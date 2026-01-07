@@ -108,6 +108,7 @@ export default function CourseApplication() {
       setFormData({
         "First Name": student?.firstname || "",
         "Last Name": student?.lastname || "",
+        "Full Name": `${student?.firstname || ""} ${student?.lastname || ""}`.trim(),
         "Email Address": student?.email || "",
         "Contact Number": student?.mobileNo || "",
       });

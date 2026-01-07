@@ -21,7 +21,7 @@ export default function PaymentPage() {
   const [status, setStatus] = useState<PaymentStatus>("idle");
 
   useEffect(() => {
-    setAmount(5000);
+    setAmount(1000);
   }, []);
 
   const handlePayment = async () => {
