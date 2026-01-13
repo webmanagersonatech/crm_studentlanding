@@ -5,6 +5,7 @@ import Select from "react-select"
 import toast, { Toaster } from "react-hot-toast"
 import { getLoggedInStudent, createApplication, getStudentApplicationById } from "@/lib/api"
 
+import { Country, State, City } from "country-state-city"
 
 import { CheckIcon } from "@heroicons/react/24/solid";
 
@@ -29,6 +30,10 @@ export default function CourseApplication() {
   const [formData, setFormData] = useState<Record<string, any>>({})
   const [files, setFiles] = useState<Record<string, File>>({})
   const [minApplicantAge, setMinApplicantAge] = useState<number | null>(null)
+  const [academicYear, setAcademicYear] = useState<string>("")
+  const [applicationSource, setApplicationSource] = useState<"online" | "offline" | "lead">("online");
+
+
 
   const IMAGE_EXTENSIONS = ["jpg", "jpeg", "png", "webp"]
   const BASE_URL = "http://localhost:4000/uploads/"
@@ -36,6 +41,34 @@ export default function CourseApplication() {
     "border border-gray-300 p-2 rounded bg-white focus:outline-none focus:ring-2 focus:ring-[#003B73]"
 
   // Auto-generate sibling fields
+  const DEFAULT_COUNTRY_CODE = "IN";
+
+  const hasPersonalField = (name: string) =>
+    formConfig?.personalDetails?.some((section: any) =>
+      section.fields.some(
+        (f: any) => f.fieldName.toLowerCase() === name.toLowerCase()
+      )
+    );
+
+
+  const countryOptions = Country.getAllCountries().map(c => ({
+    value: c.isoCode,
+    label: c.name,
+  }));
+
+  const getStateOptions = (countryCode: string) =>
+    State.getStatesOfCountry(countryCode).map(s => ({
+      value: s.isoCode,
+      label: s.name,
+    }));
+
+  const getCityOptions = (countryCode: string, stateCode: string) =>
+    City.getCitiesOfState(countryCode, stateCode).map(c => ({
+      value: c.name,
+      label: c.name,
+    }));
+
+
   useEffect(() => {
     const count = Number(formData["Sibling Count"]) || 0
     if (!formConfig) return
@@ -99,9 +132,12 @@ export default function CourseApplication() {
       }
 
       const { student, settings, formManager } = res.data;
+      let finalAcademicYear = settings?.academicYear || ""
+      setAcademicYear(finalAcademicYear)
       setStudent(student);
-      console.log(settings,"settingsuhh")
+
       setMinApplicantAge(settings.applicantAge ?? 16)
+
 
       // Set basic student info
       setSelectedInstitute(student?.instituteId || "");
@@ -130,7 +166,13 @@ export default function CourseApplication() {
         const appRes = await getStudentApplicationById(student.applicationId);
 
         if (appRes.success && appRes.data) {
+          finalAcademicYear = appRes.data.academicYear || finalAcademicYear
+
           const appData = appRes.data;
+
+          const source: "online" | "offline" | "lead" = appData.applicationSource || "online";
+
+          setApplicationSource(source);
 
           const newFormData: Record<string, any> = {};
           const newFiles: Record<string, File | string> = {};
@@ -162,6 +204,7 @@ export default function CourseApplication() {
 
           // seet program
           setProgram(appData.program || "");
+          setAcademicYear(finalAcademicYear)
         }
       }
     } catch (err) {
@@ -264,6 +307,130 @@ export default function CourseApplication() {
       className: `${inputClass} ${isAutoDisabled ? "bg-gray-100 cursor-not-allowed" : ""}`,
     }
 
+
+    if (field.fieldName === "Country") {
+      return (
+        <Select
+          options={countryOptions}
+          value={countryOptions.find(o => o.label === formData.Country) || null}
+          onChange={(val) =>
+            setFormData(p => ({
+              ...p,
+              Country: val?.label || "",
+              State: "",
+              City: "",
+            }))
+          }
+          placeholder="Select Country"
+        />
+      );
+    }
+    if (field.fieldName === "State") {
+
+      // CASE 1: Country exists → depend on country
+      if (hasPersonalField("Country")) {
+        const countryCode = Country.getAllCountries()
+          .find(c => c.name === formData.Country)?.isoCode;
+
+        const options = countryCode ? getStateOptions(countryCode) : [];
+
+        return (
+          <Select
+            options={options}
+            value={options.find(o => o.label === formData.State) || null}
+            onChange={(val) =>
+              setFormData(p => ({ ...p, State: val?.label || "", City: "" }))
+            }
+            isDisabled={!formData.Country}
+            placeholder="Select State"
+          />
+        );
+      }
+
+      // CASE 2: NO Country → show all states
+      const options = getStateOptions(DEFAULT_COUNTRY_CODE);
+
+      return (
+        <Select
+          options={options}
+          value={options.find(o => o.label === formData.State) || null}
+          onChange={(val) =>
+            setFormData(p => ({ ...p, State: val?.label || "", City: "" }))
+          }
+          placeholder="Select State"
+        />
+      );
+    }
+    if (field.fieldName === "City") {
+
+      // CASE 1: Country + State
+      if (hasPersonalField("Country") && hasPersonalField("State")) {
+        const countryCode = Country.getAllCountries()
+          .find(c => c.name === formData.Country)?.isoCode;
+
+        const stateCode = State.getStatesOfCountry(countryCode || "")
+          .find(s => s.name === formData.State)?.isoCode;
+
+        const options =
+          countryCode && stateCode
+            ? getCityOptions(countryCode, stateCode)
+            : [];
+
+        return (
+          <Select
+            options={options}
+            value={options.find(o => o.label === formData.City) || null}
+            onChange={(val) =>
+              setFormData(p => ({ ...p, City: val?.label || "" }))
+            }
+            isDisabled={!formData.State}
+            placeholder="Select City"
+          />
+        );
+      }
+
+      // CASE 2: State + City (NO Country)
+      if (hasPersonalField("State")) {
+        const stateCode = State.getStatesOfCountry(DEFAULT_COUNTRY_CODE)
+          .find(s => s.name === formData.State)?.isoCode;
+
+        const options = stateCode
+          ? getCityOptions(DEFAULT_COUNTRY_CODE, stateCode)
+          : [];
+
+        return (
+          <Select
+            options={options}
+            value={options.find(o => o.label === formData.City) || null}
+            onChange={(val) =>
+              setFormData(p => ({ ...p, City: val?.label || "" }))
+            }
+            isDisabled={!formData.State}
+            placeholder="Select City"
+          />
+        );
+      }
+
+      // CASE 3: ONLY City → show all cities
+      const allCities = State.getStatesOfCountry(DEFAULT_COUNTRY_CODE)
+        .flatMap(s =>
+          City.getCitiesOfState(DEFAULT_COUNTRY_CODE, s.isoCode)
+        )
+        .map(c => ({ value: c.name, label: c.name }));
+
+      return (
+        <Select
+          options={allCities}
+          value={allCities.find(o => o.label === formData.City) || null}
+          onChange={(val) =>
+            setFormData(p => ({ ...p, City: val?.label || "" }))
+          }
+          placeholder="Select City"
+        />
+      );
+    }
+
+
     switch (field.type) {
       case "textarea":
         return <textarea {...commonProps} value={value} onChange={handleChange} maxLength={field.maxLength ?? 500} />
@@ -346,7 +513,24 @@ export default function CourseApplication() {
           </div>
         )
       default:
-        return <input {...commonProps} type={field.type} value={value} onChange={handleChange} maxLength={field.maxLength || undefined} />
+        return (
+          <input
+            {...commonProps}
+            type={field.type}
+            value={value}
+            onChange={(e) => {
+              if (field.type === "text") {
+                // Allow only letters and spaces
+                const textOnly = e.target.value.replace(/[^a-zA-Z\s]/g, "");
+                setFormData(p => ({ ...p, [field.fieldName]: textOnly }));
+              } else {
+                handleChange(e);
+              }
+            }}
+            maxLength={field.maxLength || undefined}
+          />
+        );
+
     }
   }
 
@@ -416,7 +600,9 @@ export default function CourseApplication() {
       const fd = new FormData()
       fd.append("instituteId", selectedInstitute)
       fd.append("program", program)
-      fd.append("academicYear", "2025-2026")
+      fd.append("academicYear", academicYear)
+      fd.append("applicationSource", applicationSource);
+
       fd.append("personalDetails", JSON.stringify(mapSectionData(formConfig?.personalDetails)))
       fd.append("educationDetails", JSON.stringify(mapSectionData(formConfig?.educationDetails)))
       Object.entries(files).forEach(([key, file]) => fd.append(key, file))
@@ -424,7 +610,7 @@ export default function CourseApplication() {
       const res = await createApplication(fd, true)
 
       if (res?.success) {
-        toast.success("Application submitted successfully")
+        toast.success("Application Updated successfully")
 
         router.push("/dashboard")
       } else {
@@ -448,7 +634,8 @@ export default function CourseApplication() {
       const fd = new FormData()
       fd.append("instituteId", selectedInstitute)
       fd.append("program", program)
-      fd.append("academicYear", "2025-2026")
+      fd.append("academicYear", academicYear)
+      fd.append("applicationSource", applicationSource);
       fd.append(
         "personalDetails",
         JSON.stringify(mapSectionData(formConfig?.personalDetails))

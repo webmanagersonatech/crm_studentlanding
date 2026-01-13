@@ -1,4 +1,4 @@
-"use client";
+
 
 import { FaHome, FaLock, FaSignOutAlt, FaTimes, FaBook } from "react-icons/fa";
 import { MdDashboard } from "react-icons/md";

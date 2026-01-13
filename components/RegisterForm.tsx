@@ -1,4 +1,4 @@
-"use client";
+
 
 import { useState, FormEvent, useEffect } from "react";
 import Select from "react-select";
