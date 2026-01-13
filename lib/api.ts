@@ -5,6 +5,7 @@ type RegisterPayload = {
   lastname: string;
   email: string;
   mobileNo: string;
+  
   instituteId: string;
   country: string;
   state: string;
