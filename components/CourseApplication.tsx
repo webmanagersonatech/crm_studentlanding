@@ -519,15 +519,21 @@ export default function CourseApplication() {
             {...commonProps}
             type={field.type}
             value={value}
-            onChange={(e) => {
-              if (field.type === "text") {
-                // Allow only letters and spaces
-                const textOnly = e.target.value.replace(/[^a-zA-Z\s]/g, "");
-                setFormData(p => ({ ...p, [field.fieldName]: textOnly }));
-              } else {
-                handleChange(e);
-              }
-            }}
+            // onChange={(e) => {
+            //   if (field.type === "text") {
+            //     // Allow only letters and spaces
+            //     const textOnly = e.target.value.replace(/[^a-zA-Z\s]/g, "");
+            //     setFormData(p => ({ ...p, [field.fieldName]: textOnly }));
+            //   } else {
+            //     handleChange(e);
+            //   }
+            // }}
+            onChange={(e) =>
+              setFormData(p => ({
+                ...p,
+                [field.fieldName]: e.target.value,
+              }))
+            }
             maxLength={field.maxLength || undefined}
           />
         );
