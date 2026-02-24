@@ -15,7 +15,7 @@ import { useSidebar } from "@/context/SidebarContext";
 const menu = [
   { href: "/dashboard", label: "Apply For Courses", icon: FaHome },
   { href: "/change-password", label: "Change Password", icon: FaLock },
-  { href: "/recent-publications", label: "Recent Publications", icon: FaBook },
+  // { href: "/recent-publications", label: "Recent Publications", icon: FaBook },?
   { label: "Logout", icon: FaSignOutAlt },
 ];
 

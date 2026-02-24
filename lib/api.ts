@@ -5,7 +5,7 @@ type RegisterPayload = {
   lastname: string;
   email: string;
   mobileNo: string;
-  
+
   instituteId: string;
   country: string;
   state: string;
@@ -31,6 +31,30 @@ type ChangePasswordPayload = {
   newPassword: string; // AES encrypted string
   confirmPassword: string; // AES encrypted string
 };
+export type ReceiptData = {
+  paymentDate: string;
+  instituteName: string;
+  name: string;
+  email: string;
+  mobileNo: string;
+  applicationId: string;
+  program: string;
+  academicYear: string;
+  applicationFee: number;
+  totalAmount: number;
+  paymentId: string;
+  orderId: string;
+  transactionId: string;
+  paymentMethod: string;
+  paymentStatus: string;
+};
+
+export type ReceiptResponse = {
+  success: boolean;
+  errorCode?: string;
+  message?: string;
+  data?: ReceiptData;
+};
 
 // Login function
 export const loginStudent = async (email: string, password: string) => {
@@ -46,7 +70,62 @@ export const loginStudent = async (email: string, password: string) => {
     return { success: false, message: err.response?.data?.message || "Login failed" };
   }
 };
+export const getReceiptData = async (): Promise<ReceiptResponse> => {
+  try {
+    const res = await axios.get(
+      `${API_BASE}/student/receipt-data`,
+      { withCredentials: true }
+    );
 
+    if (res.data.success) {
+      return {
+        success: true,
+        data: res.data.data,
+        message: res.data.message
+      };
+    }
+
+    return {
+      success: false,
+      errorCode: res.data.errorCode,
+      message: res.data.message || "Failed to fetch receipt data",
+      data: res.data.data
+    };
+  } catch (err: any) {
+    // Handle specific error cases
+    if (err.response?.status === 401) {
+      return {
+        success: false,
+        errorCode: "UNAUTHORIZED",
+        message: "You are not authorized. Please login again.",
+      };
+    }
+
+    if (err.response?.status === 404) {
+      return {
+        success: false,
+        errorCode: err.response.data?.errorCode || "NOT_FOUND",
+        message: err.response.data?.message || "Receipt not found",
+        data: err.response.data?.data
+      };
+    }
+
+    if (err.response?.status === 400) {
+      return {
+        success: false,
+        errorCode: err.response.data?.errorCode || "BAD_REQUEST",
+        message: err.response.data?.message || "Payment not completed",
+        data: err.response.data?.data
+      };
+    }
+
+    // Generic error
+    return {
+      success: false,
+      message: err.response?.data?.message || "Server error while fetching receipt data",
+    };
+  }
+};
 export const registerStudent = async (payload: RegisterPayload) => {
   try {
     const res = await axios.post(`${API_BASE}/student/`, payload);
@@ -84,6 +163,58 @@ export const getStudentSettings = async (instituteId: string) => {
     };
   }
 };
+
+// ========================
+// Create Payment (Student)
+// ========================
+export const createStudentPayment = async (
+  applicationId: string
+) => {
+  try {
+    const res = await axios.post(
+      `${API_BASE}/payments/create`,
+      { applicationId }, // ✅ only send applicationId
+      { withCredentials: true }
+    );
+
+    return res.data;
+  } catch (err: any) {
+    return {
+      success: false,
+      message:
+        err.response?.data?.message || "Payment initiation failed",
+    };
+  }
+};
+// ========================
+// Get payment related data for logged-in student
+// ========================
+export const getPaymentRelatedData = async () => {
+  try {
+    const res = await axios.get(
+      `${API_BASE}/student/payment-data`,
+      { withCredentials: true }
+    );
+
+    if (res.data.success) {
+      return {
+        success: true,
+        data: res.data.data
+      };
+    }
+
+    return {
+      success: false,
+      message: res.data.message || "Failed to fetch payment data"
+    };
+  } catch (err: any) {
+    return {
+      success: false,
+      message: err.response?.data?.message || "Server error while fetching payment data"
+    };
+  }
+};
+
 export const getActiveInstitutions = async () => {
   try {
     const res = await axios.get(`${API_BASE}/institutions/active-institutions`);

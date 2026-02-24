@@ -13,7 +13,10 @@
     "axios": "^1.13.2",
     "country-state-city": "^3.2.1",
     "crypto-js": "^4.2.0",
+    "date-fns": "^4.1.0",
+    "html2canvas": "^1.4.1",
     "js-cookie": "^3.0.5",
+    "jspdf": "^4.2.0",
     "lucide-react": "^0.562.0",
     "next": "16.1.1",
     "react": "19.2.3",
@@ -21,6 +24,7 @@
     "react-hot-toast": "^2.6.0",
     "react-icons": "^5.5.0",
     "react-select": "^5.10.2",
+    "react-to-print": "^3.3.0",
     "sonner": "^2.0.7"
   },
   "devDependencies": {
