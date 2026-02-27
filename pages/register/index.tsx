@@ -1,21 +1,24 @@
+import { GetServerSideProps } from "next";
+import RegisterForm from "@/components/RegisterForm";
 
+type Props = {
+  instituteId: string | null;
+};
 
-
-import { useEffect, useState } from "react"
-import Cookies from "js-cookie"
-import RegisterForm from "@/components/RegisterForm"
-
-export default function RegisterPage() {
-  const [instituteId, setInstituteId] = useState<string | null>(null)
-
-  useEffect(() => {
-    const id = Cookies.get("instituteId") || null
-    setInstituteId(id)
-  }, [])
-
+export default function RegisterPage({ instituteId }: Props) {
   return (
     <div>
       <RegisterForm instituteId={instituteId} />
     </div>
-  )
+  );
 }
+
+export const getServerSideProps: GetServerSideProps = async ({ req }) => {
+  const instituteId = req.cookies["instituteId"] || null;
+
+  return {
+    props: {
+      instituteId,
+    },
+  };
+};
