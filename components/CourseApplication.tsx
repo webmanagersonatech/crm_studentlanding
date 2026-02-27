@@ -37,7 +37,7 @@ export default function CourseApplication() {
 
   const IMAGE_EXTENSIONS = ["jpg", "jpeg", "png", "webp"]
   // const BASE_URL = "http://localhost:4000/uploads/"
-  const BASE_URL = "https://hikabackend.sonastar.com//uploads/";
+  const BASE_URL = "https://hikabackend.sonastar.com/uploads/";
   const inputClass =
     "border border-gray-300 p-2 rounded bg-white focus:outline-none focus:ring-2 focus:ring-[#003B73]"
 
