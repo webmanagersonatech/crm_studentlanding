@@ -298,17 +298,13 @@ export default function CourseApplication() {
   }
 
   const renderField = (field: any) => {
-    const value = formData[field.fieldName] || (field.type === "checkbox" ? [] : "")
-    const isAutoDisabled =
-      field.fieldName === "Email Address" || field.fieldName === "Contact Number"
+    const value =
+      formData[field.fieldName] ??
+      (field.type === "checkbox" ? [] : "");
 
-    const commonProps = {
-      name: field.fieldName,
-      disabled: isAutoDisabled,
-      className: `${inputClass} ${isAutoDisabled ? "bg-gray-100 cursor-not-allowed" : ""}`,
-    }
-
-
+    /* =========================
+       COUNTRY
+    ========================= */
     if (field.fieldName === "Country") {
       return (
         <Select
@@ -326,30 +322,29 @@ export default function CourseApplication() {
         />
       );
     }
-    if (field.fieldName === "State") {
 
-      // CASE 1: Country exists → depend on country
-      if (hasPersonalField("Country")) {
+    /* =========================
+       STATE
+    ========================= */
+    if (field.fieldName === "State") {
+      let options: any[] = [];
+
+      if (hasPersonalField("Country") && formData.Country) {
         const countryCode = Country.getAllCountries()
           .find(c => c.name === formData.Country)?.isoCode;
 
-        const options = countryCode ? getStateOptions(countryCode) : [];
-
-        return (
-          <Select
-            options={options}
-            value={options.find(o => o.label === formData.State) || null}
-            onChange={(val) =>
-              setFormData(p => ({ ...p, State: val?.label || "", City: "" }))
-            }
-            isDisabled={!formData.Country}
-            placeholder="Select State"
-          />
-        );
+        options = countryCode
+          ? State.getStatesOfCountry(countryCode).map(s => ({
+            value: s.isoCode,
+            label: s.name,
+          }))
+          : [];
+      } else {
+        options = State.getStatesOfCountry(DEFAULT_COUNTRY_CODE).map(s => ({
+          value: s.isoCode,
+          label: s.name,
+        }));
       }
-
-      // CASE 2: NO Country → show all states
-      const options = getStateOptions(DEFAULT_COUNTRY_CODE);
 
       return (
         <Select
@@ -358,92 +353,91 @@ export default function CourseApplication() {
           onChange={(val) =>
             setFormData(p => ({ ...p, State: val?.label || "", City: "" }))
           }
+          isDisabled={hasPersonalField("Country") && !formData.Country}
           placeholder="Select State"
         />
       );
     }
+
+    /* =========================
+       CITY
+    ========================= */
     if (field.fieldName === "City") {
+      let options: any[] = [];
 
-      // CASE 1: Country + State
-      if (hasPersonalField("Country") && hasPersonalField("State")) {
-        const countryCode = Country.getAllCountries()
-          .find(c => c.name === formData.Country)?.isoCode;
+      const countryCode =
+        Country.getAllCountries().find(c => c.name === formData.Country)
+          ?.isoCode || DEFAULT_COUNTRY_CODE;
 
-        const stateCode = State.getStatesOfCountry(countryCode || "")
+      const stateCode =
+        State.getStatesOfCountry(countryCode)
           .find(s => s.name === formData.State)?.isoCode;
 
-        const options =
-          countryCode && stateCode
-            ? getCityOptions(countryCode, stateCode)
-            : [];
-
-        return (
-          <Select
-            options={options}
-            value={options.find(o => o.label === formData.City) || null}
-            onChange={(val) =>
-              setFormData(p => ({ ...p, City: val?.label || "" }))
-            }
-            isDisabled={!formData.State}
-            placeholder="Select City"
-          />
-        );
+      if (stateCode) {
+        options = City.getCitiesOfState(countryCode, stateCode).map(c => ({
+          value: c.name,
+          label: c.name,
+        }));
       }
-
-      // CASE 2: State + City (NO Country)
-      if (hasPersonalField("State")) {
-        const stateCode = State.getStatesOfCountry(DEFAULT_COUNTRY_CODE)
-          .find(s => s.name === formData.State)?.isoCode;
-
-        const options = stateCode
-          ? getCityOptions(DEFAULT_COUNTRY_CODE, stateCode)
-          : [];
-
-        return (
-          <Select
-            options={options}
-            value={options.find(o => o.label === formData.City) || null}
-            onChange={(val) =>
-              setFormData(p => ({ ...p, City: val?.label || "" }))
-            }
-            isDisabled={!formData.State}
-            placeholder="Select City"
-          />
-        );
-      }
-
-      // CASE 3: ONLY City → show all cities
-      const allCities = State.getStatesOfCountry(DEFAULT_COUNTRY_CODE)
-        .flatMap(s =>
-          City.getCitiesOfState(DEFAULT_COUNTRY_CODE, s.isoCode)
-        )
-        .map(c => ({ value: c.name, label: c.name }));
 
       return (
         <Select
-          options={allCities}
-          value={allCities.find(o => o.label === formData.City) || null}
+          options={options}
+          value={options.find(o => o.label === formData.City) || null}
           onChange={(val) =>
             setFormData(p => ({ ...p, City: val?.label || "" }))
           }
+          isDisabled={!formData.State}
           placeholder="Select City"
         />
       );
     }
 
-
+    /* =========================
+       TYPE BASED RENDERING
+    ========================= */
     switch (field.type) {
+      /* TEXTAREA */
       case "textarea":
-        return <textarea {...commonProps} value={value} onChange={handleChange} maxLength={field.maxLength ?? 500} />
+        return (
+          <textarea
+            name={field.fieldName}
+            value={value}
+            onChange={(e) =>
+              setFormData(p => ({
+                ...p,
+                [field.fieldName]: e.target.value,
+              }))
+            }
+            className={inputClass}
+            maxLength={field.maxLength ?? 500}
+          />
+        );
+
+      /* SELECT */
       case "select":
         return (
-          <select {...commonProps} value={value} onChange={handleChange}>
+          <select
+            name={field.fieldName}
+            value={value}
+            onChange={(e) =>
+              setFormData(p => ({
+                ...p,
+                [field.fieldName]: e.target.value,
+              }))
+            }
+            className={inputClass}
+          >
             <option value="">Select</option>
             {field.options?.map((o: string) => (
-              <option key={o} value={o}>{o}</option>
+              <option key={o} value={o}>
+                {o}
+              </option>
             ))}
           </select>
-        )
+        );
+
+      /* RADIO */
       case "radiobutton":
         return (
           <div className="space-y-1">
@@ -453,15 +447,21 @@ export default function CourseApplication() {
                   type="radio"
                   name={field.fieldName}
                   value={o}
-                  checked={formData[field.fieldName] === o}
-                  disabled={isAutoDisabled}
-                  onChange={() => setFormData(p => ({ ...p, [field.fieldName]: o }))}
+                  checked={value === o}
+                  onChange={() =>
+                    setFormData(p => ({
+                      ...p,
+                      [field.fieldName]: o,
+                    }))
+                  }
                 />
                 {o}
               </label>
             ))}
           </div>
-        )
+        );
+
+      /* CHECKBOX */
       case "checkbox":
         return (
           <div className="space-y-1">
@@ -469,77 +469,115 @@ export default function CourseApplication() {
               <label key={o} className="flex items-center gap-2 text-sm">
                 <input
                   type="checkbox"
-                  disabled={isAutoDisabled}
-                  checked={(formData[field.fieldName] || []).includes(o)}
+                  checked={(value || []).includes(o)}
                   onChange={(e) => {
-                    const prev = formData[field.fieldName] || []
-                    const updated = e.target.checked ? [...prev, o] : prev.filter((v: string) => v !== o)
-                    setFormData(p => ({ ...p, [field.fieldName]: updated }))
+                    const updated = e.target.checked
+                      ? [...value, o]
+                      : value.filter((v: string) => v !== o);
+
+                    setFormData(p => ({
+                      ...p,
+                      [field.fieldName]: updated,
+                    }));
                   }}
                 />
                 {o}
               </label>
             ))}
           </div>
-        )
+        );
+
+      /* NUMBER */
       case "number":
         return (
           <input
-            {...commonProps}
             type="text"
+            name={field.fieldName}
             value={value}
+            className={inputClass}
             inputMode="numeric"
-            pattern="[0-9]*"
             maxLength={field.maxLength ?? 15}
-            onChange={(e) => {
-              const digits = e.target.value.replace(/\D/g, "")
-              setFormData(p => ({ ...p, [field.fieldName]: digits }))
-            }}
+            onChange={(e) =>
+              setFormData(p => ({
+                ...p,
+                [field.fieldName]: e.target.value.replace(/\D/g, ""),
+              }))
+            }
           />
-        )
-      case "file":
-        const fileValue = formData[field.fieldName]
-        const selectedFile = files[field.fieldName]
-        const previewUrl = selectedFile ? URL.createObjectURL(selectedFile) : `${BASE_URL}${fileValue}`
-        const isImage =
-          selectedFile ||
-          (fileValue && IMAGE_EXTENSIONS.includes(fileValue.toString().split(".").pop()?.toLowerCase() || ""))
-        return (
-          <div className="flex flex-col gap-2">
-            {isImage && previewUrl && <img src={previewUrl} alt={field.fieldName} className="w-32 h-32 object-cover border rounded" />}
-            {!isImage && fileValue && (
-              <a href={`${BASE_URL}${fileValue}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">{fileValue}</a>
-            )}
-            <input type="file" name={field.fieldName} onChange={handleFileChange} />
-          </div>
-        )
-      default:
+        );
+
+      /* TEXT ONLY */
+      case "text":
         return (
           <input
-            {...commonProps}
-            type={field.type}
+            type="text"
+            name={field.fieldName}
             value={value}
-            // onChange={(e) => {
-            //   if (field.type === "text") {
-            //     // Allow only letters and spaces
-            //     const textOnly = e.target.value.replace(/[^a-zA-Z\s]/g, "");
-            //     setFormData(p => ({ ...p, [field.fieldName]: textOnly }));
-            //   } else {
-            //     handleChange(e);
-            //   }
-            // }}
+            className={inputClass}
+            maxLength={field.maxLength ?? 100}
+            onChange={(e) =>
+              setFormData(p => ({
+                ...p,
+                [field.fieldName]: e.target.value.replace(/[^a-zA-Z\s]/g, ""),
+              }))
+            }
+          />
+        );
+
+      /* ALPHANUMERIC */
+      case "alphanumeric":
+        return (
+          <input
+            type="text"
+            name={field.fieldName}
+            value={value}
+            className={inputClass}
+            maxLength={field.maxLength ?? 100}
+            onChange={(e) =>
+              setFormData(p => ({
+                ...p,
+                [field.fieldName]: e.target.value.replace(/[^a-zA-Z0-9\s]/g, ""),
+              }))
+            }
+          />
+        );
+
+      /* ANY */
+
+      case "any":
+        return (
+          <input
+            type="text"
+            name={field.fieldName}
+            value={value}
+            className={inputClass}
+            maxLength={field.maxLength ?? 300}
             onChange={(e) =>
               setFormData(p => ({
                 ...p,
                 [field.fieldName]: e.target.value,
               }))
             }
+          />
+        );
+      default:
+        return (
+          <input
+            type={field.type}   // <-- THIS IS IMPORTANT
+            name={field.fieldName}
+            value={value}
+            onChange={(e) =>
+              setFormData(p => ({
+                ...p,
+                [field.fieldName]: e.target.value,
+              }))
+            }
+            className={inputClass}
             maxLength={field.maxLength || undefined}
           />
         );
-
     }
-  }
+  };
 
   const handleNext = async () => {
     if (activeStep === "program") {
