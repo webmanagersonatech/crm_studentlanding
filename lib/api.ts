@@ -254,6 +254,22 @@ export const sendStudentOtp = async (payload: SendOtpPayload) => {
     };
   }
 };
+export const logoutStudent = async () => {
+  try {
+    const res = await axios.post(
+      `${API_BASE}/student/logout`,
+      {},
+      { withCredentials: true } // VERY IMPORTANT
+    );
+
+    return res.data;
+  } catch (err: any) {
+    return {
+      success: false,
+      message: err.response?.data?.message || "Logout failed",
+    };
+  }
+};
 
 export const verifyStudentOtp = async (payload: VerifyOtpPayload) => {
   try {

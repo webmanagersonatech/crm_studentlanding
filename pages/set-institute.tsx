@@ -26,7 +26,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
             secure: isProd,                // ✅ HTTPS only in production
             sameSite: "lax",               // ✅ Works for redirect flow
             path: "/",
-            maxAge: 60 * 60,               // 1 hour
+            maxAge: 60 * 60 * 24 * 7,
         })
     );
 

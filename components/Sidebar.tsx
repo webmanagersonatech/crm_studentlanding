@@ -5,7 +5,7 @@ import { MdDashboard } from "react-icons/md";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-
+import { logoutStudent } from "@/lib/api";
 
 import { useSidebar } from "@/context/SidebarContext";
 
@@ -52,14 +52,21 @@ export function Sidebar() {
   /* =======================
      Logout Handler
   ======================= */
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    localStorage.removeItem("student");
+  const handleLogout = async () => {
+    try {
+      await logoutStudent(); // clears HttpOnly cookie
 
-    if (isMobile) toggle();
+      // Clear localStorage
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      localStorage.removeItem("student");
 
-    router.push("/");
+      if (isMobile) toggle();
+
+      router.replace("/"); // better than push
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
   };
 
   return (

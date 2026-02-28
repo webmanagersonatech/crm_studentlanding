@@ -494,7 +494,11 @@ export default function CourseApplication() {
             type="text"
             name={field.fieldName}
             value={value}
-            className={inputClass}
+            disabled={field.fieldName === "Contact Number"}
+            className={`${inputClass} ${field.fieldName === "Contact Number"
+                ? "bg-gray-100 cursor-not-allowed"
+                : ""
+              }`}
             inputMode="numeric"
             maxLength={field.maxLength ?? 15}
             onChange={(e) =>
@@ -566,13 +570,22 @@ export default function CourseApplication() {
             type={field.type}   // <-- THIS IS IMPORTANT
             name={field.fieldName}
             value={value}
+            disabled={
+              field.fieldName === "Email Address" ||
+              field.fieldName === "Contact Number"
+            }
+
             onChange={(e) =>
               setFormData(p => ({
                 ...p,
                 [field.fieldName]: e.target.value,
               }))
             }
-            className={inputClass}
+            className={`${inputClass} ${field.fieldName === "Email Address" ||
+              field.fieldName === "Contact Number"
+              ? "bg-gray-100 cursor-not-allowed"
+              : ""
+              }`}
             maxLength={field.maxLength || undefined}
           />
         );
@@ -713,20 +726,21 @@ export default function CourseApplication() {
   const steps = ["program", "personal", "education"];
 
   return (
-    <div className="flex justify-center">
-      <form onSubmit={handleSubmit} className="max-w-6xl mx-auto bg-white rounded-2xl shadow-xl border border-gray-100 p-8 space-y-10">
+    <div className="w-full px-3 sm:px-6 lg:px-0 flex justify-center overflow-x-hidden ">
+      <form onSubmit={handleSubmit} className="w-full max-w-5xl bg-white rounded-2xl  border border-gray-100 
+  p-4 sm:p-6 md:p-8 space-y-8 overflow-hidden">
         <Toaster position="top-right" />
 
         {/* STEP PROGRESS */}
         <div className="mb-12">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
             {steps.map((step, index) => {
-              const stepIndex = steps.indexOf(step);
+
               const isActive = activeStep === step;
               const isCompleted = steps.indexOf(activeStep) > index;
 
               return (
-                <div key={step} className="flex-1 flex items-center">
+                <div key={step} className="flex items-center w-full sm:flex-1">
                   {/* Step Circle */}
                   <div
                     className={`w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold transition-all 
