@@ -33,13 +33,12 @@ export default function CourseApplication() {
   const [academicYear, setAcademicYear] = useState<string>("")
   const [applicationSource, setApplicationSource] = useState<"online" | "offline" | "lead">("online");
 
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
-
-  const IMAGE_EXTENSIONS = ["jpg", "jpeg", "png", "webp"]
   // const BASE_URL = "http://localhost:4000/uploads/"
   const BASE_URL = "https://hikabackend.sonastar.com/uploads/";
   const inputClass =
-    "border border-gray-300 p-2 rounded bg-white focus:outline-none focus:ring-2 focus:ring-[#003B73]"
+    "border border-gray-300 w-full p-2 rounded bg-white focus:outline-none focus:ring-2 focus:ring-[#003B73]"
 
   // Auto-generate sibling fields
   const DEFAULT_COUNTRY_CODE = "IN";
@@ -50,25 +49,73 @@ export default function CourseApplication() {
         (f: any) => f.fieldName.toLowerCase() === name.toLowerCase()
       )
     );
+  const isValidDOB = (dob: string) => {
+    if (!dob) return false
 
+    const birthDate = new Date(dob)
+    const today = new Date()
 
+    // future date check
+    if (birthDate > today) return false
+
+    const minAge = minApplicantAge ?? 16
+
+    let age = today.getFullYear() - birthDate.getFullYear()
+    const m = today.getMonth() - birthDate.getMonth()
+
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--
+    }
+
+    return age >= minAge
+  }
+  const validateField = (field: any, value: any): string => {
+    if (field.required && (!value || value.toString().trim() === "")) {
+      return `${field.fieldName} is required`;
+    }
+
+    if (value && value.toString().trim() !== "") {
+      if (field.type === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+        return "Invalid email format";
+      }
+
+      if (field.fieldName === "Date of Birth" && field.type === "date") {
+        if (!isValidDOB(value)) {
+          return `You must be at least ${minApplicantAge ?? 16} years old`;
+        }
+      }
+    }
+
+    return "";
+  };
+  const handleBlur = (
+    e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
+    const { name, value } = e.target;
+
+    // Find the field configuration
+    let fieldConfig = null;
+    ['personal', 'education'].forEach(tab => {
+      formConfig?.[`${tab}Details`]?.forEach((section: any) => {
+        const found = section.fields.find((f: any) => f.fieldName === name);
+        if (found) fieldConfig = found;
+      });
+    });
+
+    if (fieldConfig) {
+      const error = validateField(fieldConfig, value);
+      setFieldErrors(prev => ({
+        ...prev,
+        [name]: error
+      }));
+    }
+  }
   const countryOptions = Country.getAllCountries().map(c => ({
     value: c.isoCode,
     label: c.name,
   }));
 
-  const getStateOptions = (countryCode: string) =>
-    State.getStatesOfCountry(countryCode).map(s => ({
-      value: s.isoCode,
-      label: s.name,
-    }));
-
-  const getCityOptions = (countryCode: string, stateCode: string) =>
-    City.getCitiesOfState(countryCode, stateCode).map(c => ({
-      value: c.name,
-      label: c.name,
-    }));
-
+ 
 
   useEffect(() => {
     const count = Number(formData["Sibling Count"]) || 0
@@ -234,59 +281,38 @@ export default function CourseApplication() {
   const validateSection = (sections?: any[]) => {
     if (!Array.isArray(sections)) return true
 
+    let isValid = true;
+    const newErrors: Record<string, string> = {};
+
     for (const section of sections) {
       for (const field of section.fields || []) {
-        if (!field.required) continue
+        const value = formData[field.fieldName];
+        const error = validateField(field, value);
 
-        if (field.type === "file") {
-          if (!files[field.fieldName] && !formData[field.fieldName]) {
-            toast.error(`${field.fieldName} is required`)
-            return false
-          }
-          continue
+        if (error) {
+          newErrors[field.fieldName] = error;
+          isValid = false;
         }
-
-        const value = formData[field.fieldName]
-        if (!value || value.toString().trim() === "") {
-          toast.error(`${field.fieldName} is required`)
-          return false
-        }
-
-        if (field.type === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-          toast.error("Invalid email format")
-          return false
-        }
-        if (field.fieldName === "Date of Birth" && field.type === "date") {
-          const dob = new Date(value);
-          const today = new Date();
-
-          let age = today.getFullYear() - dob.getFullYear();
-          const monthDiff = today.getMonth() - dob.getMonth();
-          const dayDiff = today.getDate() - dob.getDate();
-
-          if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
-            age--;
-          }
-
-          const minAge = minApplicantAge ?? 16; // fallback safety
-
-          if (age < minAge) {
-            toast.error(`You must be at least ${minAge} years old`);
-            return false;
-          }
-        }
-
       }
     }
 
-    return true
+    setFieldErrors(prev => ({ ...prev, ...newErrors }));
+    return isValid;
   }
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value, type, checked } = e.target as HTMLInputElement
-    setFormData((p) => ({ ...p, [name]: type === "checkbox" ? checked : value }))
+    const newValue = type === "checkbox" ? checked : value
+
+    setFormData(p => ({ ...p, [name]: newValue }))
+
+    // Clear error when user starts typing
+    setFieldErrors(prev => ({
+      ...prev,
+      [name]: ''
+    }));
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -294,32 +320,55 @@ export default function CourseApplication() {
     if (file) {
       setFiles((p) => ({ ...p, [e.target.name]: file }))
       setFormData((p) => ({ ...p, [e.target.name]: file.name }))
+
+      // Clear error on file selection
+      setFieldErrors(prev => ({
+        ...prev,
+        [e.target.name]: ''
+      }));
     }
   }
 
   const renderField = (field: any) => {
-    const value =
-      formData[field.fieldName] ??
-      (field.type === "checkbox" ? [] : "");
+    const value = formData[field.fieldName] ?? (field.type === "checkbox" ? [] : "");
+    const error = fieldErrors[field.fieldName];
+    const hasError = !!error;
 
     /* =========================
        COUNTRY
     ========================= */
     if (field.fieldName === "Country") {
       return (
-        <Select
-          options={countryOptions}
-          value={countryOptions.find(o => o.label === formData.Country) || null}
-          onChange={(val) =>
-            setFormData(p => ({
-              ...p,
-              Country: val?.label || "",
-              State: "",
-              City: "",
-            }))
-          }
-          placeholder="Select Country"
-        />
+        <div>
+          <Select
+            options={countryOptions}
+            value={countryOptions.find(o => o.label === formData.Country) || null}
+            onChange={(val) => {
+              setFormData(p => ({
+                ...p,
+                Country: val?.label || "",
+                State: "",
+                City: "",
+              }));
+              setFieldErrors(prev => ({ ...prev, Country: '' }));
+            }}
+            onBlur={() => {
+              const error = validateField(field, formData.Country);
+              setFieldErrors(prev => ({ ...prev, Country: error }));
+            }}
+            placeholder="Select Country"
+            styles={{
+              control: (base) => ({
+                ...base,
+                borderColor: hasError ? '#ef4444' : base.borderColor,
+                '&:hover': {
+                  borderColor: hasError ? '#ef4444' : base.borderColor,
+                }
+              })
+            }}
+          />
+          {hasError && <p className="text-red-500 text-xs mt-1">{error}</p>}
+        </div>
       );
     }
 
@@ -347,15 +396,32 @@ export default function CourseApplication() {
       }
 
       return (
-        <Select
-          options={options}
-          value={options.find(o => o.label === formData.State) || null}
-          onChange={(val) =>
-            setFormData(p => ({ ...p, State: val?.label || "", City: "" }))
-          }
-          isDisabled={hasPersonalField("Country") && !formData.Country}
-          placeholder="Select State"
-        />
+        <div>
+          <Select
+            options={options}
+            value={options.find(o => o.label === formData.State) || null}
+            onChange={(val) => {
+              setFormData(p => ({ ...p, State: val?.label || "", City: "" }));
+              setFieldErrors(prev => ({ ...prev, State: '' }));
+            }}
+            onBlur={() => {
+              const error = validateField(field, formData.State);
+              setFieldErrors(prev => ({ ...prev, State: error }));
+            }}
+            isDisabled={hasPersonalField("Country") && !formData.Country}
+            placeholder="Select State"
+            styles={{
+              control: (base) => ({
+                ...base,
+                borderColor: hasError ? '#ef4444' : base.borderColor,
+                '&:hover': {
+                  borderColor: hasError ? '#ef4444' : base.borderColor,
+                }
+              })
+            }}
+          />
+          {hasError && <p className="text-red-500 text-xs mt-1">{error}</p>}
+        </div>
       );
     }
 
@@ -381,231 +447,343 @@ export default function CourseApplication() {
       }
 
       return (
-        <Select
-          options={options}
-          value={options.find(o => o.label === formData.City) || null}
-          onChange={(val) =>
-            setFormData(p => ({ ...p, City: val?.label || "" }))
-          }
-          isDisabled={!formData.State}
-          placeholder="Select City"
-        />
+        <div>
+          <Select
+            options={options}
+            value={options.find(o => o.label === formData.City) || null}
+            onChange={(val) => {
+              setFormData(p => ({ ...p, City: val?.label || "" }));
+              setFieldErrors(prev => ({ ...prev, City: '' }));
+            }}
+            onBlur={() => {
+              const error = validateField(field, formData.City);
+              setFieldErrors(prev => ({ ...prev, City: error }));
+            }}
+            isDisabled={!formData.State}
+            placeholder="Select City"
+            styles={{
+              control: (base) => ({
+                ...base,
+                borderColor: hasError ? '#ef4444' : base.borderColor,
+                '&:hover': {
+                  borderColor: hasError ? '#ef4444' : base.borderColor,
+                }
+              })
+            }}
+          />
+          {hasError && <p className="text-red-500 text-xs mt-1">{error}</p>}
+        </div>
       );
     }
 
     /* =========================
        TYPE BASED RENDERING
     ========================= */
-    switch (field.type) {
-      /* TEXTAREA */
-      case "textarea":
-        return (
-          <textarea
-            name={field.fieldName}
-            value={value}
-            onChange={(e) =>
-              setFormData(p => ({
-                ...p,
-                [field.fieldName]: e.target.value,
-              }))
-            }
-            className={inputClass}
-            maxLength={field.maxLength ?? 500}
-          />
-        );
+    const renderInput = () => {
+      switch (field.type) {
+        /* TEXTAREA */
+        case "textarea":
+          return (
+            <textarea
+              name={field.fieldName}
+              value={value}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              className={`${inputClass} ${hasError ? 'border-red-500' : ''}`}
+              maxLength={field.maxLength ?? 500}
+            />
+          );
 
-      /* SELECT */
-      case "select":
-        return (
-          <select
-            name={field.fieldName}
-            value={value}
-            onChange={(e) =>
-              setFormData(p => ({
-                ...p,
-                [field.fieldName]: e.target.value,
-              }))
-            }
-            className={inputClass}
-          >
-            <option value="">Select</option>
-            {field.options?.map((o: string) => (
-              <option key={o} value={o}>
-                {o}
-              </option>
-            ))}
-          </select>
-        );
+        /* SELECT */
+        case "select":
+          return (
+            <select
+              name={field.fieldName}
+              value={value}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              className={`${inputClass} ${hasError ? 'border-red-500' : ''}`}
+            >
+              <option value="">Select</option>
+              {field.options?.map((o: string) => (
+                <option key={o} value={o}>
+                  {o}
+                </option>
+              ))}
+            </select>
+          );
 
-      /* RADIO */
-      case "radiobutton":
-        return (
-          <div className="space-y-1">
-            {field.options?.map((o: string) => (
-              <label key={o} className="flex items-center gap-2 text-sm">
-                <input
-                  type="radio"
-                  name={field.fieldName}
-                  value={o}
-                  checked={value === o}
-                  onChange={() =>
-                    setFormData(p => ({
-                      ...p,
-                      [field.fieldName]: o,
-                    }))
-                  }
-                />
-                {o}
-              </label>
-            ))}
-          </div>
-        );
+        /* RADIO */
+        case "radiobutton":
+          return (
+            <div className="space-y-1">
+              {field.options?.map((o: string) => (
+                <label key={o} className="flex items-center gap-2 text-sm">
+                  <input
+                    type="radio"
+                    name={field.fieldName}
+                    value={o}
+                    checked={value === o}
+                    onChange={() => {
+                      setFormData(p => ({
+                        ...p,
+                        [field.fieldName]: o,
+                      }));
+                      setFieldErrors(prev => ({ ...prev, [field.fieldName]: '' }));
+                    }}
+                    onBlur={() => {
+                      const error = validateField(field, value);
+                      setFieldErrors(prev => ({ ...prev, [field.fieldName]: error }));
+                    }}
+                  />
+                  {o}
+                </label>
+              ))}
+            </div>
+          );
 
-      /* CHECKBOX */
-      case "checkbox":
-        return (
-          <div className="space-y-1">
-            {field.options?.map((o: string) => (
-              <label key={o} className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={(value || []).includes(o)}
-                  onChange={(e) => {
-                    const updated = e.target.checked
-                      ? [...value, o]
-                      : value.filter((v: string) => v !== o);
+        /* CHECKBOX */
+        case "checkbox":
+          return (
+            <div className="space-y-1">
+              {field.options?.map((o: string) => (
+                <label key={o} className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={(value || []).includes(o)}
+                    onChange={(e) => {
+                      const updated = e.target.checked
+                        ? [...value, o]
+                        : value.filter((v: string) => v !== o);
 
-                    setFormData(p => ({
-                      ...p,
-                      [field.fieldName]: updated,
-                    }));
-                  }}
-                />
-                {o}
-              </label>
-            ))}
-          </div>
-        );
+                      setFormData(p => ({
+                        ...p,
+                        [field.fieldName]: updated,
+                      }));
+                      setFieldErrors(prev => ({ ...prev, [field.fieldName]: '' }));
+                    }}
+                    onBlur={() => {
+                      const error = validateField(field, value);
+                      setFieldErrors(prev => ({ ...prev, [field.fieldName]: error }));
+                    }}
+                  />
+                  {o}
+                </label>
+              ))}
+            </div>
+          );
 
-      /* NUMBER */
-      case "number":
-        return (
-          <input
-            type="text"
-            name={field.fieldName}
-            value={value}
-            disabled={field.fieldName === "Contact Number"}
-            className={`${inputClass} ${field.fieldName === "Contact Number"
+        /* NUMBER */
+        case "number":
+          return (
+            <input
+              type="text"
+              name={field.fieldName}
+              value={value}
+              disabled={field.fieldName === "Contact Number"}
+              className={`${inputClass} ${field.fieldName === "Contact Number"
                 ? "bg-gray-100 cursor-not-allowed"
                 : ""
-              }`}
-            inputMode="numeric"
-            maxLength={field.maxLength ?? 15}
-            onChange={(e) =>
-              setFormData(p => ({
-                ...p,
-                [field.fieldName]: e.target.value.replace(/\D/g, ""),
-              }))
-            }
-          />
-        );
+                } ${hasError ? 'border-red-500' : ''}`}
+              inputMode="numeric"
+              maxLength={field.maxLength ?? 15}
+              onChange={(e) => {
+                const numericValue = e.target.value.replace(/\D/g, "");
+                setFormData(p => ({ ...p, [field.fieldName]: numericValue }));
+                setFieldErrors(prev => ({ ...prev, [field.fieldName]: '' }));
+              }}
+              onBlur={handleBlur}
+            />
+          );
 
-      /* TEXT ONLY */
-      case "text":
-        return (
-          <input
-            type="text"
-            name={field.fieldName}
-            value={value}
-            className={inputClass}
-            maxLength={field.maxLength ?? 100}
-            onChange={(e) =>
-              setFormData(p => ({
-                ...p,
-                [field.fieldName]: e.target.value.replace(/[^a-zA-Z\s]/g, ""),
-              }))
-            }
-          />
-        );
+        /* TEXT ONLY */
+        case "text":
+          return (
+            <input
+              type="text"
+              name={field.fieldName}
+              value={value}
+              className={`${inputClass} ${hasError ? 'border-red-500' : ''}`}
+              maxLength={field.maxLength ?? 100}
+              onChange={(e) => {
+                const textValue = e.target.value.replace(/[^a-zA-Z\s]/g, "");
+                setFormData(p => ({ ...p, [field.fieldName]: textValue }));
+                setFieldErrors(prev => ({ ...prev, [field.fieldName]: '' }));
+              }}
+              onBlur={handleBlur}
+            />
+          );
 
-      /* ALPHANUMERIC */
-      case "alphanumeric":
-        return (
-          <input
-            type="text"
-            name={field.fieldName}
-            value={value}
-            className={inputClass}
-            maxLength={field.maxLength ?? 100}
-            onChange={(e) =>
-              setFormData(p => ({
-                ...p,
-                [field.fieldName]: e.target.value.replace(/[^a-zA-Z0-9\s]/g, ""),
-              }))
-            }
-          />
-        );
+        /* ALPHANUMERIC */
+        case "alphanumeric":
+          return (
+            <input
+              type="text"
+              name={field.fieldName}
+              value={value}
+              className={`${inputClass} ${hasError ? 'border-red-500' : ''}`}
+              maxLength={field.maxLength ?? 100}
+              onChange={(e) => {
+                const alphanumericValue = e.target.value.replace(/[^a-zA-Z0-9\s]/g, "");
+                setFormData(p => ({ ...p, [field.fieldName]: alphanumericValue }));
+                setFieldErrors(prev => ({ ...prev, [field.fieldName]: '' }));
+              }}
+              onBlur={handleBlur}
+            />
+          );
 
-      /* ANY */
+        /* ANY */
+        case "any":
+          return (
+            <input
+              type="text"
+              name={field.fieldName}
+              value={value}
+              className={`${inputClass} ${hasError ? 'border-red-500' : ''}`}
+              maxLength={field.maxLength ?? 300}
+              onChange={(e) => {
+                setFormData(p => ({ ...p, [field.fieldName]: e.target.value }));
+                setFieldErrors(prev => ({ ...prev, [field.fieldName]: '' }));
+              }}
+              onBlur={handleBlur}
+            />
+          );
 
-      case "any":
-        return (
-          <input
-            type="text"
-            name={field.fieldName}
-            value={value}
-            className={inputClass}
-            maxLength={field.maxLength ?? 300}
-            onChange={(e) =>
-              setFormData(p => ({
-                ...p,
-                [field.fieldName]: e.target.value,
-              }))
-            }
-          />
-        );
-      default:
-        return (
-          <input
-            type={field.type}   // <-- THIS IS IMPORTANT
-            name={field.fieldName}
-            value={value}
-            disabled={
-              field.fieldName === "Email Address" ||
-              field.fieldName === "Contact Number"
-            }
+        /* FILE */
+        case "file":
+          const isImage = (filename: string) => {
+            const ext = filename?.split('.').pop()?.toLowerCase();
+            return ['jpg', 'jpeg', 'png', 'webp'].includes(ext || '');
+          };
 
-            onChange={(e) =>
-              setFormData(p => ({
-                ...p,
-                [field.fieldName]: e.target.value,
-              }))
-            }
-            className={`${inputClass} ${field.fieldName === "Email Address" ||
-              field.fieldName === "Contact Number"
-              ? "bg-gray-100 cursor-not-allowed"
-              : ""
-              }`}
-            maxLength={field.maxLength || undefined}
-          />
-        );
-    }
+          const isPDF = (filename: string) => {
+            const ext = filename?.split('.').pop()?.toLowerCase();
+            return ext === 'pdf';
+          };
+
+          const isDocument = (filename: string) => {
+            const ext = filename?.split('.').pop()?.toLowerCase();
+            return ['doc', 'docx'].includes(ext || '');
+          };
+
+          const getFileIcon = (filename: string) => {
+            if (isPDF(filename)) return '📄';
+            if (isDocument(filename)) return '📝';
+            return '📎';
+          };
+
+          const currentFile = files[field.fieldName]?.name || formData[field.fieldName];
+
+          return (
+            <div>
+              <input
+                type="file"
+                name={field.fieldName}
+                onChange={handleFileChange}
+                onBlur={() => {
+                  const error = validateField(field, files[field.fieldName]?.name || formData[field.fieldName]);
+                  setFieldErrors(prev => ({ ...prev, [field.fieldName]: error }));
+                }}
+                className={`${inputClass} ${hasError ? 'border-red-500' : ''}`}
+                accept=".jpg,.jpeg,.png,.webp,.pdf,.doc,.docx"
+              />
+
+              {/* Preview for newly uploaded files */}
+              {files[field.fieldName] && (
+                <div className="mt-2 p-2 border rounded bg-gray-50">
+                  {isImage(files[field.fieldName].name) ? (
+                    <img
+                      src={URL.createObjectURL(files[field.fieldName])}
+                      alt="Preview"
+                      className="max-h-20 rounded border"
+                      onLoad={() => URL.revokeObjectURL(URL.createObjectURL(files[field.fieldName]))}
+                    />
+                  ) : (
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="text-2xl">{getFileIcon(files[field.fieldName].name)}</span>
+                      <span className="text-gray-600 truncate max-w-[200px]">
+                        {files[field.fieldName].name}
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        ({(files[field.fieldName].size / 1024).toFixed(2)} KB)
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Existing file from server */}
+              {formData[field.fieldName] && !files[field.fieldName] && (
+                <div className="mt-2 p-2 border rounded bg-gray-50">
+                  {isImage(formData[field.fieldName]) ? (
+                    <img
+                      src={`${BASE_URL}${formData[field.fieldName]}`}
+                      alt="Current file"
+                      className="max-h-20 rounded border"
+                    />
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl">{getFileIcon(formData[field.fieldName])}</span>
+                      <a
+                        href={`${BASE_URL}${formData[field.fieldName]}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 text-sm hover:underline truncate max-w-[200px]"
+                      >
+                        {formData[field.fieldName]}
+                      </a>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+
+        default:
+          return (
+            <input
+              type={field.type}
+              name={field.fieldName}
+              value={value}
+              disabled={
+                field.fieldName === "Email Address" ||
+                field.fieldName === "Contact Number"
+              }
+              onChange={(e) => {
+                setFormData(p => ({ ...p, [field.fieldName]: e.target.value }));
+                setFieldErrors(prev => ({ ...prev, [field.fieldName]: '' }));
+              }}
+              onBlur={handleBlur}
+              className={`${inputClass} ${field.fieldName === "Email Address" ||
+                field.fieldName === "Contact Number"
+                ? "bg-gray-100 cursor-not-allowed"
+                : ""
+                } ${hasError ? 'border-red-500' : ''}`}
+              maxLength={field.maxLength || undefined}
+            />
+          );
+      }
+    };
+
+    return (
+      <div>
+        {renderInput()}
+        {hasError && <p className="text-red-500 text-xs mt-1">{error}</p>}
+      </div>
+    );
   };
 
   const handleNext = async () => {
     if (activeStep === "program") {
       if (!validateProgram()) return;
-
-      // Always go to personal, no skipping
       setActiveStep("personal");
       return;
     }
 
     if (activeStep === "personal") {
-      // Validate personal details before moving next
       if (!validateSection(formConfig?.personalDetails)) return;
+      setFieldErrors({}); // Clear errors when moving to next step
 
-      // Save personal details if applicationId does not exist
       if (!student?.applicationId) {
         const success = await savePersonalDetails();
         if (!success) return;
@@ -628,8 +806,14 @@ export default function CourseApplication() {
 
 
   const handlePrev = () => {
-    if (activeStep === "education") setActiveStep("personal")
-    else if (activeStep === "personal") setActiveStep("program")
+    if (activeStep === "education") {
+      setFieldErrors({}); // Clear errors when moving back
+      setActiveStep("personal")
+    }
+    else if (activeStep === "personal") {
+      setFieldErrors({}); // Clear errors when moving back
+      setActiveStep("program")
+    }
   }
 
   const mapSectionData = (sections?: any[]) => {
