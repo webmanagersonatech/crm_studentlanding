@@ -167,28 +167,38 @@ export const getStudentSettings = async (instituteId: string) => {
 // ========================
 // Create Payment (Student)
 // ========================
-export const createStudentPayment = async (
-  applicationId: string
-) => {
+export const createStudentPayment = async (applicationId: string) => {
   try {
-    const res = await axios.post(
+    const response = await axios.post(
       `${API_BASE}/payments/create`,
-      { applicationId }, // ✅ only send applicationId
+      { applicationId },
       { withCredentials: true }
     );
-
-    return res.data;
-  } catch (err: any) {
+    return response.data;
+  } catch (error: any) {
     return {
       success: false,
-      message:
-        err.response?.data?.message || "Payment initiation failed",
+      message: error.response?.data?.message || 'Payment creation failed',
     };
   }
 };
 // ========================
 // Get payment related data for logged-in student
 // ========================
+export const getPaymentStatus = async (applicationId: string) => {
+  try {
+    const response = await axios.get(
+      `${API_BASE}/payments/status/${applicationId}`,
+      { withCredentials: true }
+    );
+    return response.data;
+  } catch (error: any) {
+    return {
+      success: false,
+      message: error.response?.data?.message || 'Failed to fetch payment status',
+    };
+  }
+};
 export const getPaymentRelatedData = async () => {
   try {
     const res = await axios.get(

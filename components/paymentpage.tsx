@@ -1,3 +1,4 @@
+// app/payment/page.tsx
 
 
 import { useRouter } from "next/navigation";
@@ -9,6 +10,7 @@ import { CheckCircleIcon } from "@heroicons/react/24/solid";
 import axios from "axios";
 
 type PaymentStatus = "idle" | "processing" | "success" | "failed";
+type PaymentGateway = "razorpay" | "instamojo" | null;
 
 type PaymentData = {
     name: string;
@@ -24,6 +26,7 @@ export default function PaymentPage() {
     const [paymentData, setPaymentData] = useState<PaymentData | null>(null);
     const [loading, setLoading] = useState(true);
     const [status, setStatus] = useState<PaymentStatus>("idle");
+    const [gateway, setGateway] = useState<PaymentGateway>(null);
 
     const fetchPaymentData = useCallback(async () => {
         try {
@@ -48,7 +51,58 @@ export default function PaymentPage() {
         fetchPaymentData();
     }, [fetchPaymentData]);
 
+    const handleRazorpayPayment = async (result: any) => {
+        const options = {
+            key: result.key,
+            amount: result.amount,
+            currency: result.currency,
+            name: "Admission Portal",
+            description: "Application Fee Payment",
+            order_id: result.orderId,
 
+            prefill: {
+                name: result.student.name,
+                email: result.student.email,
+                contact: result.student.contact,
+            },
+
+            handler: async function (response: any) {
+                const verifyRes = await axios.post(
+                    `${API_BASE}/payments/verify`,
+                    response,
+                    { withCredentials: true }
+                );
+
+                if (verifyRes.data.success) {
+                    setStatus("success");
+                    toast.success("Payment successful!");
+                    setTimeout(() => {
+                        router.push("/dashboard");
+                    }, 2000);
+                } else {
+                    setStatus("failed");
+                    toast.error("Verification failed");
+                }
+            },
+
+            theme: {
+                color: "#003B73",
+            },
+        };
+
+        const rzp = new (window as any).Razorpay(options);
+        rzp.open();
+
+        rzp.on("payment.failed", function () {
+            setStatus("failed");
+            toast.error("Payment failed. Try again.");
+        });
+    };
+
+    const handleInstamojoPayment = (result: any) => {
+        // Redirect to Instamojo payment page
+        window.location.href = result.longurl;
+    };
 
     const handlePayment = async () => {
         if (!paymentData?.applicationId) return;
@@ -66,51 +120,13 @@ export default function PaymentPage() {
                 return;
             }
 
-            const options = {
-                key: result.key,
-                amount: result.amount,
-                currency: result.currency,
-                name: "Admission Portal",
-                description: "Application Fee Payment",
-                order_id: result.orderId,
+            setGateway(result.gateway);
 
-                prefill: {
-                    name: result.student.name,
-                    email: result.student.email,
-                    contact: result.student.contact,
-                },
-
-                handler: async function (response: any) {
-                    const verifyRes = await axios.post(
-                        `${API_BASE}/payments/verify`,
-                        response,
-                        { withCredentials: true }
-                    );
-
-                    if (verifyRes.data.success) {
-                        setStatus("success");
-                        toast.success("Payment successful!");
-                        setTimeout(() => {
-                            router.push("/dashboard");
-                        }, 2000);
-                    } else {
-                        setStatus("failed");
-                        toast.error("Verification failed");
-                    }
-                },
-
-                theme: {
-                    color: "#003B73",
-                },
-            };
-
-            const rzp = new (window as any).Razorpay(options);
-            rzp.open();
-
-            rzp.on("payment.failed", function () {
-                setStatus("failed");
-                toast.error("Payment failed. Try again.");
-            });
+            if (result.gateway === "razorpay") {
+                await handleRazorpayPayment(result);
+            } else if (result.gateway === "instamojo") {
+                handleInstamojoPayment(result);
+            }
 
         } catch (error) {
             console.error(error);
@@ -118,6 +134,23 @@ export default function PaymentPage() {
             toast.error("Payment failed. Please try again.");
         }
     };
+
+    // Check URL params for payment status (for Instamojo redirect)
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const paymentStatus = params.get("status");
+        
+        if (paymentStatus === "success") {
+            setStatus("success");
+            toast.success("Payment successful!");
+            setTimeout(() => {
+                router.push("/dashboard");
+            }, 2000);
+        } else if (paymentStatus === "failed") {
+            setStatus("failed");
+            toast.error("Payment failed. Please try again.");
+        }
+    }, [router]);
 
     const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat("en-IN", {
@@ -128,13 +161,29 @@ export default function PaymentPage() {
         }).format(amount);
     };
 
+    const getGatewayBadge = () => {
+        if (gateway === "razorpay") {
+            return (
+                <span className="px-3 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
+                    Razorpay
+                </span>
+            );
+        } else if (gateway === "instamojo") {
+            return (
+                <span className="px-3 py-1 text-xs bg-purple-100 text-purple-800 rounded-full">
+                    Instamojo
+                </span>
+            );
+        }
+        return null;
+    };
+
     return (
         <AppShell>
             <Toaster position="top-right" />
 
-            <div className=" flex items-center justify-center px-4">
+            <div className="flex items-center justify-center px-4">
                 <div className="w-full max-w-2xl">
-
                     <div className="text-center mb-8">
                         <h1 className="text-3xl font-bold text-blue-900">
                             Secure Payment
@@ -142,11 +191,12 @@ export default function PaymentPage() {
                         <p className="text-blue-600/80 mt-2">
                             Complete your application securely
                         </p>
-                        <div className="flex justify-center mt-4">
+                        <div className="flex justify-center gap-2 mt-4">
                             <span className="px-4 py-1 text-xs tracking-wide 
-      bg-blue-50 text-blue-700 rounded-full border border-blue-200">
+                                bg-blue-50 text-blue-700 rounded-full border border-blue-200">
                                 🔒 Encrypted & Secure Gateway
                             </span>
+                            {gateway && getGatewayBadge()}
                         </div>
                     </div>
 
@@ -178,7 +228,6 @@ export default function PaymentPage() {
                     {/* PAYMENT CARD */}
                     {!loading && paymentData && (
                         <div className="bg-white rounded-2xl shadow-lg p-8 space-y-8">
-
                             {/* SUMMARY */}
                             <div className="flex justify-between items-center border-b pb-6">
                                 <div>
@@ -217,8 +266,8 @@ export default function PaymentPage() {
                                 <button
                                     onClick={handlePayment}
                                     className="w-full py-3 rounded-xl bg-gradient-to-r from-[#003B73] to-[#0059a5]
-                  text-white font-semibold shadow-lg hover:opacity-90 transition
-                  disabled:opacity-50 disabled:cursor-not-allowed"
+                                        text-white font-semibold shadow-lg hover:opacity-90 transition
+                                        disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     Pay {formatCurrency(paymentData.applicationFee)}
                                 </button>
@@ -228,7 +277,9 @@ export default function PaymentPage() {
                                 <div className="flex flex-col items-center gap-4 py-6">
                                     <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
                                     <p className="font-medium text-gray-600">
-                                        Processing your payment...
+                                        {gateway === "instamojo" 
+                                            ? "Redirecting to Instamojo..." 
+                                            : "Processing your payment..."}
                                     </p>
                                 </div>
                             )}
@@ -279,7 +330,6 @@ export default function PaymentPage() {
                                     </button>
                                 </div>
                             )}
-
                         </div>
                     )}
                 </div>
