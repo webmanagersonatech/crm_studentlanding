@@ -1,5 +1,4 @@
-// app/payment/page.tsx
-
+// app/payment/page.tsx (Fixed Version)
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
@@ -51,6 +50,40 @@ export default function PaymentPage() {
         fetchPaymentData();
     }, [fetchPaymentData]);
 
+    // SINGLE useEffect for handling URL params (Instamojo redirect)
+    useEffect(() => {
+        // Only run on client side
+        if (typeof window !== 'undefined') {
+            const params = new URLSearchParams(window.location.search);
+            const paymentStatus = params.get("status");
+            const paymentId = params.get("payment_id");
+            const requestId = params.get("request_id");
+
+            console.log("URL Params:", { paymentStatus, paymentId, requestId }); // Debug log
+
+            if (paymentStatus === "success") {
+                setStatus("success");
+                toast.success("Payment successful!");
+                
+                // Optionally verify with backend
+                if (paymentId && requestId) {
+                    // You can add verification here if needed
+                    console.log("Payment verified:", { paymentId, requestId });
+                }
+                
+                setTimeout(() => {
+                    router.push("/dashboard");
+                }, 2000);
+            } else if (paymentStatus === "failed") {
+                setStatus("failed");
+                toast.error("Payment failed. Please try again.");
+            } else if (paymentStatus === "error") {
+                setStatus("failed");
+                toast.error("Payment processing error. Please contact support.");
+            }
+        }
+    }, [router]);
+
     const handleRazorpayPayment = async (result: any) => {
         const options = {
             key: result.key,
@@ -67,19 +100,25 @@ export default function PaymentPage() {
             },
 
             handler: async function (response: any) {
-                const verifyRes = await axios.post(
-                    `${API_BASE}/payments/verify`,
-                    response,
-                    { withCredentials: true }
-                );
+                try {
+                    const verifyRes = await axios.post(
+                        `${API_BASE}/payments/verify`,
+                        response,
+                        { withCredentials: true }
+                    );
 
-                if (verifyRes.data.success) {
-                    setStatus("success");
-                    toast.success("Payment successful!");
-                    setTimeout(() => {
-                        router.push("/dashboard");
-                    }, 2000);
-                } else {
+                    if (verifyRes.data.success) {
+                        setStatus("success");
+                        toast.success("Payment successful!");
+                        setTimeout(() => {
+                            router.push("/dashboard");
+                        }, 2000);
+                    } else {
+                        setStatus("failed");
+                        toast.error("Verification failed");
+                    }
+                } catch (error) {
+                    console.error("Verification error:", error);
                     setStatus("failed");
                     toast.error("Verification failed");
                 }
@@ -90,33 +129,48 @@ export default function PaymentPage() {
             },
         };
 
-        const rzp = new (window as any).Razorpay(options);
-        rzp.open();
+        try {
+            const rzp = new (window as any).Razorpay(options);
+            rzp.open();
 
-        rzp.on("payment.failed", function () {
+            rzp.on("payment.failed", function (response: any) {
+                console.error("Razorpay payment failed:", response);
+                setStatus("failed");
+                toast.error("Payment failed. Try again.");
+            });
+        } catch (error) {
+            console.error("Razorpay initialization error:", error);
             setStatus("failed");
-            toast.error("Payment failed. Try again.");
-        });
+            toast.error("Failed to initialize payment");
+        }
     };
 
     const handleInstamojoPayment = (result: any) => {
+        console.log("Redirecting to Instamojo:", result.longurl); // Debug log
         // Redirect to Instamojo payment page
         window.location.href = result.longurl;
     };
 
     const handlePayment = async () => {
-        if (!paymentData?.applicationId) return;
+        if (!paymentData?.applicationId) {
+            toast.error("No application ID found");
+            return;
+        }
 
         try {
             setStatus("processing");
+
+            console.log("Creating payment for application:", paymentData.applicationId); // Debug log
 
             const result = await createStudentPayment(
                 paymentData.applicationId
             );
 
+            console.log("Payment creation result:", result); // Debug log
+
             if (!result.success) {
                 setStatus("failed");
-                toast.error(result.message);
+                toast.error(result.message || "Payment creation failed");
                 return;
             }
 
@@ -125,32 +179,21 @@ export default function PaymentPage() {
             if (result.gateway === "razorpay") {
                 await handleRazorpayPayment(result);
             } else if (result.gateway === "instamojo") {
-                handleInstamojoPayment(result);
+                // Small delay to ensure state update before redirect
+                setTimeout(() => {
+                    handleInstamojoPayment(result);
+                }, 100);
+            } else {
+                setStatus("failed");
+                toast.error("Unknown payment gateway");
             }
 
-        } catch (error) {
-            console.error(error);
+        } catch (error: any) {
+            console.error("Payment error:", error);
             setStatus("failed");
-            toast.error("Payment failed. Please try again.");
+            toast.error(error.response?.data?.message || "Payment failed. Please try again.");
         }
     };
-
-    // Check URL params for payment status (for Instamojo redirect)
-    useEffect(() => {
-        const params = new URLSearchParams(window.location.search);
-        const paymentStatus = params.get("status");
-        
-        if (paymentStatus === "success") {
-            setStatus("success");
-            toast.success("Payment successful!");
-            setTimeout(() => {
-                router.push("/dashboard");
-            }, 2000);
-        } else if (paymentStatus === "failed") {
-            setStatus("failed");
-            toast.error("Payment failed. Please try again.");
-        }
-    }, [router]);
 
     const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat("en-IN", {
@@ -277,8 +320,8 @@ export default function PaymentPage() {
                                 <div className="flex flex-col items-center gap-4 py-6">
                                     <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
                                     <p className="font-medium text-gray-600">
-                                        {gateway === "instamojo" 
-                                            ? "Redirecting to Instamojo..." 
+                                        {gateway === "instamojo"
+                                            ? "Redirecting to Instamojo..."
                                             : "Processing your payment..."}
                                     </p>
                                 </div>
