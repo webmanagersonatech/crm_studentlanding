@@ -1,4 +1,4 @@
-// app/payment/page.tsx (Fixed Version)
+
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
@@ -9,7 +9,6 @@ import { CheckCircleIcon } from "@heroicons/react/24/solid";
 import axios from "axios";
 
 type PaymentStatus = "idle" | "processing" | "success" | "failed";
-type PaymentGateway = "razorpay" | "instamojo" | null;
 
 type PaymentData = {
     name: string;
@@ -25,7 +24,6 @@ export default function PaymentPage() {
     const [paymentData, setPaymentData] = useState<PaymentData | null>(null);
     const [loading, setLoading] = useState(true);
     const [status, setStatus] = useState<PaymentStatus>("idle");
-    const [gateway, setGateway] = useState<PaymentGateway>(null);
 
     const fetchPaymentData = useCallback(async () => {
         try {
@@ -50,57 +48,39 @@ export default function PaymentPage() {
         fetchPaymentData();
     }, [fetchPaymentData]);
 
-    // SINGLE useEffect for handling URL params (Instamojo redirect)
-    useEffect(() => {
-        // Only run on client side
-        if (typeof window !== 'undefined') {
-            const params = new URLSearchParams(window.location.search);
-            const paymentStatus = params.get("status");
-            const paymentId = params.get("payment_id");
-            const requestId = params.get("request_id");
 
-            console.log("URL Params:", { paymentStatus, paymentId, requestId }); // Debug log
 
-            if (paymentStatus === "success") {
-                setStatus("success");
-                toast.success("Payment successful!");
-                
-                // Optionally verify with backend
-                if (paymentId && requestId) {
-                    // You can add verification here if needed
-                    console.log("Payment verified:", { paymentId, requestId });
-                }
-                
-                setTimeout(() => {
-                    router.push("/dashboard");
-                }, 2000);
-            } else if (paymentStatus === "failed") {
+    const handlePayment = async () => {
+        if (!paymentData?.applicationId) return;
+
+        try {
+            setStatus("processing");
+
+            const result = await createStudentPayment(
+                paymentData.applicationId
+            );
+
+            if (!result.success) {
                 setStatus("failed");
-                toast.error("Payment failed. Please try again.");
-            } else if (paymentStatus === "error") {
-                setStatus("failed");
-                toast.error("Payment processing error. Please contact support.");
+                toast.error(result.message);
+                return;
             }
-        }
-    }, [router]);
 
-    const handleRazorpayPayment = async (result: any) => {
-        const options = {
-            key: result.key,
-            amount: result.amount,
-            currency: result.currency,
-            name: "Admission Portal",
-            description: "Application Fee Payment",
-            order_id: result.orderId,
+            const options = {
+                key: result.key,
+                amount: result.amount,
+                currency: result.currency,
+                name: "Admission Portal",
+                description: "Application Fee Payment",
+                order_id: result.orderId,
 
-            prefill: {
-                name: result.student.name,
-                email: result.student.email,
-                contact: result.student.contact,
-            },
+                prefill: {
+                    name: result.student.name,
+                    email: result.student.email,
+                    contact: result.student.contact,
+                },
 
-            handler: async function (response: any) {
-                try {
+                handler: async function (response: any) {
                     const verifyRes = await axios.post(
                         `${API_BASE}/payments/verify`,
                         response,
@@ -117,81 +97,25 @@ export default function PaymentPage() {
                         setStatus("failed");
                         toast.error("Verification failed");
                     }
-                } catch (error) {
-                    console.error("Verification error:", error);
-                    setStatus("failed");
-                    toast.error("Verification failed");
-                }
-            },
+                },
 
-            theme: {
-                color: "#003B73",
-            },
-        };
+                theme: {
+                    color: "#003B73",
+                },
+            };
 
-        try {
             const rzp = new (window as any).Razorpay(options);
             rzp.open();
 
-            rzp.on("payment.failed", function (response: any) {
-                console.error("Razorpay payment failed:", response);
+            rzp.on("payment.failed", function () {
                 setStatus("failed");
                 toast.error("Payment failed. Try again.");
             });
+
         } catch (error) {
-            console.error("Razorpay initialization error:", error);
+            console.error(error);
             setStatus("failed");
-            toast.error("Failed to initialize payment");
-        }
-    };
-
-    const handleInstamojoPayment = (result: any) => {
-        console.log("Redirecting to Instamojo:", result.longurl); // Debug log
-        // Redirect to Instamojo payment page
-        window.location.href = result.longurl;
-    };
-
-    const handlePayment = async () => {
-        if (!paymentData?.applicationId) {
-            toast.error("No application ID found");
-            return;
-        }
-
-        try {
-            setStatus("processing");
-
-            console.log("Creating payment for application:", paymentData.applicationId); // Debug log
-
-            const result = await createStudentPayment(
-                paymentData.applicationId
-            );
-
-            console.log("Payment creation result:", result); // Debug log
-
-            if (!result.success) {
-                setStatus("failed");
-                toast.error(result.message || "Payment creation failed");
-                return;
-            }
-
-            setGateway(result.gateway);
-
-            if (result.gateway === "razorpay") {
-                await handleRazorpayPayment(result);
-            } else if (result.gateway === "instamojo") {
-                // Small delay to ensure state update before redirect
-                setTimeout(() => {
-                    handleInstamojoPayment(result);
-                }, 100);
-            } else {
-                setStatus("failed");
-                toast.error("Unknown payment gateway");
-            }
-
-        } catch (error: any) {
-            console.error("Payment error:", error);
-            setStatus("failed");
-            toast.error(error.response?.data?.message || "Payment failed. Please try again.");
+            toast.error("Payment failed. Please try again.");
         }
     };
 
@@ -204,29 +128,13 @@ export default function PaymentPage() {
         }).format(amount);
     };
 
-    const getGatewayBadge = () => {
-        if (gateway === "razorpay") {
-            return (
-                <span className="px-3 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
-                    Razorpay
-                </span>
-            );
-        } else if (gateway === "instamojo") {
-            return (
-                <span className="px-3 py-1 text-xs bg-purple-100 text-purple-800 rounded-full">
-                    Instamojo
-                </span>
-            );
-        }
-        return null;
-    };
-
     return (
         <AppShell>
             <Toaster position="top-right" />
 
-            <div className="flex items-center justify-center px-4">
+            <div className=" flex items-center justify-center px-4">
                 <div className="w-full max-w-2xl">
+
                     <div className="text-center mb-8">
                         <h1 className="text-3xl font-bold text-blue-900">
                             Secure Payment
@@ -234,12 +142,11 @@ export default function PaymentPage() {
                         <p className="text-blue-600/80 mt-2">
                             Complete your application securely
                         </p>
-                        <div className="flex justify-center gap-2 mt-4">
+                        <div className="flex justify-center mt-4">
                             <span className="px-4 py-1 text-xs tracking-wide 
-                                bg-blue-50 text-blue-700 rounded-full border border-blue-200">
+      bg-blue-50 text-blue-700 rounded-full border border-blue-200">
                                 🔒 Encrypted & Secure Gateway
                             </span>
-                            {gateway && getGatewayBadge()}
                         </div>
                     </div>
 
@@ -271,6 +178,7 @@ export default function PaymentPage() {
                     {/* PAYMENT CARD */}
                     {!loading && paymentData && (
                         <div className="bg-white rounded-2xl shadow-lg p-8 space-y-8">
+
                             {/* SUMMARY */}
                             <div className="flex justify-between items-center border-b pb-6">
                                 <div>
@@ -309,8 +217,8 @@ export default function PaymentPage() {
                                 <button
                                     onClick={handlePayment}
                                     className="w-full py-3 rounded-xl bg-gradient-to-r from-[#003B73] to-[#0059a5]
-                                        text-white font-semibold shadow-lg hover:opacity-90 transition
-                                        disabled:opacity-50 disabled:cursor-not-allowed"
+                  text-white font-semibold shadow-lg hover:opacity-90 transition
+                  disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     Pay {formatCurrency(paymentData.applicationFee)}
                                 </button>
@@ -320,9 +228,7 @@ export default function PaymentPage() {
                                 <div className="flex flex-col items-center gap-4 py-6">
                                     <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
                                     <p className="font-medium text-gray-600">
-                                        {gateway === "instamojo"
-                                            ? "Redirecting to Instamojo..."
-                                            : "Processing your payment..."}
+                                        Processing your payment...
                                     </p>
                                 </div>
                             )}
@@ -373,6 +279,7 @@ export default function PaymentPage() {
                                     </button>
                                 </div>
                             )}
+
                         </div>
                     )}
                 </div>
