@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 import toast, { Toaster } from "react-hot-toast";
-import { getPaymentRelatedData, createStudentPayment } from "@/lib/api";
+import { getPaymentRelatedData, createInstamojoPayment, createStudentPayment } from "@/lib/api";
 import { AppShell } from "./AppShell";
 import { CheckCircleIcon } from "@heroicons/react/24/solid";
 import axios from "axios";
@@ -118,6 +118,32 @@ export default function PaymentPage() {
             toast.error("Payment failed. Please try again.");
         }
     };
+    const handleInstamojoPayment = async () => {
+        if (!paymentData?.applicationId) return;
+
+        try {
+            setStatus("processing");
+
+            const result = await createInstamojoPayment(
+                paymentData.applicationId
+            );
+
+            if (!result.success) {
+                setStatus("failed");
+                toast.error(result.message);
+                return;
+            }
+
+            // 🔥 Redirect directly to Instamojo page
+            window.location.href = result.paymentUrl;
+
+        } catch (error) {
+            console.error(error);
+            setStatus("failed");
+            toast.error("Instamojo payment failed.");
+        }
+    };
+
 
     const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat("en-IN", {
@@ -223,6 +249,14 @@ export default function PaymentPage() {
                                     Pay {formatCurrency(paymentData.applicationFee)}
                                 </button>
                             )}
+
+                            <button
+                                onClick={handleInstamojoPayment}
+                                className="w-full py-3 mt-4 rounded-xl bg-green-600
+  text-white font-semibold shadow-lg hover:opacity-90 transition"
+                            >
+                                Pay via Instamojo
+                            </button>
 
                             {status === "processing" && (
                                 <div className="flex flex-col items-center gap-4 py-6">

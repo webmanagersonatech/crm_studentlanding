@@ -145,7 +145,28 @@ export const registerStudent = async (payload: RegisterPayload) => {
     };
   }
 };
+// ========================
+// Create Instamojo Payment
+// ========================
+export const createInstamojoPayment = async (
+  applicationId: string
+) => {
+  try {
+    const res = await axios.post(
+      `${API_BASE}/payments/instamojo/create`,
+      { applicationId },
+      { withCredentials: true }
+    );
 
+    return res.data;
+  } catch (err: any) {
+    return {
+      success: false,
+      message:
+        err.response?.data?.message || "Instamojo initiation failed",
+    };
+  }
+};
 
 export const getStudentSettings = async (instituteId: string) => {
   try {
