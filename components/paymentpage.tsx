@@ -15,6 +15,7 @@ type PaymentData = {
     email: string;
     mobileNo: string;
     applicationId: string;
+    paymentMethod: "instamojo" | "razorpay";
     applicationFee: number;
 };
 
@@ -90,14 +91,14 @@ export default function PaymentPage() {
                 order_id: result.orderId,
 
                 prefill: {
-                    name: result.student.name,
-                    email: result.student.email,
-                    contact: result.student.contact,
+                    name: paymentData?.name,
+                    email: paymentData?.email,
+                    contact: paymentData?.mobileNo,
                 },
 
                 handler: async function (response: any) {
                     const verifyRes = await axios.post(
-                        `${API_BASE}/payments/verify`,
+                        `${API_BASE}/payments/razorpay/verify`,
                         response,
                         { withCredentials: true }
                     );
@@ -256,22 +257,21 @@ export default function PaymentPage() {
                             {/* BUTTON / STATES */}
                             {status === "idle" && (
                                 <button
-                                    onClick={handlePayment}
+                                    onClick={() => {
+                                        if (paymentData?.paymentMethod === "instamojo") {
+                                            handleInstamojoPayment();
+                                        } else {
+                                            handlePayment();
+                                        }
+                                    }}
                                     className="w-full py-3 rounded-xl bg-gradient-to-r from-[#003B73] to-[#0059a5]
-                  text-white font-semibold shadow-lg hover:opacity-90 transition
-                  disabled:opacity-50 disabled:cursor-not-allowed"
+    text-white font-semibold shadow-lg hover:opacity-90 transition"
                                 >
                                     Pay {formatCurrency(paymentData.applicationFee)}
                                 </button>
                             )}
 
-                            <button
-                                onClick={handleInstamojoPayment}
-                                className="w-full py-3 mt-4 rounded-xl bg-green-600
-  text-white font-semibold shadow-lg hover:opacity-90 transition"
-                            >
-                                Pay via Instamojo
-                            </button>
+
 
                             {status === "processing" && (
                                 <div className="flex flex-col items-center gap-4 py-6">

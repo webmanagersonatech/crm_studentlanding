@@ -193,7 +193,7 @@ export const createStudentPayment = async (
 ) => {
   try {
     const res = await axios.post(
-      `${API_BASE}/payments/create`,
+      `${API_BASE}/payments/razorpay/create`,
       { applicationId }, // ✅ only send applicationId
       { withCredentials: true }
     );
