@@ -7,7 +7,7 @@ export default function PaymentSuccess() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      router.push("/student/dashboard"); // change if needed
+      router.push("/dashboard"); // change if needed
     }, 4000);
 
     return () => clearTimeout(timer);
@@ -29,7 +29,7 @@ export default function PaymentSuccess() {
         </p>
 
         <button
-          onClick={() => router.push("/student/dashboard")}
+          onClick={() => router.push("/dashboard")}
           className="mt-6 bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg"
         >
           Go to Dashboard
