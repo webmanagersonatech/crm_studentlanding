@@ -258,7 +258,7 @@ export default function PaymentPage() {
                             {status === "idle" && (
                                 <button
                                     onClick={() => {
-                                        if (paymentData?.paymentMethod === "instamojo") {
+                                        if (!paymentData?.paymentMethod || paymentData.paymentMethod === "instamojo") {
                                             handleInstamojoPayment();
                                         } else {
                                             handlePayment();
