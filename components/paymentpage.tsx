@@ -48,7 +48,22 @@ export default function PaymentPage() {
         fetchPaymentData();
     }, [fetchPaymentData]);
 
+    useEffect(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const statusParam = urlParams.get("status");
 
+        if (statusParam?.toLowerCase() === "credit") {
+            setStatus("success");
+
+            setTimeout(() => {
+                router.push("/dashboard");
+            }, 2000);
+        }
+
+        if (statusParam?.toLowerCase() === "failed") {
+            setStatus("failed");
+        }
+    }, [router]);
 
     const handlePayment = async () => {
         if (!paymentData?.applicationId) return;
