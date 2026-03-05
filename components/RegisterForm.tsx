@@ -8,13 +8,13 @@ import { registerStudent, getStudentSettings, getActiveInstitutions } from "@/li
 import { AuthShell } from "./AuthShell";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
-
+import toast, { Toaster } from "react-hot-toast";
+import { motion, AnimatePresence } from "framer-motion";
 type Props = { instituteId?: string | null };
 
 export default function RegisterForm({ instituteId }: Props) {
     const router = useRouter();
-
+    const [registered, setRegistered] = useState(false);
     const [form, setForm] = useState({
         firstName: "",
         lastName: "",
@@ -68,14 +68,26 @@ export default function RegisterForm({ instituteId }: Props) {
             instituteId: finalInstituteId,
         });
 
+        console.log(result, "ll")
+
         if (!result.success) {
             setMsg(result.message);
             setLoading(false);
             return;
         }
-
-        toast.success("Registered successfully 🎉");
-        setTimeout(() => (window.location.href = "/"), 300);
+        setRegistered(true);
+        // toast.success("Registered successfully ");
+        setForm({
+            firstName: "",
+            lastName: "",
+            email: "",
+            mobileNo: "",
+            country: "",
+            state: "",
+            city: "",
+            instituteInput: "",
+        });
+        setLoading(false);
     };
 
     // -------------------- init --------------------
@@ -121,7 +133,7 @@ export default function RegisterForm({ instituteId }: Props) {
 
     return (
         <AuthShell title="ADMISSION PORTAL - REGISTER" logo={institutdata?.logo || null} size="lg">
-
+            <Toaster position="top-right" />
             {/* Institute */}
             {!isInstituteSelected && (
                 <Select
@@ -211,6 +223,80 @@ export default function RegisterForm({ instituteId }: Props) {
                     </p>
                 </form>
             )}
+
+            <AnimatePresence>
+                {registered && (
+
+                    <motion.div
+                        className="fixed inset-0 flex items-center justify-center bg-black/50 z-50"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                    >
+
+                        <motion.div
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.8, opacity: 0 }}
+                            transition={{ duration: 0.3 }}
+                            className="bg-white rounded-2xl p-10 w-[420px] text-center space-y-6 shadow-2xl"
+                        >
+
+                            {/* Animated Tick */}
+                            <motion.svg
+                                width="90"
+                                height="90"
+                                viewBox="0 0 120 120"
+                                className="mx-auto"
+                            >
+
+                                <motion.circle
+                                    cx="60"
+                                    cy="60"
+                                    r="50"
+                                    fill="none"
+                                    stroke="#22c55e"
+                                    strokeWidth="8"
+                                    initial={{ pathLength: 0 }}
+                                    animate={{ pathLength: 1 }}
+                                    transition={{ duration: 0.6 }}
+                                />
+
+                                <motion.path
+                                    d="M40 65 L55 80 L85 45"
+                                    fill="none"
+                                    stroke="#22c55e"
+                                    strokeWidth="8"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    initial={{ pathLength: 0 }}
+                                    animate={{ pathLength: 1 }}
+                                    transition={{ delay: 0.5, duration: 0.5 }}
+                                />
+
+                            </motion.svg>
+
+                            <h2 className="text-2xl font-semibold text-gray-900">
+                                Registration Successful
+                            </h2>
+
+                            <p className="text-gray-600">
+                                Your password has been shared to your registered email.
+                                Please check your <b>Inbox</b>, <b>Spam</b>, or <b>Other</b> folders.
+                            </p>
+
+                            <button
+                                onClick={() => router.push("/")}
+                                className="w-full h-11 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold transition"
+                            >
+                                Back to Login
+                            </button>
+
+                        </motion.div>
+                    </motion.div>
+
+                )}
+            </AnimatePresence>
         </AuthShell>
     );
 }
