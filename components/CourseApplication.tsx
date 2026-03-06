@@ -115,7 +115,7 @@ export default function CourseApplication() {
     label: c.name,
   }));
 
- 
+
 
   useEffect(() => {
     const count = Number(formData["Sibling Count"]) || 0
@@ -316,18 +316,53 @@ export default function CourseApplication() {
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      setFiles((p) => ({ ...p, [e.target.name]: file }))
-      setFormData((p) => ({ ...p, [e.target.name]: file.name }))
+    const file = e.target.files?.[0];
+    const fieldName = e.target.name;
 
-      // Clear error on file selection
-      setFieldErrors(prev => ({
-        ...prev,
-        [e.target.name]: ''
-      }));
+    if (!file) return;
+
+    const MAX_SIZE = 2 * 1024 * 1024; // 2MB
+
+    const allowedTypes = [
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    ];
+
+    // ❌ File size validation
+    if (file.size > MAX_SIZE) {
+      toast.error("File must be less than 2MB");
+      e.target.value = "";
+      return;
     }
-  }
+
+    // ❌ File type validation
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("Only Images, PDF, DOC, DOCX allowed");
+      e.target.value = "";
+      return;
+    }
+
+    // ✅ Save file
+    setFiles((prev) => ({
+      ...prev,
+      [fieldName]: file
+    }));
+
+    setFormData((prev) => ({
+      ...prev,
+      [fieldName]: file.name
+    }));
+
+    // Clear error
+    setFieldErrors(prev => ({
+      ...prev,
+      [fieldName]: ""
+    }));
+  };
 
   const renderField = (field: any) => {
     const value = formData[field.fieldName] ?? (field.type === "checkbox" ? [] : "");
@@ -460,6 +495,151 @@ export default function CourseApplication() {
               setFieldErrors(prev => ({ ...prev, City: error }));
             }}
             isDisabled={!formData.State}
+            placeholder="Select City"
+            styles={{
+              control: (base) => ({
+                ...base,
+                borderColor: hasError ? '#ef4444' : base.borderColor,
+                '&:hover': {
+                  borderColor: hasError ? '#ef4444' : base.borderColor,
+                }
+              })
+            }}
+          />
+          {hasError && <p className="text-red-500 text-xs mt-1">{error}</p>}
+        </div>
+      );
+    }
+    /* =========================
+   PERMANENT COUNTRY
+========================= */
+    if (field.fieldName === "Permanent  Country") {
+      return (
+        <div>
+          <Select
+            options={countryOptions}
+            value={countryOptions.find(o => o.label === formData["Permanent  Country"]) || null}
+            onChange={(val) => {
+              setFormData(p => ({
+                ...p,
+                "Permanent  Country": val?.label || "",
+                "Permanent  State": "",
+                "Permanent City": "",
+              }));
+              setFieldErrors(prev => ({ ...prev, "Permanent  Country": '' }));
+            }}
+            onBlur={() => {
+              const error = validateField(field, formData["Permanent  Country"]);
+              setFieldErrors(prev => ({ ...prev, "Permanent  Country": error }));
+            }}
+            placeholder="Select Country"
+            styles={{
+              control: (base) => ({
+                ...base,
+                borderColor: hasError ? '#ef4444' : base.borderColor,
+                '&:hover': {
+                  borderColor: hasError ? '#ef4444' : base.borderColor,
+                }
+              })
+            }}
+          />
+          {hasError && <p className="text-red-500 text-xs mt-1">{error}</p>}
+        </div>
+      );
+    }
+
+    /* =========================
+       PERMANENT STATE
+    ========================= */
+    if (field.fieldName === "Permanent  State") {
+      let options: any[] = [];
+
+      if (hasPersonalField("Permanent  Country") && formData["Permanent  Country"]) {
+        const countryCode = Country.getAllCountries()
+          .find(c => c.name === formData["Permanent  Country"])?.isoCode;
+
+        options = countryCode
+          ? State.getStatesOfCountry(countryCode).map(s => ({
+            value: s.isoCode,
+            label: s.name,
+          }))
+          : [];
+      } else {
+        options = State.getStatesOfCountry(DEFAULT_COUNTRY_CODE).map(s => ({
+          value: s.isoCode,
+          label: s.name,
+        }));
+      }
+
+      return (
+        <div>
+          <Select
+            options={options}
+            value={options.find(o => o.label === formData["Permanent  State"]) || null}
+            onChange={(val) => {
+              setFormData(p => ({
+                ...p,
+                "Permanent  State": val?.label || "",
+                "Permanent City": ""
+              }));
+              setFieldErrors(prev => ({ ...prev, "Permanent  State": '' }));
+            }}
+            onBlur={() => {
+              const error = validateField(field, formData["Permanent  State"]);
+              setFieldErrors(prev => ({ ...prev, "Permanent  State": error }));
+            }}
+            isDisabled={hasPersonalField("Permanent  Country") && !formData["Permanent  Country"]}
+            placeholder="Select State"
+            styles={{
+              control: (base) => ({
+                ...base,
+                borderColor: hasError ? '#ef4444' : base.borderColor,
+                '&:hover': {
+                  borderColor: hasError ? '#ef4444' : base.borderColor,
+                }
+              })
+            }}
+          />
+          {hasError && <p className="text-red-500 text-xs mt-1">{error}</p>}
+        </div>
+      );
+    }
+
+    /* =========================
+       PERMANENT CITY
+    ========================= */
+    if (field.fieldName === "Permanent City") {
+      let options: any[] = [];
+
+      const countryCode =
+        Country.getAllCountries().find(c => c.name === formData["Permanent  Country"])
+          ?.isoCode || DEFAULT_COUNTRY_CODE;
+
+      const stateCode =
+        State.getStatesOfCountry(countryCode)
+          .find(s => s.name === formData["Permanent  State"])?.isoCode;
+
+      if (stateCode) {
+        options = City.getCitiesOfState(countryCode, stateCode).map(c => ({
+          value: c.name,
+          label: c.name,
+        }));
+      }
+
+      return (
+        <div>
+          <Select
+            options={options}
+            value={options.find(o => o.label === formData["Permanent City"]) || null}
+            onChange={(val) => {
+              setFormData(p => ({ ...p, "Permanent City": val?.label || "" }));
+              setFieldErrors(prev => ({ ...prev, "Permanent City": '' }));
+            }}
+            onBlur={() => {
+              const error = validateField(field, formData["Permanent City"]);
+              setFieldErrors(prev => ({ ...prev, "Permanent City": error }));
+            }}
+            isDisabled={!formData["Permanent  State"]}
             placeholder="Select City"
             styles={{
               control: (base) => ({
