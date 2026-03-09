@@ -752,6 +752,21 @@ export default function CourseApplication() {
               ))}
             </div>
           );
+        /* DECLARATION */
+        case "declaration":
+          return (
+            <div>
+              <textarea
+                name={field.fieldName}
+                value={field.declarationText || "No declaration text provided"}
+                readOnly
+                disabled
+                className={`${inputClass} bg-gray-100 cursor-not-allowed ${hasError ? 'border-red-500' : ''}`}
+                rows={4}
+              />
+              <p className="text-xs text-gray-500 mt-1">This is a declaration field and cannot be edited</p>
+            </div>
+          );
 
         /* NUMBER */
         case "number":
@@ -1002,7 +1017,9 @@ export default function CourseApplication() {
       const sectionObj: any = { sectionName: section.sectionName, fields: {} }
       section.fields.forEach((field: any) => {
         sectionObj.fields[field.fieldName] =
-          field.type === "file" ? files[field.fieldName]?.name || formData[field.fieldName] || "" : formData[field.fieldName] || ""
+          field.type === "file" ? files[field.fieldName]?.name || formData[field.fieldName] || "" : field.type === "declaration"
+            ? field.declarationText || ""
+            : formData[field.fieldName] || ""
       })
       return sectionObj
     })
