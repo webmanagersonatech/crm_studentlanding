@@ -10,7 +10,9 @@ export default function DashboardClient() {
   const [application, setApplication] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
-
+  const hidePaymentButtons =
+    application?.instituteId === "INS-P2VTCZ5T" ||
+    application?.instituteId === "INS-3-ZXYXKM";
   useEffect(() => {
     const fetchApplication = async () => {
       try {
@@ -63,7 +65,7 @@ export default function DashboardClient() {
                 </button>
               )}
 
-              {application.paymentStatus === "Unpaid" && (
+              {!hidePaymentButtons && application.paymentStatus === "Unpaid" && (
                 <button
                   onClick={handlePayNow}
                   className="px-5 py-2 rounded-md bg-gray-900 text-white font-medium hover:bg-gray-800 transition"
@@ -71,7 +73,8 @@ export default function DashboardClient() {
                   Pay Now
                 </button>
               )}
-              {application.paymentStatus === "Paid" && (
+
+              {!hidePaymentButtons && application.paymentStatus === "Paid" && (
                 <button
                   onClick={handleViewReceipt}
                   className="px-5 py-2 rounded-md bg-green-600 text-white font-medium hover:bg-green-700 transition flex items-center gap-2"
