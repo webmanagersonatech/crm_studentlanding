@@ -16,6 +16,8 @@ type PaymentData = {
     mobileNo: string;
     applicationId: string;
     paymentMethod: "instamojo" | "razorpay";
+    amount: number;
+    gstAmount: number;
     applicationFee: number;
 };
 
@@ -165,8 +167,8 @@ export default function PaymentPage() {
         return new Intl.NumberFormat("en-IN", {
             style: "currency",
             currency: "INR",
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0,
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
         }).format(amount);
     };
 
@@ -238,20 +240,54 @@ export default function PaymentPage() {
                                 </div>
                             </div>
 
-                            {/* CONTACT */}
-                            <div className="border-b pb-6">
-                                <p className="text-sm text-gray-500 mb-2">
-                                    Contact Information
-                                </p>
-                                <p className="font-medium text-gray-800">
-                                    {paymentData.name}
-                                </p>
-                                <p className="font-medium text-gray-800">
-                                    {paymentData.email}
-                                </p>
-                                <p className="font-medium text-gray-800">
-                                    {paymentData.mobileNo}
-                                </p>
+                            {/* CONTACT + PAYMENT DETAILS */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 border-b pb-6">
+
+                                {/* CONTACT DETAILS */}
+                                <div>
+                                    <p className="text-sm text-gray-500 mb-3">
+                                        Contact Information
+                                    </p>
+
+                                    <div className="space-y-1 text-gray-800">
+                                        <p className="font-medium">{paymentData.name}</p>
+                                        <p className="text-sm">{paymentData.email}</p>
+                                        <p className="text-sm">{paymentData.mobileNo}</p>
+                                    </div>
+                                </div>
+
+                                {/* PAYMENT DETAILS */}
+                                <div className="md:text-right">
+                                    <p className="text-sm text-gray-500 mb-3">
+                                        Payment Details
+                                    </p>
+
+                                    <div className="space-y-2 text-sm">
+
+                                        <div className="flex justify-between md:justify-end md:gap-6">
+                                            <span className="text-gray-600">Application Fee</span>
+                                            <span className="font-semibold text-gray-800">
+                                                {formatCurrency(paymentData.amount)}
+                                            </span>
+                                        </div>
+
+                                        <div className="flex justify-between md:justify-end md:gap-6">
+                                            <span className="text-gray-600">GST (18%)</span>
+                                            <span className="font-semibold text-gray-800">
+                                                {formatCurrency(paymentData.gstAmount)}
+                                            </span>
+                                        </div>
+
+                                        <div className="flex justify-between md:justify-end md:gap-6 pt-2 border-t">
+                                            <span className="font-semibold text-gray-900">Total</span>
+                                            <span className="font-bold text-lg text-[#003B73]">
+                                                {formatCurrency(paymentData.applicationFee)}
+                                            </span>
+                                        </div>
+
+                                    </div>
+                                </div>
+
                             </div>
 
                             {/* BUTTON / STATES */}

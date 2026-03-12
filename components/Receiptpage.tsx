@@ -43,9 +43,7 @@ export default function ReceiptPage() {
     const [downloading, setDownloading] = useState(false);
     const componentRef = useRef<HTMLDivElement>(null);
 
-    useEffect(() => {
-        fetchReceiptData();
-    }, []);
+
 
     const fetchReceiptData = async () => {
         setLoading(true);
@@ -84,6 +82,10 @@ export default function ReceiptPage() {
         setLoading(false);
     };
 
+    useEffect(() => {
+        fetchReceiptData();
+    }, []);
+
     const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat("en-IN", {
             style: "currency",
@@ -104,35 +106,7 @@ export default function ReceiptPage() {
         onPrintError: (error) => console.error('Print error:', error),
     });
 
-    const handleDownloadPDF = async () => {
-        if (!receiptData || !componentRef.current) return;
 
-        setDownloading(true);
-        try {
-            const receiptElement = componentRef.current;
-
-            const canvas = await html2canvas(receiptElement, {
-                scale: 2,
-                backgroundColor: '#ffffff',
-                logging: false,
-                windowWidth: 800
-            });
-
-            const imgData = canvas.toDataURL('image/png');
-            const pdf = new jsPDF({
-                orientation: 'portrait',
-                unit: 'px',
-                format: [canvas.width * 0.75, canvas.height * 0.75]
-            });
-
-            pdf.addImage(imgData, 'PNG', 0, 0, canvas.width * 0.75, canvas.height * 0.75);
-            pdf.save(`receipt_${receiptData.receiptNumber || receiptData.paymentId}.pdf`);
-        } catch (error) {
-            console.error("Error generating PDF:", error);
-        } finally {
-            setDownloading(false);
-        }
-    };
 
     const handleRetry = () => {
         fetchReceiptData();
@@ -387,6 +361,15 @@ export default function ReceiptPage() {
                                                 {formatCurrency(receiptData.applicationFee)}
                                             </span>
                                         </div>
+
+                                        {receiptData.totalAmount !== receiptData.applicationFee && (
+                                            <div className="flex justify-between">
+                                                <span className="text-gray-600">GST (18%):</span>
+                                                <span className="font-medium text-gray-800">
+                                                    {formatCurrency(receiptData.totalAmount - receiptData.applicationFee)}
+                                                </span>
+                                            </div>
+                                        )}
                                         <div className="flex justify-between text-lg font-bold pt-2 border-t border-gray-200">
                                             <span>Total Amount:</span>
                                             <span className="text-blue-600">{formatCurrency(receiptData.totalAmount)}</span>
@@ -434,7 +417,7 @@ export default function ReceiptPage() {
                                 {/* Footer */}
                                 <div className="mt-8 text-center text-gray-500 text-sm">
                                     <p>This is a computer generated receipt and does not require a signature.</p>
-                                    <p className="mt-1">For any queries, please contact support@admissionportal.com</p>
+                                    {/* <p className="mt-1">For any queries, please contact support@admissionportal.com</p> */}
                                 </div>
                             </div>
                         </div>
