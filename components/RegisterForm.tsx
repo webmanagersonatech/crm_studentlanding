@@ -115,15 +115,29 @@ export default function RegisterForm({ instituteId }: Props) {
         isoCode: c.isoCode,
     }));
 
+
+    const selectedCountry = Country.getAllCountries().find(
+        (c) => c.name === form.country
+    );
+
     const stateOptions = State.getStatesOfCountry(
-        Country.getAllCountries().find(c => c.name === form.country)?.isoCode || ""
+        selectedCountry?.isoCode || ""
     ).map((s) => ({
         value: s.name,
         label: s.name,
         isoCode: s.isoCode,
     }));
 
-    const cityOptions = City.getCitiesOfState(form.country, form.state).map((c) => ({
+
+
+    const selectedState = State.getStatesOfCountry(
+        selectedCountry?.isoCode || ""
+    ).find((s) => s.name === form.state);
+
+    const cityOptions = City.getCitiesOfState(
+        selectedCountry?.isoCode || "",
+        selectedState?.isoCode || ""
+    ).map((c) => ({
         value: c.name,
         label: c.name,
     }));
