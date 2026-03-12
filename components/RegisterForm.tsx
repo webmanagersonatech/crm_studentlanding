@@ -110,13 +110,17 @@ export default function RegisterForm({ instituteId }: Props) {
     // -------------------- options --------------------
 
     const countryOptions = Country.getAllCountries().map((c) => ({
-        value: c.isoCode,
+        value: c.name,
         label: c.name,
+        isoCode: c.isoCode,
     }));
 
-    const stateOptions = State.getStatesOfCountry(form.country).map((s) => ({
-        value: s.isoCode,
+    const stateOptions = State.getStatesOfCountry(
+        Country.getAllCountries().find(c => c.name === form.country)?.isoCode || ""
+    ).map((s) => ({
+        value: s.name,
         label: s.name,
+        isoCode: s.isoCode,
     }));
 
     const cityOptions = City.getCitiesOfState(form.country, form.state).map((c) => ({
