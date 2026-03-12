@@ -24,7 +24,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
         serialize("instituteId", instituteId, {
             httpOnly: true,
             secure: isProd,                // ✅ HTTPS only in production
-            sameSite: "strict",                // ✅ Works for redirect flow
+            sameSite: "lax",               // ✅ Works for redirect flow
             path: "/",
             maxAge: 60 * 60 * 24 * 7,
         })
