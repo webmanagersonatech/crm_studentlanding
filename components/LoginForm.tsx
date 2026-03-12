@@ -117,7 +117,7 @@ export default function LoginForm({ instituteId }: Props) {
                     {/* ✅ Allow registration only if open */}
 
                     <Link href="/register" className="text-white/80 mx-2">
-                        Create Account
+                        Register
                     </Link>
 
 
