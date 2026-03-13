@@ -5,7 +5,7 @@ type RegisterPayload = {
   lastname: string;
   email: string;
   mobileNo: string;
-
+  recaptchaToken: string;
   instituteId: string;
   country: string;
   state: string;
