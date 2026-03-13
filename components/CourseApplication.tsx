@@ -84,6 +84,30 @@ export default function CourseApplication() {
           return `You must be at least ${minApplicantAge ?? 16} years old`;
         }
       }
+
+      // NUMBER FIELD SPECIFIC VALIDATION
+      if (field.type === "number") {
+        // Check if starts with zero
+        if (value.toString().length > 0 && value.toString().startsWith('0')) {
+          return `${field.fieldName} cannot start with zero`;
+        }
+
+        // Check if it's a valid number (no leading zeros)
+        const numStr = value.toString();
+        if (numStr.length > 1 && /^0+/.test(numStr)) {
+          return `${field.fieldName} cannot have leading zeros`;
+        }
+      }
+
+      // MIN LENGTH VALIDATION
+      if (field.minLength && value.toString().length < field.minLength) {
+        return `${field.fieldName} must be at least ${field.minLength} characters`;
+      }
+
+      // MAX LENGTH VALIDATION
+      if (field.maxLength && value.toString().length > field.maxLength) {
+        return `${field.fieldName} cannot exceed ${field.maxLength} characters`;
+      }
     }
 
     return "";
@@ -669,7 +693,9 @@ export default function CourseApplication() {
               value={value}
               onChange={handleChange}
               onBlur={handleBlur}
+
               className={`${inputClass} ${hasError ? 'border-red-500' : ''}`}
+              minLength={field.minLength}
               maxLength={field.maxLength ?? 500}
             />
           );
@@ -768,6 +794,7 @@ export default function CourseApplication() {
             </div>
           );
 
+
         /* NUMBER */
         case "number":
           return (
@@ -783,14 +810,51 @@ export default function CourseApplication() {
               inputMode="numeric"
               maxLength={field.maxLength ?? 15}
               onChange={(e) => {
-                const numericValue = e.target.value.replace(/\D/g, "");
+                let numericValue = e.target.value.replace(/\D/g, "");
+
+                // Prevent starting with zero
+                if (numericValue.length > 1 && numericValue.startsWith('0')) {
+                  numericValue = numericValue.replace(/^0+/, '');
+                }
+                // If it's a single zero, don't allow
+                if (numericValue === '0') {
+                  numericValue = '';
+                }
+
                 setFormData(p => ({ ...p, [field.fieldName]: numericValue }));
                 setFieldErrors(prev => ({ ...prev, [field.fieldName]: '' }));
               }}
-              onBlur={handleBlur}
+              onBlur={(e) => {
+                const val = e.target.value;
+
+                // Check if starts with zero
+                if (val.length > 0 && val.startsWith('0')) {
+                  setFieldErrors(prev => ({
+                    ...prev,
+                    [field.fieldName]: `${field.fieldName} cannot start with zero`
+                  }));
+                }
+                // Check min length if specified
+                else if (field.minLength && val.length < field.minLength) {
+                  setFieldErrors(prev => ({
+                    ...prev,
+                    [field.fieldName]: `${field.fieldName} must be at least ${field.minLength} digits`
+                  }));
+                }
+                // Check max length if specified
+                else if (field.maxLength && val.length > field.maxLength) {
+                  setFieldErrors(prev => ({
+                    ...prev,
+                    [field.fieldName]: `${field.fieldName} cannot exceed ${field.maxLength} digits`
+                  }));
+                }
+                // Run the main validation
+                else {
+                  handleBlur(e);
+                }
+              }}
             />
           );
-
         /* TEXT ONLY */
         case "text":
           return (
@@ -799,6 +863,7 @@ export default function CourseApplication() {
               name={field.fieldName}
               value={value}
               className={`${inputClass} ${hasError ? 'border-red-500' : ''}`}
+              minLength={field.minLength} // Add this
               maxLength={field.maxLength ?? 100}
               onChange={(e) => {
                 const textValue = e.target.value.replace(/[^a-zA-Z\s]/g, "");
@@ -808,7 +873,6 @@ export default function CourseApplication() {
               onBlur={handleBlur}
             />
           );
-
         /* ALPHANUMERIC */
         case "alphanumeric":
           return (
@@ -817,6 +881,7 @@ export default function CourseApplication() {
               name={field.fieldName}
               value={value}
               className={`${inputClass} ${hasError ? 'border-red-500' : ''}`}
+              minLength={field.minLength}
               maxLength={field.maxLength ?? 100}
               onChange={(e) => {
                 const alphanumericValue = e.target.value.replace(/[^a-zA-Z0-9\s]/g, "");
@@ -835,6 +900,7 @@ export default function CourseApplication() {
               name={field.fieldName}
               value={value}
               className={`${inputClass} ${hasError ? 'border-red-500' : ''}`}
+              minLength={field.minLength}
               maxLength={field.maxLength ?? 300}
               onChange={(e) => {
                 setFormData(p => ({ ...p, [field.fieldName]: e.target.value }));
