@@ -364,7 +364,7 @@ export default function ReceiptPage() {
 
                                         {receiptData.totalAmount !== receiptData.applicationFee && (
                                             <div className="flex justify-between">
-                                                <span className="text-gray-600">GST (18%):</span>
+                                                <span className="text-gray-600">GST Included:</span>
                                                 <span className="font-medium text-gray-800">
                                                     {formatCurrency(receiptData.totalAmount - receiptData.applicationFee)}
                                                 </span>

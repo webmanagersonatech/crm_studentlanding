@@ -17,6 +17,7 @@ type PaymentData = {
     applicationId: string;
     paymentMethod: "instamojo" | "razorpay";
     amount: number;
+    gstPercentage: number;
     gstAmount: number;
     applicationFee: number;
 };
@@ -271,12 +272,16 @@ export default function PaymentPage() {
                                             </span>
                                         </div>
 
-                                        <div className="flex justify-between md:justify-end md:gap-6">
-                                            <span className="text-gray-600">GST (18%)</span>
-                                            <span className="font-semibold text-gray-800">
-                                                {formatCurrency(paymentData.gstAmount)}
-                                            </span>
-                                        </div>
+                                        {paymentData?.gstPercentage > 0 && (
+                                            <div className="flex justify-between md:justify-end md:gap-6">
+                                                <span className="text-gray-600">
+                                                    GST ({paymentData?.gstPercentage}%)
+                                                </span>
+                                                <span className="font-semibold text-gray-800">
+                                                    {formatCurrency(paymentData.gstAmount)}
+                                                </span>
+                                            </div>
+                                        )}
 
                                         <div className="flex justify-between md:justify-end md:gap-6 pt-2 border-t">
                                             <span className="font-semibold text-gray-900">Total</span>
