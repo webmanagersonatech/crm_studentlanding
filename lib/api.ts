@@ -5,7 +5,7 @@ type RegisterPayload = {
   lastname: string;
   email: string;
   mobileNo: string;
-  recaptchaToken: string;
+  captchaInput: string;
   instituteId: string;
   country: string;
   state: string;
@@ -57,6 +57,20 @@ export type ReceiptResponse = {
 };
 
 // Login function
+export const generateCaptcha = async () => {
+  try {
+    const res = await axios.get(`${API_BASE}/captcha/generate`, {
+      withCredentials: true
+    });
+
+    return res.data;
+  } catch (err: any) {
+    return {
+      success: false,
+      message: err.response?.data?.message || "Captcha failed",
+    };
+  }
+};
 export const loginStudent = async (email: string, password: string) => {
   try {
     const res = await axios.post(
@@ -128,7 +142,9 @@ export const getReceiptData = async (): Promise<ReceiptResponse> => {
 };
 export const registerStudent = async (payload: RegisterPayload) => {
   try {
-    const res = await axios.post(`${API_BASE}/student/`, payload);
+    const res = await axios.post(`${API_BASE}/student/`, payload, {
+      withCredentials: true // Important for session
+    });
 
     if (res.data.success) {
       return { success: true };
