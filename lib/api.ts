@@ -164,7 +164,7 @@ export const registerStudent = async (payload: RegisterPayload) => {
 export const setInstituteCookie = async (instituteId: string) => {
   try {
     const res = await axios.get(
-      `${API_BASE}/institutions/apply/${instituteId}`,
+      `${API_BASE}/institutions/applys/${instituteId}`,
       {
         withCredentials: true, // 🔥 IMPORTANT for cookies
       }
