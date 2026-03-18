@@ -272,7 +272,7 @@ export default function RegisterForm({ instituteId }: Props) {
                             
                         } else {
                             setForm({ ...form, instituteInput: opt.value });
-                          
+                            router.refresh(); // reload SSR
                         }
                     }}
                 />
