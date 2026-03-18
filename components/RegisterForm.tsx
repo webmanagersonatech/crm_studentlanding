@@ -1,7 +1,7 @@
 import { useState, FormEvent, useEffect } from "react";
 import Select from "react-select";
 import { Country, State, City } from "country-state-city";
-import { registerStudent, getStudentSettings, getActiveInstitutions, generateCaptcha } from "@/lib/api";
+import { registerStudent, getStudentSettings, getActiveInstitutions, setInstituteCookie, generateCaptcha } from "@/lib/api";
 import { AuthShell } from "./AuthShell";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -264,10 +264,16 @@ export default function RegisterForm({ instituteId }: Props) {
                     styles={selectStyles}
                     options={instituteOptions}
                     placeholder="Search Institute..."
-                    onChange={(opt: any) => {
-                        document.cookie = `instituteId=${opt.value}; path=/; max-age=${60 * 60 * 24 * 7}`;
-                        setForm({ ...form, instituteInput: opt.value });
-                        router.refresh();
+                    onChange={async (opt: any) => {
+                        const res = await setInstituteCookie(opt.value as string);
+
+                        if (!res.success) {
+                            toast.error(res.message || "Invalid Institute");
+                            
+                        } else {
+                            setForm({ ...form, instituteInput: opt.value });
+                          
+                        }
                     }}
                 />
             )}
