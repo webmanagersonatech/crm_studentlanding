@@ -71,11 +71,11 @@ export const generateCaptcha = async () => {
     };
   }
 };
-export const loginStudent = async (email: string, password: string) => {
+export const loginStudent = async (username: string, password: string) => {
   try {
     const res = await axios.post(
       `${API_BASE}/student/login`,
-      { email, password },
+      { username, password },
       { withCredentials: true }
     );
 
@@ -158,6 +158,23 @@ export const registerStudent = async (payload: RegisterPayload) => {
     return {
       success: false,
       message: err.response?.data?.message || "Registration failed",
+    };
+  }
+};
+export const setInstituteCookie = async (instituteId: string) => {
+  try {
+    const res = await axios.get(
+      `${API_BASE}/institutions/apply/${instituteId}`,
+      {
+        withCredentials: true, // 🔥 IMPORTANT for cookies
+      }
+    );
+
+    return res.data;
+  } catch (err: any) {
+    return {
+      success: false,
+      message: err.response?.data?.message || "Failed to set institute cookie",
     };
   }
 };

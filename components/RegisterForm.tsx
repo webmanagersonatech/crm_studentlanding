@@ -519,7 +519,7 @@ export default function RegisterForm({ instituteId }: Props) {
                             </h2>
 
                             <p className="text-gray-600">
-                                Your password has been sent to <b>{form.email}</b>.
+                                Your username and password has been sent to <b>{form.email}</b>.
                                 Please check your <b>Inbox</b>, <b>Spam</b>, or <b>Other</b> folders.
                             </p>
 

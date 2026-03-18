@@ -9,7 +9,7 @@ import Link from "next/link";
 type Props = { instituteId?: string | null };
 
 export default function LoginForm({ instituteId }: Props) {
-    const [email, setEmail] = useState("");
+    const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
 
     const [showPassword, setShowPassword] = useState(false);
@@ -28,7 +28,7 @@ export default function LoginForm({ instituteId }: Props) {
         setLoading(true);
         setMsg("");
 
-        const result = await loginStudent(email, password);
+        const result = await loginStudent(username, password);
 
         if (!result.success) {
             setMsg(result.message);
@@ -69,10 +69,10 @@ export default function LoginForm({ instituteId }: Props) {
             <form onSubmit={handleSubmit} className="space-y-4">
                 {/* Email */}
                 <input
-                    name="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Username or Email"
+                    name="username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="Username"
                     required
                     disabled={!isApplicationOpen}
                     className="w-full h-12 px-4 rounded-xl border bg-white/20 text-white placeholder-white/80 outline-none"
