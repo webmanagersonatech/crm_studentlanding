@@ -269,7 +269,7 @@ export default function RegisterForm({ instituteId }: Props) {
 
                         if (!res.success) {
                             toast.error(res.message || "Invalid Institute");
-                            
+
                         } else {
                             setForm({ ...form, instituteInput: opt.value });
                             router.refresh(); // reload SSR
@@ -364,11 +364,12 @@ export default function RegisterForm({ instituteId }: Props) {
                     </div>
 
                     {/* Captcha Section - Enhanced for Large Screens */}
+                    {/* Captcha Section - Enhanced for Large Screens */}
                     <div className="space-y-3">
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
                             {/* Left Side - Captcha Display */}
                             <div className="space-y-3">
-                                <div className="bg-white border rounded-lg p-4 flex justify-center items-center min-h-[100px]">
+                                <div className="bg-gray-50 border-2 border-gray-300 rounded-lg p-4 flex justify-center items-center min-h-[120px] shadow-sm">
                                     {captchaLoading ? (
                                         <div className="flex items-center space-x-2">
                                             <svg className="animate-spin h-5 w-5 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -380,7 +381,13 @@ export default function RegisterForm({ instituteId }: Props) {
                                     ) : (
                                         <div
                                             dangerouslySetInnerHTML={{ __html: captchaSvg }}
-                                            className="captcha-svg"
+                                            className="captcha-svg clear-captcha"
+                                            style={{
+                                                filter: "none",
+                                                transform: "scale(1)",
+                                                maxWidth: "100%",
+                                                height: "auto"
+                                            }}
                                         />
                                     )}
                                 </div>
@@ -389,28 +396,33 @@ export default function RegisterForm({ instituteId }: Props) {
                                     type="button"
                                     onClick={loadCaptcha}
                                     disabled={captchaLoading}
-                                    className="text-sm text-indigo-600 hover:underline disabled:opacity-50 flex items-center space-x-1"
+                                    className="text-sm text-indigo-600 hover:text-indigo-800 font-medium flex items-center space-x-2 transition-colors"
                                 >
                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                                     </svg>
-                                    <span>{captchaLoading ? "Refreshing..." : "Refresh Captcha"}</span>
+                                    <span>{captchaLoading ? "Refreshing..." : "⟳ Refresh Captcha"}</span>
                                 </button>
                             </div>
 
                             {/* Right Side - Captcha Input with Error Display */}
                             <div className="space-y-2">
                                 <label className="block text-sm font-medium text-white/90">
-                                    Enter Captcha
+                                    Enter Captcha Code
                                 </label>
                                 <div className="relative">
                                     <input
-                                        className={`${input} ${captchaError ? inputError : ''}`}
-                                        placeholder="Type the captcha here..."
+                                        className={`${input} ${captchaError ? inputError : ''} text-lg tracking-wider`}
+                                        placeholder="Enter the characters above..."
                                         value={captchaInput}
                                         onChange={handleCaptchaChange}
                                         maxLength={6}
                                         required
+                                        autoComplete="off"
+                                        style={{
+                                            fontSize: "18px",
+                                            letterSpacing: "2px"
+                                        }}
                                     />
                                     {captchaError && (
                                         <motion.div
@@ -427,12 +439,17 @@ export default function RegisterForm({ instituteId }: Props) {
                                         </motion.div>
                                     )}
                                 </div>
-                                <p className="text-xs text-white/60 mt-6">
-                                    Enter the characters shown in the image
+                                <p className="text-xs text-white/60 mt-6 flex items-center space-x-1">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <span>Case sensitive - enter exactly as shown</span>
                                 </p>
                             </div>
                         </div>
                     </div>
+
+
 
                     {/* Message Display */}
                     {msg && (
