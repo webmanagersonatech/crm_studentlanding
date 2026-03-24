@@ -1232,7 +1232,14 @@ export default function CourseApplication() {
         {activeStep === "program" && (
           <div className="space-y-6">
             <h2 className="text-xl font-semibold text-gray-800 tracking-wide">Select Program</h2>
-            <Select options={programOptions} value={programOptions.find((p) => p.value === program) || null} onChange={(o) => setProgram(o?.value || "")} placeholder="Choose your program" />
+            <Select
+              options={programOptions}
+              value={programOptions.find((p) => p.value === program) || null}
+              onChange={(o) => setProgram(o?.value || "")}
+              placeholder="Choose your program"
+              menuPortalTarget={document.body}
+              menuPosition="fixed"
+            />
           </div>
         )}
 
