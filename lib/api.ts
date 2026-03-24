@@ -21,15 +21,18 @@ export type StudentFormManager = {
 };
 type SendOtpPayload = {
   email: string;
+  instituteId: string;
 };
 type VerifyOtpPayload = {
   email: string;
+  instituteId: string;
   otp: string;
 };
 type ChangePasswordPayload = {
   email: string;
   newPassword: string; // AES encrypted string
   confirmPassword: string; // AES encrypted string
+  instituteId: string;
 };
 export type ReceiptData = {
   paymentDate: string;
@@ -327,7 +330,7 @@ export const logoutStudent = async () => {
 
 export const verifyStudentOtp = async (payload: VerifyOtpPayload) => {
   try {
-    const res = await axios.post(`${API_BASE}/otp/verify`, payload);
+    const res = await axios.post(`${API_BASE}/otp/verifystudent`, payload);
 
     if (res.data.success) {
       return {
@@ -347,6 +350,7 @@ export const verifyStudentOtp = async (payload: VerifyOtpPayload) => {
     };
   }
 };
+
 export const changeStudentPassword = async (payload: ChangePasswordPayload) => {
   try {
     const res = await axios.post(`${API_BASE}/student/changenewpassword`, payload);
