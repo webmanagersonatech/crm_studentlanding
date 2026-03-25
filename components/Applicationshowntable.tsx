@@ -65,14 +65,15 @@ export default function DashboardClient() {
                 </button>
               )}
 
-              {!hidePaymentButtons && application.paymentStatus === "Unpaid" && (
-                <button
-                  onClick={handlePayNow}
-                  className="px-5 py-2 rounded-md bg-gray-900 text-white font-medium hover:bg-gray-800 transition"
-                >
-                  Pay Now
-                </button>
-              )}
+              {!hidePaymentButtons && application.paymentStatus === "Unpaid" &&
+                application.formStatus === "Complete" && (
+                  <button
+                    onClick={handlePayNow}
+                    className="px-5 py-2 rounded-md bg-gray-900 text-white font-medium hover:bg-gray-800 transition"
+                  >
+                    Pay Now
+                  </button>
+                )}
 
               {!hidePaymentButtons && application.paymentStatus === "Paid" && (
                 <button
