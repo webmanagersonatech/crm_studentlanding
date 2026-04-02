@@ -25,7 +25,7 @@ export default function CourseApplication() {
   const [programOptions, setProgramOptions] = useState<OptionType[]>([])
   const [activeStep, setActiveStep] = useState<Step>("program")
   const [student, setStudent] = useState<any>(null);
-  const [program, setProgram] = useState("")
+  const [programId, setProgramId] = useState("")
   const [formConfig, setFormConfig] = useState<any>(null)
   const [formData, setFormData] = useState<Record<string, any>>({})
   const [files, setFiles] = useState<Record<string, File>>({})
@@ -223,7 +223,12 @@ export default function CourseApplication() {
 
       // Program options
       if (Array.isArray(settings?.courses)) {
-        setProgramOptions(settings.courses.map((c: string) => ({ value: c, label: c })));
+        setProgramOptions(
+          settings.courses.map((c: any) => ({
+            value: c.courseId,
+            label: c.name,
+          }))
+        );
       }
 
       // Form configuration
@@ -275,7 +280,7 @@ export default function CourseApplication() {
           setFormData((prev) => ({ ...prev, ...newFormData }));
 
           // seet program
-          setProgram(appData.program || "");
+          setProgramId(appData.programId || "");
           setAcademicYear(finalAcademicYear)
         }
       }
@@ -295,7 +300,7 @@ export default function CourseApplication() {
 
 
   const validateProgram = () => {
-    if (!program) {
+    if (!programId) {
       toast.error("Please select a program")
       return false
     }
@@ -1104,7 +1109,7 @@ export default function CourseApplication() {
       setLoading(true)
       const fd = new FormData()
       fd.append("instituteId", selectedInstitute)
-      fd.append("program", program)
+      fd.append("programId", programId)
       fd.append("academicYear", academicYear)
       fd.append("applicationSource", applicationSource);
 
@@ -1138,7 +1143,7 @@ export default function CourseApplication() {
 
       const fd = new FormData()
       fd.append("instituteId", selectedInstitute)
-      fd.append("program", program)
+      fd.append("programId", programId)
       fd.append("academicYear", academicYear)
       fd.append("applicationSource", applicationSource);
       fd.append(
@@ -1234,8 +1239,8 @@ export default function CourseApplication() {
             <h2 className="text-xl font-semibold text-gray-800 tracking-wide">Select Program</h2>
             <Select
               options={programOptions}
-              value={programOptions.find((p) => p.value === program) || null}
-              onChange={(o) => setProgram(o?.value || "")}
+              value={programOptions.find((p) => p.value === programId) || null}
+              onChange={(o) => setProgramId(o?.value || "")}
               placeholder="Choose your program"
               menuPortalTarget={document.body}
               menuPosition="fixed"
