@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import toast, { Toaster } from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 
+
 type Props = { instituteId?: string | null };
 
 export default function RegisterForm({ instituteId }: Props) {
@@ -28,6 +29,7 @@ export default function RegisterForm({ instituteId }: Props) {
     const [institutions, setInstitutions] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [msg, setMsg] = useState("");
+    const [emailError, setEmailError] = useState("");
     const [msgType, setMsgType] = useState<"error" | "success" | "">("");
     const [mobileError, setMobileError] = useState("");
     const [captchaSvg, setCaptchaSvg] = useState("");
@@ -36,6 +38,8 @@ export default function RegisterForm({ instituteId }: Props) {
     const [captchaLoading, setCaptchaLoading] = useState(false);
     const finalInstituteId = instituteId || form.instituteInput;
     const isInstituteSelected = Boolean(finalInstituteId);
+    const [firstNameError, setFirstNameError] = useState("");
+    const [lastNameError, setLastNameError] = useState("");
 
     // Load captcha
     const loadCaptcha = async () => {
@@ -94,7 +98,38 @@ export default function RegisterForm({ instituteId }: Props) {
         setMobileError("");
         return true;
     };
+    const validateFirstName = (value: string) => {
+        if (value.trim().length < 2) {
+            setFirstNameError("First name must be at least 2 characters");
+            return false;
+        }
+        setFirstNameError("");
+        return true;
+    };
+    const validateEmail = (value: string) => {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+        if (!value.trim()) {
+            setEmailError("Email is required");
+            return false;
+        }
+
+        if (!emailRegex.test(value)) {
+            setEmailError("Enter a valid email address");
+            return false;
+        }
+
+        setEmailError("");
+        return true;
+    };
+    const validateLastName = (value: string) => {
+        if (value.trim().length < 2) {
+            setLastNameError("Last name must be at least 2 characters");
+            return false;
+        }
+        setLastNameError("");
+        return true;
+    };
     // Validate captcha input
     const validateCaptcha = (value: string) => {
         if (!value.trim()) {
@@ -113,6 +148,20 @@ export default function RegisterForm({ instituteId }: Props) {
             setMsgType("error");
             setMsg("Please select an institute");
             toast.error("Please select an institute");
+            return;
+        }
+
+        if (!validateFirstName(form.firstName)) {
+            toast.error(firstNameError);
+            return;
+        }
+
+        if (!validateLastName(form.lastName)) {
+            toast.error(lastNameError);
+            return;
+        }
+        if (!validateEmail(form.email)) {
+            toast.error(emailError);
             return;
         }
 
@@ -282,32 +331,72 @@ export default function RegisterForm({ instituteId }: Props) {
                 <form onSubmit={handleSubmit} className="w-full p-8 space-y-6">
                     {/* Name Fields */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <input
-                            className={input}
-                            placeholder="First Name"
-                            required
-                            value={form.firstName}
-                            onChange={(e) => setForm({ ...form, firstName: e.target.value })}
-                        />
-                        <input
-                            className={input}
-                            placeholder="Last Name"
-                            required
-                            value={form.lastName}
-                            onChange={(e) => setForm({ ...form, lastName: e.target.value })}
-                        />
+
+                        {/* First Name */}
+                        <div className="relative">
+                            <input
+                                className={`${input} ${firstNameError ? inputError : ""}`}
+                                placeholder="First Name"
+                                required
+                                value={form.firstName}
+                                onChange={(e) => {
+                                    const value = e.target.value;
+                                    setForm({ ...form, firstName: value });
+                                    validateFirstName(value);
+                                }}
+                            />
+                            {firstNameError && (
+                                <p className="absolute -bottom-5 left-0 text-xs text-red-500">
+                                    {firstNameError}
+                                </p>
+                            )}
+                        </div>
+
+                        {/* Last Name */}
+                        <div className="relative">
+                            <input
+                                className={`${input} ${lastNameError ? inputError : ""}`}
+                                placeholder="Last Name"
+                                required
+                                value={form.lastName}
+                                onChange={(e) => {
+                                    const value = e.target.value;
+                                    setForm({ ...form, lastName: value });
+                                    validateLastName(value);
+                                }}
+                            />
+                            {lastNameError && (
+                                <p className="absolute -bottom-5 left-0 text-xs text-red-500">
+                                    {lastNameError}
+                                </p>
+                            )}
+                        </div>
+
                     </div>
+
 
                     {/* Email / Mobile */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <input
-                            className={input}
-                            placeholder="Email"
-                            type="email"
-                            required
-                            value={form.email}
-                            onChange={(e) => setForm({ ...form, email: e.target.value })}
-                        />
+                        <div className="relative">
+                            <input
+                                className={`${input} ${emailError ? inputError : ""}`}
+                                placeholder="Email"
+                                type="email"
+                                required
+                                value={form.email}
+                                onChange={(e) => {
+                                    const value = e.target.value;
+                                    setForm({ ...form, email: value });
+                                    validateEmail(value);
+                                }}
+                            />
+
+                            {emailError && (
+                                <p className="absolute -bottom-5 left-0 text-xs text-red-500">
+                                    {emailError}
+                                </p>
+                            )}
+                        </div>
                         <div className="relative">
                             <input
                                 className={`${input} ${mobileError ? inputError : ''}`}
@@ -467,7 +556,8 @@ export default function RegisterForm({ instituteId }: Props) {
                     {/* Submit Button */}
                     <button
                         type="submit"
-                        disabled={loading || !!mobileError || !!captchaError || captchaLoading}
+                        disabled={loading || !!mobileError || !!captchaError || !!firstNameError ||
+                            !!lastNameError || !!emailError || captchaLoading}
                         className="w-full h-12 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]"
                     >
                         {loading ? (
