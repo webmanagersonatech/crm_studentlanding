@@ -29,89 +29,46 @@ export default function InstitutePage() {
     }, [instituteId]);
 
     // ⏳ Loading UI with animations
-    if (loading) {
+  if (loading) {
         return (
-
             <>
                 <Head>
                     <title>HikaApp</title>
                 </Head>
-                <div className="flex flex-col items-center justify-center h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+
+                <div className="flex items-center justify-center h-screen bg-white">
+
+                    {/* Animated Loader */}
                     <motion.div
-                        initial={{ scale: 0.8, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        transition={{ duration: 0.5 }}
-                        className="text-center"
+                        className="flex flex-col items-center space-y-6"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
                     >
-                        {/* Animated Institute Icon */}
-                        <div className="relative mb-8">
-                            <motion.div
-                                animate={{
-                                    scale: [1, 1.2, 1],
-                                    rotate: [0, 5, -5, 0],
-                                }}
-                                transition={{
-                                    duration: 2,
-                                    repeat: Infinity,
-                                    repeatType: "reverse",
-                                }}
-                                className="w-24 h-24 mx-auto bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl shadow-lg flex items-center justify-center"
-                            >
-                                <span className="text-4xl text-white font-bold">
-                                    {instituteId?.toString().charAt(0).toUpperCase() || "I"}
-                                </span>
-                            </motion.div>
-                        </div>
-
-                        {/* Loading Text with Typing Effect */}
-                        <motion.h1
-                            initial={{ y: 20, opacity: 0 }}
-                            animate={{ y: 0, opacity: 1 }}
-                            transition={{ delay: 0.2 }}
-                            className="text-2xl font-bold text-gray-800 mb-2"
-                        >
-                            Loading Institute
-                        </motion.h1>
-
-                        <motion.p
-                            initial={{ y: 20, opacity: 0 }}
-                            animate={{ y: 0, opacity: 1 }}
-                            transition={{ delay: 0.3 }}
-                            className="text-gray-600 mb-6"
-                        >
-                            {instituteId}
-                        </motion.p>
-
-                        {/* Animated Progress Bar */}
+                        {/* Spinner */}
                         <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: "100%" }}
+                            animate={{ rotate: 360 }}
                             transition={{
-                                duration: 2,
                                 repeat: Infinity,
-                                repeatType: "loop",
+                                duration: 1,
+                                ease: "linear"
                             }}
-                            className="h-2 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full"
+                            className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full"
                         />
 
-                        {/* Loading Dots */}
-                        <div className="flex justify-center mt-6 space-x-2">
-                            {[0, 1, 2].map((dot) => (
-                                <motion.div
-                                    key={dot}
-                                    animate={{
-                                        y: [0, -10, 0],
-                                    }}
-                                    transition={{
-                                        duration: 0.6,
-                                        repeat: Infinity,
-                                        delay: dot * 0.2,
-                                    }}
-                                    className="w-3 h-3 bg-blue-600 rounded-full"
-                                />
-                            ))}
-                        </div>
+                        {/* Optional subtle text */}
+                        <motion.p
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: [0.3, 1, 0.3] }}
+                            transition={{
+                                repeat: Infinity,
+                                duration: 1.5
+                            }}
+                            className="text-blue-500 text-sm tracking-widest"
+                        >
+                            LOADING...
+                        </motion.p>
                     </motion.div>
+
                 </div>
             </>
         );
