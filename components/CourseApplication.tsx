@@ -860,6 +860,33 @@ export default function CourseApplication() {
               }}
             />
           );
+
+        case "decimal":
+          return (
+            <input
+              type="text"
+              name={field.fieldName}
+              value={value}
+              className={`${inputClass} ${hasError ? 'border-red-500' : ''}`}
+              inputMode="decimal"
+              onChange={(e) => {
+                let val = e.target.value;
+
+                // Allow only numbers and dot
+                val = val.replace(/[^0-9.]/g, "");
+
+                // Allow only one dot
+                const parts = val.split(".");
+                if (parts.length > 2) {
+                  val = parts[0] + "." + parts[1];
+                }
+
+                setFormData(p => ({ ...p, [field.fieldName]: val }));
+                setFieldErrors(prev => ({ ...prev, [field.fieldName]: '' }));
+              }}
+              onBlur={handleBlur}
+            />
+          );
         /* TEXT ONLY */
         case "text":
           return (
