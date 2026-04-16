@@ -295,7 +295,95 @@ export default function CourseApplication() {
     fetchStudentAndApplication();
   }, []);
 
+  // Add this useEffect after your other useEffects (around line 200-250)
 
+  useEffect(() => {
+    if (!formConfig?.educationDetails) return;
+
+    const cutoffSection = formConfig.educationDetails.find(
+      (section: any) => section.sectionName === "Cutoff Details"
+    );
+
+    if (!cutoffSection) return;
+
+    const hasBiologyField = cutoffSection.fields.some(
+      (field: any) => field.fieldName === "Subject3(Biology)"
+    );
+
+    const hasMathsField = cutoffSection.fields.some(
+      (field: any) => field.fieldName === "Subject3(Mathematics)"
+    );
+
+    const isMedicalInstitute = hasBiologyField;
+    const isEngineeringInstitute = hasMathsField;
+
+    let physics = parseFloat(formData["Subject1(Physics)"] || "0");
+    let chemistry = parseFloat(formData["Subject2(Chemistry)"] || "0");
+    let thirdSubject = 0;
+
+    // Validate numbers
+    if (isNaN(physics)) physics = 0;
+    if (isNaN(chemistry)) chemistry = 0;
+
+    let cutoff = 0;
+
+    if (isMedicalInstitute) {
+      // 🩺 Medical cutoff
+      thirdSubject = parseFloat(formData["Subject3(Biology)"] || "0");
+      if (isNaN(thirdSubject)) thirdSubject = 0;
+      cutoff = (physics / 2) + (chemistry / 2) + thirdSubject;
+
+    } else if (isEngineeringInstitute) {
+      // ⚙️ Engineering cutoff
+      thirdSubject = parseFloat(formData["Subject3(Mathematics)"] || "0");
+      if (isNaN(thirdSubject)) thirdSubject = 0;
+      cutoff = (physics / 2) + (chemistry / 2) + thirdSubject;
+
+    } else {
+      // fallback (optional)
+      thirdSubject = parseFloat(
+        formData["Subject3(Biology)"] || formData["Subject3(Mathematics)"] || "0"
+      );
+      if (isNaN(thirdSubject)) thirdSubject = 0;
+      cutoff = (physics / 2) + (chemistry / 2) + thirdSubject;
+    }
+
+    // Only calculate if at least one subject has a value
+    if (physics > 0 || chemistry > 0 || thirdSubject > 0) {
+      const roundedCutoff = Math.round(cutoff * 100) / 100;
+
+      const currentCutoff = parseFloat(formData["Overall Cutoff"] || "0");
+
+      // Only update if value changed significantly
+      if (Math.abs(roundedCutoff - currentCutoff) > 0.01) {
+        setFormData(prev => ({
+          ...prev,
+          "Overall Cutoff": roundedCutoff.toString()
+        }));
+
+        // Clear any error for this field
+        setFieldErrors(prev => ({
+          ...prev,
+          "Overall Cutoff": ''
+        }));
+      }
+    } else {
+      // Clear cutoff if no marks entered
+      if (formData["Overall Cutoff"] && formData["Overall Cutoff"] !== "") {
+        setFormData(prev => ({
+          ...prev,
+          "Overall Cutoff": ""
+        }));
+      }
+    }
+
+  }, [
+    formData["Subject1(Physics)"],
+    formData["Subject2(Chemistry)"],
+    formData["Subject3(Biology)"],
+    formData["Subject3(Mathematics)"],
+    formConfig
+  ]);
 
 
 
@@ -397,7 +485,23 @@ export default function CourseApplication() {
     const value = formData[field.fieldName] ?? (field.type === "checkbox" ? [] : "");
     const error = fieldErrors[field.fieldName];
     const hasError = !!error;
-
+    
+    if (field.fieldName === "Overall Cutoff") {
+      return (
+        <div>
+          <input
+            type="text"
+            name={field.fieldName}
+            value={value || ""}
+            readOnly
+            disabled
+            className={`${inputClass} bg-gray-100 cursor-not-allowed ${hasError ? 'border-red-500' : ''}`}
+          />
+          {hasError && <p className="text-red-500 text-xs mt-1">{error}</p>}
+          <p className="text-xs text-gray-500 mt-1">This field is auto-calculated based on subject marks</p>
+        </div>
+      );
+    }
     /* =========================
        COUNTRY
     ========================= */
