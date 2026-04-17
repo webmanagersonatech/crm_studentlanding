@@ -1,10 +1,10 @@
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { useRouter } from "next/navigation";
 import Select from "react-select"
 import toast, { Toaster } from "react-hot-toast"
 import { getLoggedInStudent, createApplication, getStudentApplicationById } from "@/lib/api"
-
+import SignatureCanvas from 'react-signature-canvas';
 import { Country, State, City } from "country-state-city"
 
 import { CheckIcon } from "@heroicons/react/24/solid";
@@ -32,7 +32,9 @@ export default function CourseApplication() {
   const [minApplicantAge, setMinApplicantAge] = useState<number | null>(null)
   const [academicYear, setAcademicYear] = useState<string>("")
   const [applicationSource, setApplicationSource] = useState<"online" | "offline" | "lead">("online");
-
+  const [signatures, setSignatures] = useState<Record<string, SignatureCanvas | null>>({});
+  const [signaturesData, setSignaturesData] = useState<Record<string, string>>({});
+  const signaturesLoaded = useRef<Record<string, boolean>>({}); // Track loaded signatures
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   // const BASE_URL = "http://localhost:4000/uploads/"
@@ -171,6 +173,113 @@ export default function CourseApplication() {
 
     setFormConfig({ ...formConfig })
   }, [formData["Sibling Count"]])
+
+  const renderSignatureField = (field: any) => {
+    const existingSignature = formData[field.fieldName];
+    const currentSignatureData = signaturesData[field.fieldName] || "";
+
+    return (
+      <div className="space-y-2">
+        <div className="border rounded p-2 bg-white">
+          <SignatureCanvas
+            ref={(ref) => {
+              if (!ref) return;
+
+              // Only update if ref changed
+              setSignatures(prev => {
+                if (prev[field.fieldName] === ref) return prev;
+                return { ...prev, [field.fieldName]: ref };
+              });
+
+              // Load existing signature if available and not already loaded
+              if (existingSignature && !signaturesData[field.fieldName] && !signaturesLoaded.current[field.fieldName]) {
+                signaturesLoaded.current[field.fieldName] = true;
+
+                setTimeout(() => {
+                  const img = new Image();
+                  img.onload = () => {
+                    ref.clear();
+                    ref.fromDataURL(existingSignature);
+                    setSignaturesData(prev => ({
+                      ...prev,
+                      [field.fieldName]: existingSignature
+                    }));
+                  };
+                  img.src = existingSignature;
+                }, 100);
+              }
+            }}
+            canvasProps={{
+              className: "signature-canvas w-full h-32 border rounded",
+              style: { border: "1px solid #ccc" }
+            }}
+            backgroundColor="rgb(255,255,255)"
+            onEnd={() => {
+              const currentSig = signatures[field.fieldName];
+              if (currentSig) {
+                const dataUrl = currentSig.toDataURL();
+                setSignaturesData(prev => ({
+                  ...prev,
+                  [field.fieldName]: dataUrl
+                }));
+                setFormData(prev => ({
+                  ...prev,
+                  [field.fieldName]: dataUrl
+                }));
+                setFieldErrors(prev => ({ ...prev, [field.fieldName]: '' }));
+              }
+            }}
+          />
+        </div>
+        {/* Clear and Download buttons */}
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              const currentSig = signatures[field.fieldName];
+              if (currentSig) {
+                currentSig.clear();
+                setSignaturesData(prev => ({
+                  ...prev,
+                  [field.fieldName]: ""
+                }));
+                setFormData(prev => ({
+                  ...prev,
+                  [field.fieldName]: ""
+                }));
+                // Reset loaded flag if cleared
+                signaturesLoaded.current[field.fieldName] = false;
+              }
+            }}
+            className="px-3 py-1 text-sm bg-gray-500 text-white rounded hover:bg-gray-600"
+          >
+            Clear
+          </button>
+          {currentSignatureData && (
+            <button
+              type="button"
+              onClick={() => {
+                const dataUrl = currentSignatureData;
+                const link = document.createElement('a');
+                link.download = `${field.fieldName}.png`;
+                link.href = dataUrl;
+                link.click();
+              }}
+              className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
+            >
+              Download
+            </button>
+          )}
+        </div>
+        {currentSignatureData && (
+          <div className="mt-2">
+            <p className="text-xs text-gray-500">Preview:</p>
+            <img src={currentSignatureData} alt={`${field.fieldName} preview`} className="h-16 border rounded mt-1" />
+          </div>
+        )}
+      </div>
+    );
+  };
 
   const removeField = (tab: Tab, sectionName: string, fieldName: string) => {
     setFormConfig((prev: any) => {
@@ -485,7 +594,7 @@ export default function CourseApplication() {
     const value = formData[field.fieldName] ?? (field.type === "checkbox" ? [] : "");
     const error = fieldErrors[field.fieldName];
     const hasError = !!error;
-    
+
     if (field.fieldName === "Overall Cutoff") {
       return (
         <div>
@@ -808,7 +917,8 @@ export default function CourseApplication() {
               maxLength={field.maxLength ?? 500}
             />
           );
-
+        case "signature":
+          return renderSignatureField(field);
         /* SELECT */
         case "select":
           return (
@@ -1221,7 +1331,7 @@ export default function CourseApplication() {
         sectionObj.fields[field.fieldName] =
           field.type === "file" ? files[field.fieldName]?.name || formData[field.fieldName] || "" : field.type === "declaration"
             ? field.declarationText || ""
-            : formData[field.fieldName] || ""
+            : field.type === "signature" ? formData[field.fieldName] || "" : formData[field.fieldName] || ""
       })
       return sectionObj
     })
