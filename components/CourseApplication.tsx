@@ -410,7 +410,7 @@ export default function CourseApplication() {
     if (!formConfig?.educationDetails) return;
 
     const cutoffSection = formConfig.educationDetails.find(
-      (section: any) => section.sectionName === "Cutoff Details"
+      (section: any) => section.sectionName === "Cutoff Details (12th)"
     );
 
     if (!cutoffSection) return;
@@ -461,27 +461,27 @@ export default function CourseApplication() {
     if (physics > 0 || chemistry > 0 || thirdSubject > 0) {
       const roundedCutoff = Math.round(cutoff * 100) / 100;
 
-      const currentCutoff = parseFloat(formData["Overall Cutoff"] || "0");
+      const currentCutoff = parseFloat(formData["Cutoff"] || "0");
 
       // Only update if value changed significantly
       if (Math.abs(roundedCutoff - currentCutoff) > 0.01) {
         setFormData(prev => ({
           ...prev,
-          "Overall Cutoff": roundedCutoff.toString()
+          "Cutoff": roundedCutoff.toString()
         }));
 
         // Clear any error for this field
         setFieldErrors(prev => ({
           ...prev,
-          "Overall Cutoff": ''
+          "Cutoff": ''
         }));
       }
     } else {
       // Clear cutoff if no marks entered
-      if (formData["Overall Cutoff"] && formData["Overall Cutoff"] !== "") {
+      if (formData["Cutoff"] && formData["Cutoff"] !== "") {
         setFormData(prev => ({
           ...prev,
-          "Overall Cutoff": ""
+          "Cutoff": ""
         }));
       }
     }
@@ -595,7 +595,7 @@ export default function CourseApplication() {
     const error = fieldErrors[field.fieldName];
     const hasError = !!error;
 
-    if (field.fieldName === "Overall Cutoff") {
+    if (field.fieldName === "Cutoff") {
       return (
         <div>
           <input
