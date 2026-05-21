@@ -36,6 +36,7 @@ export default function CourseApplication() {
   const [signaturesData, setSignaturesData] = useState<Record<string, string>>({});
   const signaturesLoaded = useRef<Record<string, boolean>>({}); // Track loaded signatures
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [sameAddress, setSameAddress] = useState(false);
 
   // const BASE_URL = "http://localhost:4000/uploads/"
   const BASE_URL = "https://hikabackend.sonastar.com/uploads/";
@@ -1299,7 +1300,25 @@ export default function CourseApplication() {
       setActiveStep("education");
     }
   };
-
+  useEffect(() => {
+    if (sameAddress) {
+      setFormData((prev) => ({
+        ...prev,
+        "Permanent  Country": prev["Country"] || "",
+        "Permanent  State": prev["State"] || "",
+        "Permanent City": prev["City"] || "",
+        "Permanent Pincode": prev["Pincode"] || "",
+        "Permanent Address": prev["Address"] || "",
+      }));
+    }
+  }, [
+    sameAddress,
+    formData["Country"],
+    formData["State"],
+    formData["City"],
+    formData["Pincode"],
+    formData["Address"],
+  ]);
 
   useEffect(() => {
     const savedStep = localStorage.getItem("courseApplicationStep") as Step | null
@@ -1495,7 +1514,41 @@ export default function CourseApplication() {
             <h2 className="text-xl font-semibold text-gray-800 tracking-wide">Personal Details</h2>
             {formConfig?.personalDetails?.map((section: any) => (
               <div key={section.sectionName} className="rounded-xl bg-gray-50/80 p-6">
-                <h3 className="text-sm font-semibold text-indigo-700 uppercase tracking-wider mb-5">{section.sectionName}</h3>
+
+                {/* HEADER */}
+                <div className="flex items-center justify-between mb-5">
+                  <h3 className="text-sm font-semibold text-indigo-700 uppercase tracking-wider">
+                    {section.sectionName}
+                  </h3>
+
+                  {section.sectionName === "Permanent Address Details" && (
+                    <label className="flex items-center gap-2 text-sm text-gray-700">
+                      <input
+                        type="checkbox"
+                        checked={sameAddress}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setSameAddress(checked);
+
+                          if (checked) {
+                            setFormData((prev) => ({
+                              ...prev,
+
+                              // Current → Permanent
+                              "Permanent  Country": prev["Country"] || "",
+                              "Permanent  State": prev["State"] || "",
+                              "Permanent City": prev["City"] || "",
+                              "Permanent Pincode": prev["Pincode"] || "",
+                              "Permanent Address": prev["Address"] || "",
+                            }));
+                          }
+                        }}
+                      />
+                      Same as Current Address
+                    </label>
+                  )}
+                </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   {section.fields
                     .filter((f: any) => {
