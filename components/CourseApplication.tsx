@@ -1497,19 +1497,25 @@ export default function CourseApplication() {
               <div key={section.sectionName} className="rounded-xl bg-gray-50/80 p-6">
                 <h3 className="text-sm font-semibold text-indigo-700 uppercase tracking-wider mb-5">{section.sectionName}</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {section.fields.map((f: any) => (
-                    <div key={f.fieldName} className={`relative flex flex-col ${f.type === "declaration" ? "col-span-1 sm:col-span-2 lg:col-span-3" : ""
-                      }`}
-                    >
-                      {f.isCustom && (
-                        <button type="button" onClick={() => removeField("personal", section.sectionName, f.fieldName)} className="absolute top-1 right-1 text-red-500 text-sm">✕</button>
-                      )}
-                      <label className="text-xs font-medium text-gray-600 mb-1">
-                        {f.fieldName}{f.required && <span className="text-red-500"> *</span>}
-                      </label>
-                      {renderField(f)}
-                    </div>
-                  ))}
+                  {section.fields
+                    .filter((f: any) => {
+                      if (!f.showWhen) return true;
+
+                      return formData[f.showWhen.field] === f.showWhen.value;
+                    })
+                    .map((f: any) => (
+                      <div key={f.fieldName} className={`relative flex flex-col ${f.type === "declaration" ? "col-span-1 sm:col-span-2 lg:col-span-3" : ""
+                        }`}
+                      >
+                        {f.isCustom && (
+                          <button type="button" onClick={() => removeField("personal", section.sectionName, f.fieldName)} className="absolute top-1 right-1 text-red-500 text-sm">✕</button>
+                        )}
+                        <label className="text-xs font-medium text-gray-600 mb-1">
+                          {f.fieldName}{f.required && <span className="text-red-500"> *</span>}
+                        </label>
+                        {renderField(f)}
+                      </div>
+                    ))}
                 </div>
               </div>
             ))}
@@ -1524,16 +1530,22 @@ export default function CourseApplication() {
               <div key={section.sectionName} className="rounded-xl bg-gray-50/80 p-6">
                 <h3 className="text-sm font-semibold text-indigo-700 uppercase tracking-wider mb-5">{section.sectionName}</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {section.fields.map((f: any) => (
-                    <div key={f.fieldName} className={`relative flex flex-col ${f.type === "declaration" ? "col-span-1 sm:col-span-2 lg:col-span-3" : ""
-                      }`}
-                    >
-                      <label className="text-xs font-medium text-gray-600 mb-1">
-                        {f.fieldName}{f.required && <span className="text-red-500"> *</span>}
-                      </label>
-                      {renderField(f)}
-                    </div>
-                  ))}
+                  {section.fields
+                    .filter((f: any) => {
+                      if (!f.showWhen) return true;
+
+                      return formData[f.showWhen.field] === f.showWhen.value;
+                    })
+                    .map((f: any) => (
+                      <div key={f.fieldName} className={`relative flex flex-col ${f.type === "declaration" ? "col-span-1 sm:col-span-2 lg:col-span-3" : ""
+                        }`}
+                      >
+                        <label className="text-xs font-medium text-gray-600 mb-1">
+                          {f.fieldName}{f.required && <span className="text-red-500"> *</span>}
+                        </label>
+                        {renderField(f)}
+                      </div>
+                    ))}
                 </div>
               </div>
             ))}
