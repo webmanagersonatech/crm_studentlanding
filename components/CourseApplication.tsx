@@ -1319,7 +1319,36 @@ export default function CourseApplication() {
     formData["Pincode"],
     formData["Address"],
   ]);
+  useEffect(() => {
+    const dob = formData["Date of Birth"];
 
+    if (!dob) {
+      setFormData((prev) => ({
+        ...prev,
+        Age: "",
+      }));
+      return;
+    }
+
+    const birthDate = new Date(dob);
+    const today = new Date();
+
+    let age = today.getFullYear() - birthDate.getFullYear();
+
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+
+    if (
+      monthDiff < 0 ||
+      (monthDiff === 0 && today.getDate() < birthDate.getDate())
+    ) {
+      age--;
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      Age: age.toString(),
+    }));
+  }, [formData["Date of Birth"]]);
   useEffect(() => {
     const savedStep = localStorage.getItem("courseApplicationStep") as Step | null
 
