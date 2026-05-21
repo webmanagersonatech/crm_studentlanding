@@ -1518,8 +1518,11 @@ export default function CourseApplication() {
                 {/* HEADER */}
                 <div className="flex items-center justify-between mb-5">
                   <h3 className="text-sm font-semibold text-indigo-700 uppercase tracking-wider">
-                    {section.sectionName}
+                    {section.sectionName === "Personal Details"
+                      ? "Student Details"
+                      : section.sectionName}
                   </h3>
+
 
                   {section.sectionName === "Permanent Address Details" && (
                     <label className="flex items-center gap-2 text-sm text-gray-700">
