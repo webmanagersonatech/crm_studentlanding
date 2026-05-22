@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 import toast, { Toaster } from "react-hot-toast";
-import { getPaymentRelatedData, createInstamojoPayment, createStudentPayment } from "@/lib/api";
+import { getPaymentRelatedData, createInstamojoPayment, createStudentPayment, createCCAvenuePayment } from "@/lib/api";
 import { AppShell } from "./AppShell";
 import { CheckCircleIcon } from "@heroicons/react/24/solid";
 import axios from "axios";
@@ -15,7 +15,7 @@ type PaymentData = {
     email: string;
     mobileNo: string;
     applicationId: string;
-    paymentMethod: "instamojo" | "razorpay";
+    paymentMethod: "instamojo" | "razorpay" | "ccavenue";
     amount: number;
     gstPercentage: number;
     gstAmount: number;
@@ -68,6 +68,88 @@ export default function PaymentPage() {
             setStatus("failed");
         }
     }, [router]);
+
+    const handleCCAvenuePayment = async () => {
+
+        if (!paymentData?.applicationId) return;
+
+        try {
+
+            setStatus("processing");
+
+            const result = await createCCAvenuePayment(
+                paymentData.applicationId
+            );
+
+            if (!result.success) {
+
+                setStatus("failed");
+
+                toast.error(
+                    result.message || "CCAvenue failed"
+                );
+
+                return;
+            }
+
+            // ============================================
+            // CREATE FORM
+            // ============================================
+
+            const form =
+                document.createElement("form");
+
+            form.method = "POST";
+
+            // TEST URL
+            form.action =
+                "https://test.ccavenue.com/transaction/transaction.do?command=initiateTransaction";
+
+            // LIVE URL
+            // form.action =
+            //     "https://secure.ccavenue.com/transaction/transaction.do?command=initiateTransaction";
+
+            // ENC REQUEST
+            const encRequest =
+                document.createElement("input");
+
+            encRequest.type = "hidden";
+
+            encRequest.name = "encRequest";
+
+            encRequest.value =
+                result.encryptedData;
+
+            // ACCESS CODE
+            const accessCode =
+                document.createElement("input");
+
+            accessCode.type = "hidden";
+
+            accessCode.name = "access_code";
+
+            accessCode.value =
+                result.accessCode;
+
+            form.appendChild(encRequest);
+
+            form.appendChild(accessCode);
+
+            document.body.appendChild(form);
+
+            form.submit();
+
+        } catch (error) {
+
+            console.log(error);
+
+            setStatus("failed");
+
+            toast.error(
+                "CCAvenue payment failed"
+            );
+        }
+    };
 
     const handlePayment = async () => {
         if (!paymentData?.applicationId) return;
@@ -137,6 +219,9 @@ export default function PaymentPage() {
             toast.error("Payment failed. Please try again.");
         }
     };
+
+
+
     const handleInstamojoPayment = async () => {
         if (!paymentData?.applicationId) return;
 
@@ -299,9 +384,18 @@ export default function PaymentPage() {
                             {status === "idle" && (
                                 <button
                                     onClick={() => {
-                                        if (!paymentData?.paymentMethod || paymentData.paymentMethod === "instamojo") {
+                                        if (paymentData?.paymentMethod === "instamojo") {
+
                                             handleInstamojoPayment();
+
+                                        } else if (
+                                            paymentData?.paymentMethod === "ccavenue"
+                                        ) {
+
+                                            handleCCAvenuePayment();
+
                                         } else {
+
                                             handlePayment();
                                         }
                                     }}

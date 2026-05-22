@@ -243,6 +243,34 @@ export const createStudentPayment = async (
     };
   }
 };
+
+export const createCCAvenuePayment = async (
+  applicationId: string
+) => {
+
+  try {
+
+    const res = await axios.post(
+      `${API_BASE}/payments/ccavenue/create`,
+      { applicationId },
+      {
+        withCredentials: true,
+      }
+    );
+
+    return res.data;
+
+  } catch (err: any) {
+
+    return {
+      success: false,
+
+      message:
+        err.response?.data?.message ||
+        "CCAvenue payment initiation failed",
+    };
+  }
+};
 // ========================
 // Get payment related data for logged-in student
 // ========================
