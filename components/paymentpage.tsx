@@ -102,12 +102,12 @@ export default function PaymentPage() {
             form.method = "POST";
 
             // TEST URL
-            form.action =
-                "https://test.ccavenue.com/transaction/transaction.do?command=initiateTransaction";
+            // form.action =
+            //     "https://test.ccavenue.com/transaction/transaction.do?command=initiateTransaction";
 
             // LIVE URL
-            // form.action =
-            //     "https://secure.ccavenue.com/transaction/transaction.do?command=initiateTransaction";
+            form.action =
+                "https://secure.ccavenue.com/transaction/transaction.do?command=initiateTransaction";
 
             // ENC REQUEST
             const encRequest =
