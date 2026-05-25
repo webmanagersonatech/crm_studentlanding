@@ -11,8 +11,8 @@ export default function DashboardClient() {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const hidePaymentButtons =
-    application?.instituteId === "INS-P2VTCZ5T" ||
-    application?.instituteId === "INS-3-ZXYXKM";
+    application?.instituteId === "INS-P2VTCZ5T"
+    
   useEffect(() => {
     const fetchApplication = async () => {
       try {
