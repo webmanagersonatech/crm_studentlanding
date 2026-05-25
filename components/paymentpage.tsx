@@ -53,20 +53,59 @@ export default function PaymentPage() {
     }, [fetchPaymentData]);
 
     useEffect(() => {
-        const urlParams = new URLSearchParams(window.location.search);
-        const statusParam = urlParams.get("status");
 
-        if (statusParam?.toLowerCase() === "credit") {
+        const urlParams =
+            new URLSearchParams(window.location.search);
+
+        const statusParam =
+            urlParams.get("status");
+
+        const normalizedStatus =
+            statusParam?.toLowerCase();
+
+        // SUCCESS CASES
+        if (
+            normalizedStatus === "success" ||
+            normalizedStatus === "credit"
+        ) {
+
             setStatus("success");
 
+            toast.success(
+                "Payment Successful"
+            );
+
             setTimeout(() => {
+
                 router.push("/dashboard");
+
             }, 2000);
         }
 
-        if (statusParam?.toLowerCase() === "failed") {
+        // FAILED CASE
+        else if (
+            normalizedStatus === "failed"
+        ) {
+
             setStatus("failed");
+
+            toast.error(
+                "Payment Failed"
+            );
         }
+
+        // CANCELLED CASE
+        else if (
+            normalizedStatus === "cancelled"
+        ) {
+
+            setStatus("failed");
+
+            toast.error(
+                "Payment Cancelled"
+            );
+        }
+
     }, [router]);
 
     const handleCCAvenuePayment = async () => {
@@ -81,8 +120,8 @@ export default function PaymentPage() {
                 paymentData.applicationId
             );
 
-            console.log(result,"result")
-            console.log(console.log(result.encryptedData,"encryptedData"))
+            console.log(result, "result")
+            console.log(console.log(result.encryptedData, "encryptedData"))
 
             if (!result.success) {
 
@@ -240,8 +279,6 @@ export default function PaymentPage() {
                 toast.error(result.message);
                 return;
             }
-
-            // 🔥 Redirect directly to Instamojo page
             window.location.href = result.paymentUrl;
 
         } catch (error) {
