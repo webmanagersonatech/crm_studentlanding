@@ -81,6 +81,9 @@ export default function PaymentPage() {
                 paymentData.applicationId
             );
 
+            console.log(result,"result")
+            console.log(console.log(result.encryptedData,"encryptedData"))
+
             if (!result.success) {
 
                 setStatus("failed");
