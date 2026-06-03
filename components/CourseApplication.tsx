@@ -1426,43 +1426,56 @@ export default function CourseApplication() {
   }
 
   const savePersonalDetails = async () => {
-    if (!validateSection(formConfig?.personalDetails)) return false
-    try {
-      setLoading(true)
+    if (!validateSection(formConfig?.personalDetails)) {
+      return false;
+    }
 
-      const fd = new FormData()
-      fd.append("instituteId", selectedInstitute)
-      fd.append("programId", programId)
-      fd.append("academicYear", academicYear)
+    try {
+      setLoading(true);
+
+      const fd = new FormData();
+
+      fd.append("instituteId", selectedInstitute);
+      fd.append("programId", programId);
+      fd.append("academicYear", academicYear);
       fd.append("applicationSource", applicationSource);
+
       fd.append(
         "personalDetails",
         JSON.stringify(mapSectionData(formConfig?.personalDetails))
-      )
+      );
 
-      // only personal files
       formConfig?.personalDetails?.forEach((section: any) => {
         section.fields.forEach((field: any) => {
           if (field.type === "file" && files[field.fieldName]) {
-            fd.append(field.fieldName, files[field.fieldName])
+            fd.append(field.fieldName, files[field.fieldName]);
           }
-        })
-      })
+        });
+      });
 
-      await createApplication(fd, true)
-      toast.success("Personal details saved")
-      localStorage.setItem("courseApplicationStep", "education")
+      const res = await createApplication(fd, true);
 
-      window.location.reload()
+      if (!res?.success) {
+        toast.error(res?.message || "Failed to save personal details");
+        return false;
+      }
 
-      return true
+      toast.success("Personal details saved");
+
+      localStorage.setItem("courseApplicationStep", "education");
+
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+
+      return true;
     } catch (err: any) {
-      toast.error(err?.message || "Failed to save personal details")
-      return false
+      toast.error(err?.message || "Failed to save personal details");
+      return false;
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const steps = ["program", "personal", "education"];
 
