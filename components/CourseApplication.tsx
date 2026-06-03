@@ -88,17 +88,28 @@ export default function CourseApplication() {
         }
       }
 
-      // NUMBER FIELD SPECIFIC VALIDATION
-      if (field.type === "number") {
-        // Check if starts with zero
-        if (value.toString().length > 0 && value.toString().startsWith('0')) {
+      if (field.type === "number" || field.type === "decimal") {
+        const strValue = value.toString();
+
+        // Zero start validation
+        if (strValue.length > 0 && strValue.startsWith("0")) {
           return `${field.fieldName} cannot start with zero`;
         }
 
-        // Check if it's a valid number (no leading zeros)
-        const numStr = value.toString();
-        if (numStr.length > 1 && /^0+/.test(numStr)) {
-          return `${field.fieldName} cannot have leading zeros`;
+        const numericValue = Number(value);
+
+        if (
+          field.minValue !== undefined &&
+          numericValue < field.minValue
+        ) {
+          return `${field.fieldName} must be at least ${field.minValue}`;
+        }
+
+        if (
+          field.maxValue !== undefined &&
+          numericValue > field.maxValue
+        ) {
+          return `${field.fieldName} cannot exceed ${field.maxValue}`;
         }
       }
 
@@ -1030,19 +1041,31 @@ export default function CourseApplication() {
               inputMode="numeric"
               maxLength={field.maxLength ?? 15}
               onChange={(e) => {
-                let numericValue = e.target.value.replace(/\D/g, "");
+                const numericValue = e.target.value.replace(/\D/g, "");
 
-                // Prevent starting with zero
-                if (numericValue.length > 1 && numericValue.startsWith('0')) {
-                  numericValue = numericValue.replace(/^0+/, '');
-                }
-                // If it's a single zero, don't allow
-                if (numericValue === '0') {
-                  numericValue = '';
+                // Don't allow 0 as first value
+                if (numericValue === "0") return;
+
+                const num = Number(numericValue);
+
+                // Max value restriction while typing
+                if (
+                  numericValue &&
+                  field.maxValue !== undefined &&
+                  num > field.maxValue
+                ) {
+                  return;
                 }
 
-                setFormData(p => ({ ...p, [field.fieldName]: numericValue }));
-                setFieldErrors(prev => ({ ...prev, [field.fieldName]: '' }));
+                setFormData((p) => ({
+                  ...p,
+                  [field.fieldName]: numericValue,
+                }));
+
+                setFieldErrors((prev) => ({
+                  ...prev,
+                  [field.fieldName]: "",
+                }));
               }}
               onBlur={(e) => {
                 const val = e.target.value;
@@ -1087,17 +1110,39 @@ export default function CourseApplication() {
               onChange={(e) => {
                 let val = e.target.value;
 
-                // Allow only numbers and dot
+                // Allow only number and dot
                 val = val.replace(/[^0-9.]/g, "");
 
-                // Allow only one dot
+                // Only one decimal point
                 const parts = val.split(".");
                 if (parts.length > 2) {
                   val = parts[0] + "." + parts[1];
                 }
 
-                setFormData(p => ({ ...p, [field.fieldName]: val }));
-                setFieldErrors(prev => ({ ...prev, [field.fieldName]: '' }));
+                // Don't allow 0
+                if (val === "0") return;
+
+                const num = Number(val);
+
+                // Max value restriction while typing
+                if (
+                  val &&
+                  !isNaN(num) &&
+                  field.maxValue !== undefined &&
+                  num > field.maxValue
+                ) {
+                  return;
+                }
+
+                setFormData((p) => ({
+                  ...p,
+                  [field.fieldName]: val,
+                }));
+
+                setFieldErrors((prev) => ({
+                  ...prev,
+                  [field.fieldName]: "",
+                }));
               }}
               onBlur={handleBlur}
             />
@@ -1358,50 +1403,50 @@ export default function CourseApplication() {
     }
   }, [])
 
-useEffect(() => {
-  const relationship =
-    formData["Relationship with Emergency Contact Person"];
-    
-  if (!relationship) return;
+  useEffect(() => {
+    const relationship =
+      formData["Relationship with Emergency Contact Person"];
 
-  if (relationship === "Father") {
-    setFormData((prev) => ({
-      ...prev,
-      "Emergency Contact Name":
-        prev["Father Name"] || "",
-      "Emergency Contact Person Primary Contact Number":
-        prev["Father Contact No"] || "",
-    }));
-  }
+    if (!relationship) return;
 
-  if (relationship === "Mother") {
-    setFormData((prev) => ({
-      ...prev,
-      "Emergency Contact Name":
-        prev["Mother Name"] || "",
-      "Emergency Contact Person Primary Contact Number":
-        prev["Mother Contact No"] || "",
-    }));
-  }
+    if (relationship === "Father") {
+      setFormData((prev) => ({
+        ...prev,
+        "Emergency Contact Name":
+          prev["Father Name"] || "",
+        "Emergency Contact Person Primary Contact Number":
+          prev["Father Contact No"] || "",
+      }));
+    }
 
-  if (relationship === "Guardian") {
-    setFormData((prev) => ({
-      ...prev,
-      "Emergency Contact Name":
-        prev["Guardian Name"] || "",
-      "Emergency Contact Person Primary Contact Number":
-        prev["Guardian Contact No"] || "",
-    }));
-  }
-}, [
-  formData["Relationship with Emergency Contact Person"],
-  formData["Father Name"],
-  formData["Father Contact No"],
-  formData["Mother Name"],
-  formData["Mother Contact No"],
-  formData["Guardian Name"],
-  formData["Guardian Contact No"],
-]);
+    if (relationship === "Mother") {
+      setFormData((prev) => ({
+        ...prev,
+        "Emergency Contact Name":
+          prev["Mother Name"] || "",
+        "Emergency Contact Person Primary Contact Number":
+          prev["Mother Contact No"] || "",
+      }));
+    }
+
+    if (relationship === "Guardian") {
+      setFormData((prev) => ({
+        ...prev,
+        "Emergency Contact Name":
+          prev["Guardian Name"] || "",
+        "Emergency Contact Person Primary Contact Number":
+          prev["Guardian Contact No"] || "",
+      }));
+    }
+  }, [
+    formData["Relationship with Emergency Contact Person"],
+    formData["Father Name"],
+    formData["Father Contact No"],
+    formData["Mother Name"],
+    formData["Mother Contact No"],
+    formData["Guardian Name"],
+    formData["Guardian Contact No"],
+  ]);
 
   const handlePrev = () => {
     if (activeStep === "education") {
