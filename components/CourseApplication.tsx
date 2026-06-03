@@ -1358,7 +1358,50 @@ export default function CourseApplication() {
     }
   }, [])
 
+useEffect(() => {
+  const relationship =
+    formData["Relationship with Emergency Contact Person"];
+    
+  if (!relationship) return;
 
+  if (relationship === "Father") {
+    setFormData((prev) => ({
+      ...prev,
+      "Emergency Contact Name":
+        prev["Father Name"] || "",
+      "Emergency Contact Person Primary Contact Number":
+        prev["Father Contact No"] || "",
+    }));
+  }
+
+  if (relationship === "Mother") {
+    setFormData((prev) => ({
+      ...prev,
+      "Emergency Contact Name":
+        prev["Mother Name"] || "",
+      "Emergency Contact Person Primary Contact Number":
+        prev["Mother Contact No"] || "",
+    }));
+  }
+
+  if (relationship === "Guardian") {
+    setFormData((prev) => ({
+      ...prev,
+      "Emergency Contact Name":
+        prev["Guardian Name"] || "",
+      "Emergency Contact Person Primary Contact Number":
+        prev["Guardian Contact No"] || "",
+    }));
+  }
+}, [
+  formData["Relationship with Emergency Contact Person"],
+  formData["Father Name"],
+  formData["Father Contact No"],
+  formData["Mother Name"],
+  formData["Mother Contact No"],
+  formData["Guardian Name"],
+  formData["Guardian Contact No"],
+]);
 
   const handlePrev = () => {
     if (activeStep === "education") {
@@ -1578,13 +1621,20 @@ export default function CourseApplication() {
                           if (checked) {
                             setFormData((prev) => ({
                               ...prev,
-
-                              // Current → Permanent
                               "Permanent  Country": prev["Country"] || "",
                               "Permanent  State": prev["State"] || "",
                               "Permanent City": prev["City"] || "",
                               "Permanent Pincode": prev["Pincode"] || "",
                               "Permanent Address": prev["Address"] || "",
+                            }));
+                          } else {
+                            setFormData((prev) => ({
+                              ...prev,
+                              "Permanent  Country": "",
+                              "Permanent  State": "",
+                              "Permanent City": "",
+                              "Permanent Pincode": "",
+                              "Permanent Address": "",
                             }));
                           }
                         }}
