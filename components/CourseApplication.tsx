@@ -1642,76 +1642,97 @@ export default function CourseApplication() {
         {activeStep === "personal" && (
           <div className="space-y-8">
             <h2 className="text-xl font-semibold text-gray-800 tracking-wide">Personal Details</h2>
-            {formConfig?.personalDetails?.map((section: any) => (
-              <div key={section.sectionName} className="rounded-xl bg-gray-50/80 p-6">
+            {formConfig?.personalDetails?.map((section: any) => {
+              const visibleFields = section.fields.filter((f: any) => {
+                if (!f.showWhen) return true;
 
-                {/* HEADER */}
-                <div className="flex items-center justify-between mb-5">
-                  <h3 className="text-sm font-semibold text-indigo-700 uppercase tracking-wider">
-                    {section.sectionName === "Personal Details"
-                      ? "Student Details"
-                      : section.sectionName}
-                  </h3>
+                return formData[f.showWhen.field] === f.showWhen.value;
+              });
 
+              if (visibleFields.length === 0) return null;
 
-                  {section.sectionName === "Permanent Address Details" && (
-                    <label className="flex items-center gap-2 text-sm text-gray-700">
-                      <input
-                        type="checkbox"
-                        checked={sameAddress}
-                        onChange={(e) => {
-                          const checked = e.target.checked;
-                          setSameAddress(checked);
+              return (
+                <div key={section.sectionName} className="rounded-xl bg-gray-50/80 p-6">
+                  {/* HEADER */}
+                  <div className="flex items-center justify-between mb-5">
+                    <h3 className="text-sm font-semibold text-indigo-700 uppercase tracking-wider">
+                      {section.sectionName === "Personal Details"
+                        ? "Student Details"
+                        : section.sectionName}
+                    </h3>
 
-                          if (checked) {
-                            setFormData((prev) => ({
-                              ...prev,
-                              "Permanent  Country": prev["Country"] || "",
-                              "Permanent  State": prev["State"] || "",
-                              "Permanent City": prev["City"] || "",
-                              "Permanent Pincode": prev["Pincode"] || "",
-                              "Permanent Address": prev["Address"] || "",
-                            }));
-                          } else {
-                            setFormData((prev) => ({
-                              ...prev,
-                              "Permanent  Country": "",
-                              "Permanent  State": "",
-                              "Permanent City": "",
-                              "Permanent Pincode": "",
-                              "Permanent Address": "",
-                            }));
-                          }
-                        }}
-                      />
-                      Same as Current Address
-                    </label>
-                  )}
-                </div>
+                    {section.sectionName === "Permanent Address Details" && (
+                      <label className="flex items-center gap-2 text-sm text-gray-700">
+                        <input
+                          type="checkbox"
+                          checked={sameAddress}
+                          onChange={(e) => {
+                            const checked = e.target.checked;
+                            setSameAddress(checked);
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {section.fields
-                    .filter((f: any) => {
-                      if (!f.showWhen) return true;
+                            if (checked) {
+                              setFormData((prev) => ({
+                                ...prev,
+                                "Permanent  Country": prev["Country"] || "",
+                                "Permanent  State": prev["State"] || "",
+                                "Permanent City": prev["City"] || "",
+                                "Permanent Pincode": prev["Pincode"] || "",
+                                "Permanent Address": prev["Address"] || "",
+                              }));
+                            } else {
+                              setFormData((prev) => ({
+                                ...prev,
+                                "Permanent  Country": "",
+                                "Permanent  State": "",
+                                "Permanent City": "",
+                                "Permanent Pincode": "",
+                                "Permanent Address": "",
+                              }));
+                            }
+                          }}
+                        />
+                        Same as Current Address
+                      </label>
+                    )}
+                  </div>
 
-                      return formData[f.showWhen.field] === f.showWhen.value;
-                    })
-                    .map((f: any) => (
-                      <div key={f.fieldName} className={`relative flex flex-col ${f.type === "declaration" ? "col-span-1 sm:col-span-2 lg:col-span-3" : ""
-                        }`}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {visibleFields.map((f: any) => (
+                      <div
+                        key={f.fieldName}
+                        className={`relative flex flex-col ${f.type === "declaration"
+                          ? "col-span-1 sm:col-span-2 lg:col-span-3"
+                          : ""
+                          }`}
                       >
                         {f.isCustom && (
-                          <button type="button" onClick={() => removeField("personal", section.sectionName, f.fieldName)} className="absolute top-1 right-1 text-red-500 text-sm">✕</button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              removeField(
+                                "personal",
+                                section.sectionName,
+                                f.fieldName
+                              )
+                            }
+                            className="absolute top-1 right-1 text-red-500 text-sm"
+                          >
+                            ✕
+                          </button>
                         )}
+
                         <label className="text-xs font-medium text-gray-600 mb-1">
-                          {f.fieldName}{f.required && <span className="text-red-500"> *</span>}
+                          {f.fieldName}
+                          {f.required && <span className="text-red-500"> *</span>}
                         </label>
+
                         {renderField(f)}
                       </div>
                     ))}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
@@ -1719,29 +1740,45 @@ export default function CourseApplication() {
         {activeStep === "education" && (
           <div className="space-y-8">
             <h2 className="text-xl font-semibold text-gray-800 tracking-wide">Education Details</h2>
-            {formConfig?.educationDetails?.map((section: any) => (
-              <div key={section.sectionName} className="rounded-xl bg-gray-50/80 p-6">
-                <h3 className="text-sm font-semibold text-indigo-700 uppercase tracking-wider mb-5">{section.sectionName}</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {section.fields
-                    .filter((f: any) => {
-                      if (!f.showWhen) return true;
+            {formConfig?.educationDetails?.map((section: any) => {
+              const visibleFields = section.fields.filter((f: any) => {
+                if (!f.showWhen) return true;
 
-                      return formData[f.showWhen.field] === f.showWhen.value;
-                    })
-                    .map((f: any) => (
-                      <div key={f.fieldName} className={`relative flex flex-col ${f.type === "declaration" ? "col-span-1 sm:col-span-2 lg:col-span-3" : ""
-                        }`}
+                return formData[f.showWhen.field] === f.showWhen.value;
+              });
+
+              if (visibleFields.length === 0) return null;
+
+              return (
+                <div
+                  key={section.sectionName}
+                  className="rounded-xl bg-gray-50/80 p-6"
+                >
+                  <h3 className="text-sm font-semibold text-indigo-700 uppercase tracking-wider mb-5">
+                    {section.sectionName}
+                  </h3>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {visibleFields.map((f: any) => (
+                      <div
+                        key={f.fieldName}
+                        className={`relative flex flex-col ${f.type === "declaration"
+                            ? "col-span-1 sm:col-span-2 lg:col-span-3"
+                            : ""
+                          }`}
                       >
                         <label className="text-xs font-medium text-gray-600 mb-1">
-                          {f.fieldName}{f.required && <span className="text-red-500"> *</span>}
+                          {f.fieldName}
+                          {f.required && <span className="text-red-500"> *</span>}
                         </label>
+
                         {renderField(f)}
                       </div>
                     ))}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
 
             <button type="submit" disabled={loading} className="w-full bg-gradient-to-b from-[#003B73] to-[#0057A0] hover:bg-indigo-700 transition text-white py-3 rounded-xl font-medium">
               {loading ? "Submitting..." : "Submit Application"}
