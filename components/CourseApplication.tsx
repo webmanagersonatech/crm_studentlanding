@@ -1464,9 +1464,9 @@ export default function CourseApplication() {
 
       localStorage.setItem("courseApplicationStep", "education");
 
-      // setTimeout(() => {
-      //   window.location.reload();
-      // }, 1000);
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
 
       return true;
     } catch (err: any) {
