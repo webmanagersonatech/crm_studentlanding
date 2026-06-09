@@ -1021,7 +1021,7 @@ export default function CourseApplication() {
                 className={`${inputClass} bg-gray-100 cursor-not-allowed ${hasError ? 'border-red-500' : ''}`}
                 rows={4}
               />
-              <p className="text-xs text-gray-500 mt-1">This is a declaration field and cannot be edited</p>
+              {/* <p className="text-xs text-gray-500 mt-1">This is a declaration field and cannot be edited</p> */}
             </div>
           );
 
@@ -1364,6 +1364,8 @@ export default function CourseApplication() {
     formData["Pincode"],
     formData["Address"],
   ]);
+
+  
 
   // Add this after your existing useEffects (around line 250-300)
 
