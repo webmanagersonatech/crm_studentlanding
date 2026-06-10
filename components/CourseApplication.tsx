@@ -37,6 +37,32 @@ export default function CourseApplication() {
   const signaturesLoaded = useRef<Record<string, boolean>>({}); // Track loaded signatures
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [sameAddress, setSameAddress] = useState(false);
+useEffect(() => {
+    if (!formConfig) return;
+
+    const updateRequiredFields = (details: any[]) => {
+      return details.map((section: any) => ({
+        ...section,
+        fields: section.fields.map((field: any) => {
+          if (!field.showWhen) return field;
+
+          const conditionMet =
+            formData[field.showWhen.field] === field.showWhen.value;
+
+          return {
+            ...field,
+            required: conditionMet,
+          };
+        }),
+      }));
+    };
+
+    setFormConfig((prev: any) => ({
+      ...prev,
+      personalDetails: updateRequiredFields(prev.personalDetails || []),
+      educationDetails: updateRequiredFields(prev.educationDetails || []),
+    }));
+  }, [formData]);  // ← closes useEffect, still inside component body
 
   // const BASE_URL = "http://localhost:4000/uploads/"
   const BASE_URL = "https://hikabackend.sonastar.com/uploads/";
@@ -72,6 +98,8 @@ export default function CourseApplication() {
 
     return age >= minAge
   }
+
+  
   const validateField = (field: any, value: any): string => {
     if (field.required && (!value || value.toString().trim() === "")) {
       return `${field.fieldName} is required`;
