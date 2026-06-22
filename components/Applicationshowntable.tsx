@@ -9,10 +9,16 @@ import { getApplicationByStudent } from "@/lib/api";
 export default function DashboardClient() {
   const [application, setApplication] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [showQR, setShowQR] = useState(false);
   const router = useRouter();
   const hidePaymentButtons =
     application?.instituteId === "INS-P2VTCZ5T" ||
+    application?.instituteId === "INS-0VVEACMY" ||
     application?.instituteId === "INS-HY0CZ0CO";
+
+
+  const showQRPopup =
+    application?.instituteId === "INS-0VVEACMY"
 
   useEffect(() => {
     const fetchApplication = async () => {
@@ -75,6 +81,18 @@ export default function DashboardClient() {
                     Pay Now
                   </button>
                 )}
+              {showQRPopup &&
+                application.paymentStatus === "Unpaid" &&
+                application.formStatus === "Complete" && (
+
+                  <button
+                    onClick={() => setShowQR(true)}
+                    className="px-5 py-2 rounded-md bg-gray-900 text-white text-white font-medium  transition"
+                  >
+                    Scan & Pay Now
+                  </button>
+
+                )}
 
               {!hidePaymentButtons && application.paymentStatus === "Paid" && (
                 <button
@@ -87,6 +105,8 @@ export default function DashboardClient() {
                   View Receipt
                 </button>
               )}
+
+
             </div>
           </div>
 
@@ -115,6 +135,40 @@ export default function DashboardClient() {
           >
             Create Application
           </button>
+        </div>
+      )}
+
+      {showQR && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+
+          <div className="bg-white rounded-lg p-6 relative w-[350px] text-center">
+
+            <button
+              onClick={() => setShowQR(false)}
+              className="absolute right-3 top-2 text-gray-600 text-xl"
+            >
+              ✕
+            </button>
+
+
+            <h2 className="text-xl font-semibold mb-4">
+              Scan QR & Pay
+            </h2>
+
+
+            <img
+              src="/images/payment-qr.jpg"
+              alt="Payment QR"
+              className="w-64 mx-auto"
+            />
+
+
+            <p className="mt-4 text-gray-600">
+              Please scan and complete payment
+            </p>
+
+          </div>
+
         </div>
       )}
     </AppShell>
