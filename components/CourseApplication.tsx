@@ -38,18 +38,28 @@ export default function CourseApplication() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [sameAddress, setSameAddress] = useState(false);
   const [selectedTests, setSelectedTests] = useState<string[]>([]);
-const [testFields, setTestFields] = useState<Record<string, any[]>>({});
+  const [testFields, setTestFields] = useState<Record<string, any[]>>({});
   useEffect(() => {
     if (!formConfig) return;
+
+    // 🎯 EXCLUDE LIST - Idhula irukka fields required maari aagadhu
+    const EXCLUDE_FROM_AUTO_REQUIRED = [
+      "Class 12 Backlogs","Diploma Backlogs"
+    ];
 
     const updateRequiredFields = (details: any[]) => {
       return details.map((section: any) => ({
         ...section,
         fields: section.fields.map((field: any) => {
+          // ✅ Exclude list la irundha - skip pannu
+          if (EXCLUDE_FROM_AUTO_REQUIRED.includes(field.fieldName)) {
+            return field;  // Original required ah maintain pannu
+          }
+
           if (!field.showWhen) return field;
 
           const conditionMet =
-            formData[field.showWhen.field] === field.showWhen.value;
+            formData[field.showWhen.field] === formData[field.showWhen.value];
 
           return {
             ...field,
@@ -64,7 +74,7 @@ const [testFields, setTestFields] = useState<Record<string, any[]>>({});
       personalDetails: updateRequiredFields(prev.personalDetails || []),
       educationDetails: updateRequiredFields(prev.educationDetails || []),
     }));
-  }, [formData]);  // ← closes useEffect, still inside component body
+  }, [formData]);
 
   // const BASE_URL = "http://localhost:4000/uploads/"
   const BASE_URL = "https://hikabackend.sonastar.com/uploads/";
@@ -100,94 +110,94 @@ const [testFields, setTestFields] = useState<Record<string, any[]>>({});
 
     return age >= minAge
   }
-useEffect(() => {
-  if (!formConfig?.educationDetails) return;
+  useEffect(() => {
+    if (!formConfig?.educationDetails) return;
 
-  // Find the English Language Proficiency section
-  const proficiencySection = formConfig.educationDetails.find(
-    (section: any) => section.sectionName === "English Language Proficiency"
-  );
+    // Find the English Language Proficiency section
+    const proficiencySection = formConfig.educationDetails.find(
+      (section: any) => section.sectionName === "English Language Proficiency"
+    );
 
-  if (!proficiencySection) return;
+    if (!proficiencySection) return;
 
-  // Get the selected tests from formData
-  const selectedTestValue = formData["English Proficiency Test"];
-  let tests: string[] = [];
-  
-  if (Array.isArray(selectedTestValue)) {
-    tests = selectedTestValue;
-  } else if (typeof selectedTestValue === 'string' && selectedTestValue) {
-    tests = [selectedTestValue];
-  }
-  
-  setSelectedTests(tests);
+    // Get the selected tests from formData
+    const selectedTestValue = formData["English Proficiency Test"];
+    let tests: string[] = [];
 
-  // Base field templates (excluding the selection field itself)
-  const baseFields = [
-    { fieldName: "Test Name", label: "Test Name", type: "text", required: false, minLength: 3, maxLength: 50 },
-    { fieldName: "Overall Score", label: "Overall Score", type: "any", required: false },
-    { fieldName: "Listening", label: "Listening", type: "any", required: false },
-    { fieldName: "Reading", label: "Reading", type: "any", required: false },
-    { fieldName: "Writing", label: "Writing", type: "text", required: false },
-    { fieldName: "Speaking", label: "Speaking", type: "any", required: false },
-    { fieldName: "Test Date", label: "Test Date", type: "date", required: false },
-    { fieldName: "Score Report ID", label: "Score Report ID", type: "alphanumeric", required: false }
-  ];
+    if (Array.isArray(selectedTestValue)) {
+      tests = selectedTestValue;
+    } else if (typeof selectedTestValue === 'string' && selectedTestValue) {
+      tests = [selectedTestValue];
+    }
 
-  // Store original fields to restore when tests change
-  const originalFields = proficiencySection.originalFields || proficiencySection.fields.filter(
-    (f: any) => f.fieldName !== "English Proficiency Test" && !f.isDynamic
-  );
-  
-  if (!proficiencySection.originalFields) {
-    proficiencySection.originalFields = [...originalFields];
-  }
+    setSelectedTests(tests);
 
-  // Generate dynamic fields for each selected test
-  const newTestFields: Record<string, any[]> = {};
-  const allDynamicFields: any[] = [];
+    // Base field templates (excluding the selection field itself)
+    const baseFields = [
+      { fieldName: "Test Name", label: "Test Name", type: "text", required: false, minLength: 3, maxLength: 50 },
+      { fieldName: "Overall Score", label: "Overall Score", type: "any", required: false },
+      { fieldName: "Listening", label: "Listening", type: "any", required: false },
+      { fieldName: "Reading", label: "Reading", type: "any", required: false },
+      { fieldName: "Writing", label: "Writing", type: "text", required: false },
+      { fieldName: "Speaking", label: "Speaking", type: "any", required: false },
+      { fieldName: "Test Date", label: "Test Date", type: "date", required: false },
+      { fieldName: "Score Report ID", label: "Score Report ID", type: "alphanumeric", required: false }
+    ];
 
-  tests.forEach(test => {
-    const testSpecificFields = baseFields.map(field => ({
-      ...field,
-      fieldName: `${field.fieldName} (${test})`,
-      label: `${field.label} (${test})`,
-      isDynamic: true,
-      parentTest: test,
-      originalFieldName: field.fieldName
-    }));
-    newTestFields[test] = testSpecificFields;
-    allDynamicFields.push(...testSpecificFields);
-  });
+    // Store original fields to restore when tests change
+    const originalFields = proficiencySection.originalFields || proficiencySection.fields.filter(
+      (f: any) => f.fieldName !== "English Proficiency Test" && !f.isDynamic
+    );
 
-  setTestFields(newTestFields);
+    if (!proficiencySection.originalFields) {
+      proficiencySection.originalFields = [...originalFields];
+    }
 
-  // Update the section fields - keep selection field + dynamic fields
-  proficiencySection.fields = [
-    proficiencySection.fields.find((f: any) => f.fieldName === "English Proficiency Test"),
-    ...allDynamicFields
-  ];
+    // Generate dynamic fields for each selected test
+    const newTestFields: Record<string, any[]> = {};
+    const allDynamicFields: any[] = [];
 
-  setFormConfig({ ...formConfig });
-
-  // Clean up form data for tests that were deselected
-  const currentTestFields = Object.keys(testFields);
-  const removedTests = currentTestFields.filter(test => !tests.includes(test));
-  
-  if (removedTests.length > 0) {
-    setFormData(prev => {
-      const newData = { ...prev };
-      removedTests.forEach(test => {
-        baseFields.forEach(field => {
-          const fieldKey = `${field.fieldName} (${test})`;
-          delete newData[fieldKey];
-        });
-      });
-      return newData;
+    tests.forEach(test => {
+      const testSpecificFields = baseFields.map(field => ({
+        ...field,
+        fieldName: `${field.fieldName} (${test})`,
+        label: `${field.label} (${test})`,
+        isDynamic: true,
+        parentTest: test,
+        originalFieldName: field.fieldName
+      }));
+      newTestFields[test] = testSpecificFields;
+      allDynamicFields.push(...testSpecificFields);
     });
-  }
 
-}, [formData["English Proficiency Test"], formConfig?.educationDetails]);
+    setTestFields(newTestFields);
+
+    // Update the section fields - keep selection field + dynamic fields
+    proficiencySection.fields = [
+      proficiencySection.fields.find((f: any) => f.fieldName === "English Proficiency Test"),
+      ...allDynamicFields
+    ];
+
+    setFormConfig({ ...formConfig });
+
+    // Clean up form data for tests that were deselected
+    const currentTestFields = Object.keys(testFields);
+    const removedTests = currentTestFields.filter(test => !tests.includes(test));
+
+    if (removedTests.length > 0) {
+      setFormData(prev => {
+        const newData = { ...prev };
+        removedTests.forEach(test => {
+          baseFields.forEach(field => {
+            const fieldKey = `${field.fieldName} (${test})`;
+            delete newData[fieldKey];
+          });
+        });
+        return newData;
+      });
+    }
+
+  }, [formData["English Proficiency Test"], formConfig?.educationDetails]);
 
   const validateField = (field: any, value: any): string => {
     if (field.required && (!value || value.toString().trim() === "")) {
@@ -1096,116 +1106,116 @@ useEffect(() => {
             </div>
           );
 
-     /* CHECKBOX */
-case "checkbox":
-  // Special handling for English Proficiency Test checkbox
-  if (field.fieldName === "English Proficiency Test") {
-    return (
-      <div className="space-y-2">
-        {field.options?.map((o: string) => (
-          <label key={o} className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={(value || []).includes(o)}
-              onChange={(e) => {
-                let updated = e.target.checked
-                  ? [...(value || []), o]
-                  : (value || []).filter((v: string) => v !== o);
-                
-                // Remove "Not yet taken" if any other test is selected
-                if (e.target.checked && o !== "Not yet taken" && updated.includes("Not yet taken")) {
-                  updated = updated.filter((v: string) => v !== "Not yet taken");
-                }
-                
-                // If "Not yet taken" is selected, clear other selections
-                if (e.target.checked && o === "Not yet taken") {
-                  updated = ["Not yet taken"];
-                }
-                
-                setFormData(p => ({
-                  ...p,
-                  [field.fieldName]: updated,
-                }));
-                
-                // Clear errors for dynamic fields when selection changes
-                if (selectedTests.length > 0) {
-                  const allDynamicFieldNames = Object.values(testFields).flat().map(f => f.fieldName);
-                  setFieldErrors(prev => {
-                    const newErrors = { ...prev };
-                    allDynamicFieldNames.forEach(fieldName => {
-                      delete newErrors[fieldName];
-                    });
-                    return newErrors;
-                  });
-                }
-                
-                setFieldErrors(prev => ({ ...prev, [field.fieldName]: '' }));
-              }}
-              onBlur={() => {
-                const error = validateField(field, value);
-                setFieldErrors(prev => ({ ...prev, [field.fieldName]: error }));
-              }}
-            />
-            {o}
-          </label>
-        ))}
-        {hasError && <p className="text-red-500 text-xs mt-1">{error}</p>}
-      </div>
-    );
-  }
-  
-  // Default checkbox rendering
-  return (
-    <div className="space-y-1">
-      {field.options?.map((o: string) => (
-        <label key={o} className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={(value || []).includes(o)}
-            onChange={(e) => {
-              const updated = e.target.checked
-                ? [...value, o]
-                : value.filter((v: string) => v !== o);
+        /* CHECKBOX */
+        case "checkbox":
+          // Special handling for English Proficiency Test checkbox
+          if (field.fieldName === "English Proficiency Test") {
+            return (
+              <div className="space-y-2">
+                {field.options?.map((o: string) => (
+                  <label key={o} className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={(value || []).includes(o)}
+                      onChange={(e) => {
+                        let updated = e.target.checked
+                          ? [...(value || []), o]
+                          : (value || []).filter((v: string) => v !== o);
 
-              setFormData(p => ({
-                ...p,
-                [field.fieldName]: updated,
-              }));
-              setFieldErrors(prev => ({ ...prev, [field.fieldName]: '' }));
-            }}
-            onBlur={() => {
-              const error = validateField(field, value);
-              setFieldErrors(prev => ({ ...prev, [field.fieldName]: error }));
-            }}
-          />
-          {o}
-        </label>
-      ))}
-    </div>
-  );
-     
-      
-  /* DECLARATION */
-case "declaration":
-  return (
-    <div>
-      <textarea
-        ref={(el) => {
-          if (el) {
-            el.style.height = 'auto';
-            el.style.height = el.scrollHeight + 'px';
+                        // Remove "Not yet taken" if any other test is selected
+                        if (e.target.checked && o !== "Not yet taken" && updated.includes("Not yet taken")) {
+                          updated = updated.filter((v: string) => v !== "Not yet taken");
+                        }
+
+                        // If "Not yet taken" is selected, clear other selections
+                        if (e.target.checked && o === "Not yet taken") {
+                          updated = ["Not yet taken"];
+                        }
+
+                        setFormData(p => ({
+                          ...p,
+                          [field.fieldName]: updated,
+                        }));
+
+                        // Clear errors for dynamic fields when selection changes
+                        if (selectedTests.length > 0) {
+                          const allDynamicFieldNames = Object.values(testFields).flat().map(f => f.fieldName);
+                          setFieldErrors(prev => {
+                            const newErrors = { ...prev };
+                            allDynamicFieldNames.forEach(fieldName => {
+                              delete newErrors[fieldName];
+                            });
+                            return newErrors;
+                          });
+                        }
+
+                        setFieldErrors(prev => ({ ...prev, [field.fieldName]: '' }));
+                      }}
+                      onBlur={() => {
+                        const error = validateField(field, value);
+                        setFieldErrors(prev => ({ ...prev, [field.fieldName]: error }));
+                      }}
+                    />
+                    {o}
+                  </label>
+                ))}
+                {hasError && <p className="text-red-500 text-xs mt-1">{error}</p>}
+              </div>
+            );
           }
-        }}
-        name={field.fieldName}
-        value={field.declarationText || "No declaration text provided"}
-        readOnly
-        disabled
-        className={`${inputClass} bg-gray-100 cursor-not-allowed ${hasError ? 'border-red-500' : ''}`}
-        style={{ overflow: 'hidden', resize: 'none' }}
-        rows={1}
-      />
-    </div>
-  );
+
+          // Default checkbox rendering
+          return (
+            <div className="space-y-1">
+              {field.options?.map((o: string) => (
+                <label key={o} className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={(value || []).includes(o)}
+                    onChange={(e) => {
+                      const updated = e.target.checked
+                        ? [...value, o]
+                        : value.filter((v: string) => v !== o);
+
+                      setFormData(p => ({
+                        ...p,
+                        [field.fieldName]: updated,
+                      }));
+                      setFieldErrors(prev => ({ ...prev, [field.fieldName]: '' }));
+                    }}
+                    onBlur={() => {
+                      const error = validateField(field, value);
+                      setFieldErrors(prev => ({ ...prev, [field.fieldName]: error }));
+                    }}
+                  />
+                  {o}
+                </label>
+              ))}
+            </div>
+          );
+
+
+        /* DECLARATION */
+        case "declaration":
+          return (
+            <div>
+              <textarea
+                ref={(el) => {
+                  if (el) {
+                    el.style.height = 'auto';
+                    el.style.height = el.scrollHeight + 'px';
+                  }
+                }}
+                name={field.fieldName}
+                value={field.declarationText || "No declaration text provided"}
+                readOnly
+                disabled
+                className={`${inputClass} bg-gray-100 cursor-not-allowed ${hasError ? 'border-red-500' : ''}`}
+                style={{ overflow: 'hidden', resize: 'none' }}
+                rows={1}
+              />
+            </div>
+          );
         /* NUMBER */
         case "number":
           return (
