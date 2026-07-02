@@ -16,7 +16,7 @@ const SECRET_KEY = "sonacassecretkey@2025";
 
 export default function ChangepasswordPage() {
   const inputClass =
-    "w-full border border-[#0057A0] p-2 rounded bg-white dark:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-[#0057A0]";
+    "w-full border border-[#0057A0] p-2 rounded bg-white focus:outline-none focus:ring-2 focus:ring-[#0057A0]";
   const router = useRouter();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -77,7 +77,7 @@ export default function ChangepasswordPage() {
         <Toaster position="top-right" />
         <div className="flex items-center gap-2 mb-4">
           <Lock className="w-6 h-6 text-blue-600" />
-          <h1 className="text-xl font-semibold text-gray-800 dark:text-gray-100">
+          <h1 className="text-xl font-semibold text-gray-800 ">
             Change Password
           </h1>
         </div>
@@ -87,7 +87,7 @@ export default function ChangepasswordPage() {
         <div className="flex items-center justify-center mt-6">
           <form
             onSubmit={handleSubmit}
-            className="w-full max-w-xl bg-white dark:bg-neutral-800 p-6 rounded-xl shadow-lg space-y-6"
+            className="w-full max-w-xl bg-white  p-6 rounded-xl shadow-lg space-y-6"
           >
             {/* Current Password */}
             <div className="relative">

@@ -8,7 +8,6 @@ import { useRouter } from "next/navigation";
 import toast, { Toaster } from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 
-
 type Props = { instituteId?: string | null };
 
 export default function RegisterForm({ instituteId }: Props) {
@@ -29,17 +28,21 @@ export default function RegisterForm({ instituteId }: Props) {
     const [institutions, setInstitutions] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [msg, setMsg] = useState("");
-    const [emailError, setEmailError] = useState("");
     const [msgType, setMsgType] = useState<"error" | "success" | "">("");
-    const [mobileError, setMobileError] = useState("");
     const [captchaSvg, setCaptchaSvg] = useState("");
     const [captchaInput, setCaptchaInput] = useState("");
     const [captchaError, setCaptchaError] = useState("");
     const [captchaLoading, setCaptchaLoading] = useState(false);
     const finalInstituteId = instituteId || form.instituteInput;
     const isInstituteSelected = Boolean(finalInstituteId);
+
+    // Error states
     const [firstNameError, setFirstNameError] = useState("");
     const [lastNameError, setLastNameError] = useState("");
+    const [emailError, setEmailError] = useState("");
+    const [mobileError, setMobileError] = useState("");
+    const [instituteError, setInstituteError] = useState("");
+    const [apiError, setApiError] = useState("");
 
     // Load captcha
     const loadCaptcha = async () => {
@@ -50,11 +53,14 @@ export default function RegisterForm({ instituteId }: Props) {
             if (res.success) {
                 setCaptchaSvg(res.captcha);
                 setMsg("");
+                setApiError("");
             } else {
                 toast.error("Failed to load captcha");
+                setApiError("Failed to load captcha");
             }
         } catch (error) {
             toast.error("Error loading captcha");
+            setApiError("Error loading captcha");
         } finally {
             setCaptchaLoading(false);
         }
@@ -75,9 +81,87 @@ export default function RegisterForm({ instituteId }: Props) {
         }),
     };
 
-    // Validate mobile number
+    // Validation Functions
+    const validateFirstName = (value: string): boolean => {
+        const nameRegex = /^[A-Za-z\s\-']+$/;
+        const trimmed = value.trim();
+
+        if (trimmed.length === 0) {
+            setFirstNameError("First name is required");
+            return false;
+        }
+
+        if (trimmed.length < 2) {
+            setFirstNameError("First name must be at least 2 characters");
+            return false;
+        }
+
+        if (trimmed.length > 50) {
+            setFirstNameError("First name cannot exceed 50 characters");
+            return false;
+        }
+
+        if (!nameRegex.test(trimmed)) {
+            setFirstNameError("Only letters, spaces, hyphens, and apostrophes allowed");
+            return false;
+        }
+
+        setFirstNameError("");
+        return true;
+    };
+
+    const validateLastName = (value: string): boolean => {
+        const nameRegex = /^[A-Za-z\s\-']+$/;
+        const trimmed = value.trim();
+
+        if (trimmed.length === 0) {
+            setLastNameError("Last name is required");
+            return false;
+        }
+
+        if (trimmed.length < 2) {
+            setLastNameError("Last name must be at least 2 characters");
+            return false;
+        }
+
+        if (trimmed.length > 50) {
+            setLastNameError("Last name cannot exceed 50 characters");
+            return false;
+        }
+
+        if (!nameRegex.test(trimmed)) {
+            setLastNameError("Only letters, spaces, hyphens, and apostrophes allowed");
+            return false;
+        }
+
+        setLastNameError("");
+        return true;
+    };
+
+    const validateEmail = (value: string): boolean => {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+        if (!value.trim()) {
+            setEmailError("Email is required");
+            return false;
+        }
+
+        if (!emailRegex.test(value)) {
+            setEmailError("Enter a valid email address");
+            return false;
+        }
+
+        setEmailError("");
+        return true;
+    };
+
     const validateMobileNumber = (number: string): boolean => {
         const cleanNumber = number.replace(/\D/g, "");
+
+        if (cleanNumber.length === 0) {
+            setMobileError("Mobile number is required");
+            return false;
+        }
 
         if (cleanNumber.length !== 10) {
             setMobileError("Mobile number must be exactly 10 digits");
@@ -98,40 +182,8 @@ export default function RegisterForm({ instituteId }: Props) {
         setMobileError("");
         return true;
     };
-    const validateFirstName = (value: string) => {
-        if (value.trim().length < 2) {
-            setFirstNameError("First name must be at least 2 characters");
-            return false;
-        }
-        setFirstNameError("");
-        return true;
-    };
-    const validateEmail = (value: string) => {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-        if (!value.trim()) {
-            setEmailError("Email is required");
-            return false;
-        }
-
-        if (!emailRegex.test(value)) {
-            setEmailError("Enter a valid email address");
-            return false;
-        }
-
-        setEmailError("");
-        return true;
-    };
-    const validateLastName = (value: string) => {
-        if (value.trim().length < 2) {
-            setLastNameError("Last name must be at least 2 characters");
-            return false;
-        }
-        setLastNameError("");
-        return true;
-    };
-    // Validate captcha input
-    const validateCaptcha = (value: string) => {
+    const validateCaptcha = (value: string): boolean => {
         if (!value.trim()) {
             setCaptchaError("Captcha is required");
             return false;
@@ -140,92 +192,122 @@ export default function RegisterForm({ instituteId }: Props) {
         return true;
     };
 
+    const validateInstitute = (): boolean => {
+        if (!finalInstituteId) {
+            setInstituteError("Please select an institute");
+            return false;
+        }
+        setInstituteError("");
+        return true;
+    };
+
     // Handle form submission
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
+        setApiError("");
+        setMsg("");
+        setMsgType("");
 
-        if (!finalInstituteId) {
-            setMsgType("error");
-            setMsg("Please select an institute");
-            toast.error("Please select an institute");
-            return;
-        }
+        // Validate all fields
+        const isFirstNameValid = validateFirstName(form.firstName);
+        const isLastNameValid = validateLastName(form.lastName);
+        const isEmailValid = validateEmail(form.email);
+        const isMobileValid = validateMobileNumber(form.mobileNo);
+        const isCaptchaValid = validateCaptcha(captchaInput);
+        const isInstituteValid = validateInstitute();
 
-        if (!validateFirstName(form.firstName)) {
+        // Check if any validation failed
+        if (!isFirstNameValid) {
             toast.error(firstNameError);
             return;
         }
 
-        if (!validateLastName(form.lastName)) {
+        if (!isLastNameValid) {
             toast.error(lastNameError);
             return;
         }
-        if (!validateEmail(form.email)) {
+
+        if (!isEmailValid) {
             toast.error(emailError);
             return;
         }
 
-        if (!validateMobileNumber(form.mobileNo)) {
+        if (!isMobileValid) {
             toast.error(mobileError);
             return;
         }
 
-        if (!validateCaptcha(captchaInput)) {
+        if (!isCaptchaValid) {
             toast.error(captchaError);
             return;
         }
 
-        setLoading(true);
-        setMsg("");
-        setMsgType("");
-        setCaptchaError("");
-
-        const result = await registerStudent({
-            firstname: form.firstName,
-            lastname: form.lastName,
-            email: form.email,
-            mobileNo: form.mobileNo.replace(/\D/g, ""),
-            country: form.country,
-            state: form.state,
-            city: form.city,
-            instituteId: finalInstituteId,
-            captchaInput: captchaInput,
-        });
-
-        if (!result.success) {
-            setMsgType("error");
-            setMsg(result.message);
-            toast.error(result.message);
-
-            // Refresh captcha on error
-            loadCaptcha();
-            setCaptchaInput("");
-            setCaptchaError("Invalid captcha, please try again");
-            setLoading(false);
+        if (!isInstituteValid) {
+            toast.error(instituteError);
             return;
         }
 
-        // Success case
-        setRegistered(true);
-        toast.success("Registration successful! Check your email for password.");
+        setLoading(true);
 
-        // Reset form
-        setForm({
-            firstName: "",
-            lastName: "",
-            email: "",
-            mobileNo: "",
-            country: "India",
-            state: "",
-            city: "",
-            instituteInput: "",
-        });
-        setCaptchaInput("");
-        setCaptchaError("");
-        setLoading(false);
+        try {
+            const result = await registerStudent({
+                firstname: form.firstName.trim(),
+                lastname: form.lastName.trim(),
+                email: form.email.trim(),
+                mobileNo: form.mobileNo.replace(/\D/g, ""),
+                country: form.country,
+                state: form.state,
+                city: form.city,
+                instituteId: finalInstituteId,
+                captchaInput: captchaInput.trim(),
+            });
 
-        // Load new captcha for next registration
-        loadCaptcha();
+            if (!result.success) {
+                setMsgType("error");
+                setMsg(result.message || "Registration failed");
+                setApiError(result.message || "Registration failed");
+                toast.error(result.message || "Registration failed");
+
+                // Refresh captcha on error
+                loadCaptcha();
+                setCaptchaInput("");
+                setCaptchaError("Invalid captcha, please try again");
+                setLoading(false);
+                return;
+            }
+
+            // Success case
+            setRegistered(true);
+            setMsgType("success");
+            setMsg("Registration successful! Check your email for password.");
+            toast.success("Registration successful! Check your email for password.");
+
+            // Reset form
+            setForm({
+                firstName: "",
+                lastName: "",
+                email: "",
+                mobileNo: "",
+                country: "India",
+                state: "",
+                city: "",
+                instituteInput: "",
+            });
+            setCaptchaInput("");
+            setCaptchaError("");
+            setLoading(false);
+
+            // Load new captcha for next registration
+            loadCaptcha();
+
+        } catch (error: any) {
+            setMsgType("error");
+            const errorMessage = error?.message || "An unexpected error occurred";
+            setMsg(errorMessage);
+            setApiError(errorMessage);
+            toast.error(errorMessage);
+            setLoading(false);
+        }
     };
 
     // Initialize data
@@ -242,6 +324,7 @@ export default function RegisterForm({ instituteId }: Props) {
                 if (res.success) setInstitutions(res.data);
             } catch (error) {
                 toast.error("Failed to load institutions");
+                setApiError("Failed to load institutions");
             }
         };
 
@@ -288,9 +371,7 @@ export default function RegisterForm({ instituteId }: Props) {
         const value = e.target.value;
         const digitsOnly = value.replace(/\D/g, "");
         const truncated = digitsOnly.slice(0, 10);
-
         setForm({ ...form, mobileNo: truncated });
-
         if (truncated.length > 0) {
             validateMobileNumber(truncated);
         } else {
@@ -301,7 +382,31 @@ export default function RegisterForm({ instituteId }: Props) {
     const handleCaptchaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value.toUpperCase();
         setCaptchaInput(value);
-        validateCaptcha(value);
+        if (value.length > 0) {
+            validateCaptcha(value);
+        } else {
+            setCaptchaError("");
+        }
+    };
+
+    const handleFirstNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value.replace(/[^A-Za-z\s\-']/g, '');
+        setForm({ ...form, firstName: value });
+        if (value.length > 0) {
+            validateFirstName(value);
+        } else {
+            setFirstNameError("");
+        }
+    };
+
+    const handleLastNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value.replace(/[^A-Za-z\s\-']/g, '');
+        setForm({ ...form, lastName: value });
+        if (value.length > 0) {
+            validateLastName(value);
+        } else {
+            setLastNameError("");
+        }
     };
 
     return (
@@ -309,75 +414,90 @@ export default function RegisterForm({ instituteId }: Props) {
             <Toaster position="top-right" toastOptions={{ duration: 4000 }} />
 
             {!isInstituteSelected && (
-                <Select
-                    styles={selectStyles}
-                    options={instituteOptions}
-                    placeholder="Search Institute..."
-                    onChange={async (opt: any) => {
-                        const res = await setInstituteCookie(opt.value as string);
-
-                        if (!res.success) {
-                            toast.error(res.message || "Invalid Institute");
-
-                        } else {
-                            setForm({ ...form, instituteInput: opt.value });
-                            router.refresh(); // reload SSR
-                        }
-                    }}
-                />
+                <div className="w-full p-8 space-y-4">
+                    <Select
+                        styles={selectStyles}
+                        options={instituteOptions}
+                        placeholder="Search Institute..."
+                        onChange={async (opt: any) => {
+                            try {
+                                const res = await setInstituteCookie(opt.value as string);
+                                if (!res.success) {
+                                    toast.error(res.message || "Invalid Institute");
+                                    setInstituteError(res.message || "Invalid Institute");
+                                } else {
+                                    setForm({ ...form, instituteInput: opt.value });
+                                    setInstituteError("");
+                                    router.refresh();
+                                }
+                            } catch (error: any) {
+                                toast.error("Error selecting institute");
+                                setInstituteError("Error selecting institute");
+                            }
+                        }}
+                    />
+                    {instituteError && (
+                        <motion.p
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="text-sm text-red-500 text-center"
+                        >
+                            {instituteError}
+                        </motion.p>
+                    )}
+                </div>
             )}
 
             {isInstituteSelected && (
                 <form onSubmit={handleSubmit} className="w-full p-8 space-y-6">
                     {/* Name Fields */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {/* First Name */}
-                        <div className="relative">
+                        <div className="space-y-1">
                             <input
                                 className={`${input} ${firstNameError ? inputError : ""}`}
                                 placeholder="First Name"
                                 required
                                 value={form.firstName}
-                                onChange={(e) => {
-                                    const value = e.target.value;
-                                    setForm({ ...form, firstName: value });
-                                    validateFirstName(value);
-                                }}
+                                onChange={handleFirstNameChange}
+                                maxLength={50}
                             />
-                            {firstNameError && (
-                                <p className="absolute -bottom-5 left-0 text-xs text-red-500">
-                                    {firstNameError}
-                                </p>
-                            )}
+                            <div className="flex justify-between items-center">
+                                {firstNameError ? (
+                                    <p className="text-xs text-red-500">{firstNameError}</p>
+                                ) : (
+                                    <p className="text-xs text-white/60">
+                                        {form.firstName.length}/50 characters
+                                    </p>
+                                )}
+                            </div>
                         </div>
 
                         {/* Last Name */}
-                        <div className="relative">
+                        <div className="space-y-1">
                             <input
                                 className={`${input} ${lastNameError ? inputError : ""}`}
                                 placeholder="Last Name"
                                 required
                                 value={form.lastName}
-                                onChange={(e) => {
-                                    const value = e.target.value;
-                                    setForm({ ...form, lastName: value });
-                                    validateLastName(value);
-                                }}
+                                onChange={handleLastNameChange}
+                                maxLength={50}
                             />
-                            {lastNameError && (
-                                <p className="absolute -bottom-5 left-0 text-xs text-red-500">
-                                    {lastNameError}
-                                </p>
-                            )}
+                            <div className="flex justify-between items-center">
+                                {lastNameError ? (
+                                    <p className="text-xs text-red-500">{lastNameError}</p>
+                                ) : (
+                                    <p className="text-xs text-white/60">
+                                        {form.lastName.length}/50 characters
+                                    </p>
+                                )}
+                            </div>
                         </div>
-
                     </div>
 
-
                     {/* Email / Mobile */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="relative">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-1">
                             <input
                                 className={`${input} ${emailError ? inputError : ""}`}
                                 placeholder="Email"
@@ -387,17 +507,18 @@ export default function RegisterForm({ instituteId }: Props) {
                                 onChange={(e) => {
                                     const value = e.target.value;
                                     setForm({ ...form, email: value });
-                                    validateEmail(value);
+                                    if (value.length > 0) {
+                                        validateEmail(value);
+                                    } else {
+                                        setEmailError("");
+                                    }
                                 }}
                             />
-
                             {emailError && (
-                                <p className="absolute -bottom-5 left-0 text-xs text-red-500">
-                                    {emailError}
-                                </p>
+                                <p className="text-xs text-red-500">{emailError}</p>
                             )}
                         </div>
-                        <div className="relative">
+                        <div className="space-y-1">
                             <input
                                 className={`${input} ${mobileError ? inputError : ''}`}
                                 placeholder="Mobile Number"
@@ -411,7 +532,7 @@ export default function RegisterForm({ instituteId }: Props) {
                                 <motion.p
                                     initial={{ opacity: 0, y: -10 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    className="absolute -bottom-5 left-0 text-xs text-red-500"
+                                    className="text-xs text-red-500"
                                 >
                                     {mobileError}
                                 </motion.p>
@@ -452,12 +573,12 @@ export default function RegisterForm({ instituteId }: Props) {
                         />
                     </div>
 
-                    {/* Captcha Section - Enhanced for Large Screens */}
+                    {/* Captcha Section */}
                     <div className="space-y-3">
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
                             {/* Left Side - Captcha Display */}
                             <div className="space-y-3">
-                                <div className="bg-gray-50 border-2 border-gray-300 rounded-lg p-4 flex justify-center items-center min-h-[120px] shadow-sm">
+                                <div className="bg-gray-50 border-2 border-gray-300 rounded-lg  flex justify-center items-center min-h-[120px] shadow-sm">
                                     {captchaLoading ? (
                                         <div className="flex items-center space-x-2">
                                             <svg className="animate-spin h-5 w-5 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -493,12 +614,12 @@ export default function RegisterForm({ instituteId }: Props) {
                                 </button>
                             </div>
 
-                            {/* Right Side - Captcha Input with Error Display */}
+                            {/* Right Side - Captcha Input */}
                             <div className="space-y-2">
                                 <label className="block text-sm font-medium text-white/90">
                                     Enter Captcha Code
                                 </label>
-                                <div className="relative">
+                                <div className="space-y-1">
                                     <input
                                         className={`${input} ${captchaError ? inputError : ''} text-lg tracking-wider`}
                                         placeholder="Enter the characters above..."
@@ -507,27 +628,18 @@ export default function RegisterForm({ instituteId }: Props) {
                                         maxLength={6}
                                         required
                                         autoComplete="off"
-                                        style={{
-                                            fontSize: "18px",
-                                            letterSpacing: "2px"
-                                        }}
                                     />
                                     {captchaError && (
-                                        <motion.div
+                                        <motion.p
                                             initial={{ opacity: 0, x: -10 }}
                                             animate={{ opacity: 1, x: 0 }}
-                                            className="absolute -bottom-6 left-0 flex items-center space-x-1"
+                                            className="text-xs text-red-500"
                                         >
-                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-red-500" viewBox="0 0 20 20" fill="currentColor">
-                                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                                            </svg>
-                                            <p className="text-xs text-red-500 font-medium">
-                                                {captchaError}
-                                            </p>
-                                        </motion.div>
+                                            {captchaError}
+                                        </motion.p>
                                     )}
                                 </div>
-                                <p className="text-xs text-white/60 mt-6 flex items-center space-x-1">
+                                <p className="text-xs text-white/60 mt-1 flex items-center space-x-1">
                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
@@ -537,16 +649,25 @@ export default function RegisterForm({ instituteId }: Props) {
                         </div>
                     </div>
 
+                    {/* API Error Message - Below Submit Button */}
+                    {apiError && (
+                        <motion.div
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="p-3 rounded-lg bg-red-100 border border-red-400 text-red-700 text-center"
+                        >
+                            <p className="font-medium">{apiError}</p>
+                        </motion.div>
+                    )}
 
-
-                    {/* Message Display */}
-                    {msg && (
+                    {/* Success/Error Message */}
+                    {msg && !apiError && (
                         <motion.div
                             initial={{ opacity: 0, y: -10 }}
                             animate={{ opacity: 1, y: 0 }}
                             className={`p-3 rounded-lg text-center ${msgType === "error"
-                                ? "bg-red-100 text-red-700"
-                                : "bg-green-100 text-green-700"
+                                ? "bg-red-100 border border-red-400 text-red-700"
+                                : "bg-green-100 border border-green-400 text-green-700"
                                 }`}
                         >
                             {msg}
