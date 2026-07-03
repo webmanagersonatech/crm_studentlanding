@@ -149,36 +149,36 @@ export const createTuitionFeePayment = async (
 
 // Create Instamojo Tuition Fee Payment
 export const createInstamojoTuitionPayment = async (year: string, installmentNo: number) => {
-    try {
-        const response = await axios.post(
-            `${API_BASE}/tuition-fee/create/instamojo`,
-            { year, installmentNumber: installmentNo },
-            { withCredentials: true }
-        );
-        return response.data;
-    } catch (error: any) {
-        return {
-            success: false,
-            message: error?.response?.data?.message || "Failed to create Instamojo payment",
-        };
-    }
+  try {
+    const response = await axios.post(
+      `${API_BASE}/tuition-fee/create/instamojo`,
+      { year, installmentNumber: installmentNo },
+      { withCredentials: true }
+    );
+    return response.data;
+  } catch (error: any) {
+    return {
+      success: false,
+      message: error?.response?.data?.message || "Failed to create Instamojo payment",
+    };
+  }
 };
 
 // Create CCAvenue Tuition Fee Payment
 export const createCCAvenueTuitionPayment = async (year: string, installmentNo: number) => {
-    try {
-        const response = await axios.post(
-            `${API_BASE}/tuition-fee/create/ccavenue`,
-            { year, installmentNumber: installmentNo },
-            { withCredentials: true }
-        );
-        return response.data;
-    } catch (error: any) {
-        return {
-            success: false,
-            message: error?.response?.data?.message || "Failed to create CCAvenue payment",
-        };
-    }
+  try {
+    const response = await axios.post(
+      `${API_BASE}/tuition-fee/create/ccavenue`,
+      { year, installmentNumber: installmentNo },
+      { withCredentials: true }
+    );
+    return response.data;
+  } catch (error: any) {
+    return {
+      success: false,
+      message: error?.response?.data?.message || "Failed to create CCAvenue payment",
+    };
+  }
 };
 // Login function
 export const generateCaptcha = async () => {
@@ -308,20 +308,25 @@ export const registerStudent = async (payload: RegisterPayload) => {
     };
   }
 };
+// In your lib/api.ts or wherever setInstituteCookie is defined
 export const setInstituteCookie = async (instituteId: string) => {
   try {
     const res = await axios.get(
       `${API_BASE}/institutions/applys/${instituteId}`,
       {
-        withCredentials: true, // 🔥 IMPORTANT for cookies
-          headers: {
-        "Cache-Control": "no-cache",
-      },
+        withCredentials: true, // ✅ IMPORTANT
+        headers: {
+          "Cache-Control": "no-cache",
+          "Content-Type": "application/json",
+          // If you're using sessions/tokens, add them here
+          // 'Authorization': `Bearer ${token}`
+        },
       }
     );
 
     return res.data;
   } catch (err: any) {
+    console.error('Cookie set error:', err);
     return {
       success: false,
       message: err.response?.data?.message || "Failed to set institute cookie",
