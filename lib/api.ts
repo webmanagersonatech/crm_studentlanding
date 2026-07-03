@@ -314,6 +314,9 @@ export const setInstituteCookie = async (instituteId: string) => {
       `${API_BASE}/institutions/applys/${instituteId}`,
       {
         withCredentials: true, // 🔥 IMPORTANT for cookies
+          headers: {
+        "Cache-Control": "no-cache",
+      },
       }
     );
 
