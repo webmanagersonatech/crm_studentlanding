@@ -18,6 +18,7 @@ export default function LoginPage({ instituteId }: Props) {
 export const getServerSideProps: GetServerSideProps = async ({ req }) => {
   // Read cookie from request
   const instituteId = req.cookies["instituteId"] || null;
+  console.log("Institute ID from cookie:", instituteId);
 
   return {
     props: { instituteId },
