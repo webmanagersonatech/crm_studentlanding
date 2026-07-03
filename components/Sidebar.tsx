@@ -14,7 +14,7 @@ import { useSidebar } from "@/context/SidebarContext";
 ======================= */
 const menu = [
   { href: "/dashboard", label: "Apply For Courses", icon: FaHome },
-  { href: "/fee-payment", label: "Fee Payment", icon: FaCreditCard }, // Added fee payment
+  // { href: "/fee-payment", label: "Fee Payment", icon: FaCreditCard },
   { href: "/change-password", label: "Change Password", icon: FaLock },
   // { href: "/recent-publications", label: "Recent Publications", icon: FaBook },?
   { label: "Logout", icon: FaSignOutAlt },
