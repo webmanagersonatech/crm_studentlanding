@@ -38,3 +38,76 @@ body {
   font-family: monospace !important;
   letter-spacing: 2px !important;
 }
+/* Add to your global CSS file */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes scaleIn {
+    from {
+        transform: scale(0.9);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes circleCheck {
+    from {
+        stroke-dasharray: 166;
+        stroke-dashoffset: 166;
+    }
+    to {
+        stroke-dasharray: 166;
+        stroke-dashoffset: 0;
+    }
+}
+
+@keyframes checkmarkDraw {
+    from {
+        stroke-dasharray: 48;
+        stroke-dashoffset: 48;
+    }
+    to {
+        stroke-dasharray: 48;
+        stroke-dashoffset: 0;
+    }
+}
+
+@keyframes failureDraw {
+    from {
+        stroke-dasharray: 40;
+        stroke-dashoffset: 40;
+    }
+    to {
+        stroke-dasharray: 40;
+        stroke-dashoffset: 0;
+    }
+}
+
+.animate-fadeIn {
+    animation: fadeIn 0.3s ease-out;
+}
+
+.animate-scaleIn {
+    animation: scaleIn 0.3s ease-out;
+}
+
+.animate-circleCheck {
+    animation: circleCheck 0.6s ease-out forwards;
+}
+
+.animate-checkmarkDraw {
+    animation: checkmarkDraw 0.6s ease-out forwards;
+}
+
+.animate-failureDraw {
+    animation: failureDraw 0.6s ease-out forwards;
+}

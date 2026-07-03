@@ -1,5 +1,5 @@
 import axios from "axios";
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
+export const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
 type RegisterPayload = {
   firstname: string;
   lastname: string;
@@ -51,7 +51,43 @@ export type ReceiptData = {
   paymentMethod: string;
   paymentStatus: string;
 };
-
+export type FeeConfigurationResponse = {
+  success: boolean;
+  message?: string;
+  data?: {
+    studentId: string;
+    studentName: string;
+    programId: string;
+    courseName: string;
+    paymentMethod: string;
+    feeConcession: {
+      referralIds: string[];
+      matchedReferrals: {
+        referralId: string;
+        name: string;
+        percentage: number;
+      }[];
+      concessionPercentage: number;
+    };
+    years: {
+      year: string;
+      originalAmount: number;
+      concessionPercentage: number;
+      concessionAmount: number;
+      payableAmount: number;
+      installments: {
+        number: number;
+        originalAmount: number;
+        discountAmount: number;
+        payableAmount: number;
+        dueDate: string;
+        paid: boolean;
+        paidDate: string | null;
+        paymentId: string | null;
+      }[];
+    }[];
+  };
+};
 export type ReceiptResponse = {
   success: boolean;
   errorCode?: string;
@@ -59,6 +95,91 @@ export type ReceiptResponse = {
   data?: ReceiptData;
 };
 
+// ========================
+// Create Payment (Student)
+// ========================
+export const createStudentPayment = async (
+  applicationId: string
+) => {
+  try {
+    const res = await axios.post(
+      `${API_BASE}/payments/razorpay/create`,
+      { applicationId }, // ✅ only send applicationId
+      { withCredentials: true }
+    );
+
+    return res.data;
+  } catch (err: any) {
+    return {
+      success: false,
+      message:
+        err.response?.data?.message || "Payment initiation failed",
+    };
+  }
+};
+
+export const createTuitionFeePayment = async (
+  year: string,
+  installmentNumber: number
+) => {
+  try {
+    const res = await axios.post(
+      `${API_BASE}/tuition-fee/create/razorpay`,
+      {
+        year,
+        installmentNumber,
+      },
+      {
+        withCredentials: true,
+      }
+    );
+
+    return res.data;
+  } catch (error: any) {
+    return {
+      success: false,
+      message:
+        error?.response?.data?.message ||
+        "Failed to create payment order",
+    };
+  }
+};
+
+// Add these to your lib/api.ts file
+
+// Create Instamojo Tuition Fee Payment
+export const createInstamojoTuitionPayment = async (year: string, installmentNo: number) => {
+    try {
+        const response = await axios.post(
+            `${API_BASE}/tuition-fee/create/instamojo`,
+            { year, installmentNumber: installmentNo },
+            { withCredentials: true }
+        );
+        return response.data;
+    } catch (error: any) {
+        return {
+            success: false,
+            message: error?.response?.data?.message || "Failed to create Instamojo payment",
+        };
+    }
+};
+
+// Create CCAvenue Tuition Fee Payment
+export const createCCAvenueTuitionPayment = async (year: string, installmentNo: number) => {
+    try {
+        const response = await axios.post(
+            `${API_BASE}/tuition-fee/create/ccavenue`,
+            { year, installmentNumber: installmentNo },
+            { withCredentials: true }
+        );
+        return response.data;
+    } catch (error: any) {
+        return {
+            success: false,
+            message: error?.response?.data?.message || "Failed to create CCAvenue payment",
+        };
+    }
+};
 // Login function
 export const generateCaptcha = async () => {
   try {
@@ -85,6 +206,29 @@ export const loginStudent = async (username: string, password: string) => {
     return res.data;
   } catch (err: any) {
     return { success: false, message: err.response?.data?.message || "Login failed" };
+  }
+};
+export const getFeeConfiguration = async (): Promise<FeeConfigurationResponse> => {
+  try {
+    const res = await axios.get(
+      `${API_BASE}/fee-configuration/student`,
+      {
+        withCredentials: true,
+      }
+    );
+
+    return {
+      success: true,
+      data: res.data.data,
+      message: res.data.message,
+    };
+  } catch (err: any) {
+    return {
+      success: false,
+      message:
+        err.response?.data?.message ||
+        "Failed to fetch fee configuration",
+    };
   }
 };
 export const getReceiptData = async (): Promise<ReceiptResponse> => {
@@ -221,28 +365,7 @@ export const getStudentSettings = async (instituteId: string) => {
   }
 };
 
-// ========================
-// Create Payment (Student)
-// ========================
-export const createStudentPayment = async (
-  applicationId: string
-) => {
-  try {
-    const res = await axios.post(
-      `${API_BASE}/payments/razorpay/create`,
-      { applicationId }, // ✅ only send applicationId
-      { withCredentials: true }
-    );
 
-    return res.data;
-  } catch (err: any) {
-    return {
-      success: false,
-      message:
-        err.response?.data?.message || "Payment initiation failed",
-    };
-  }
-};
 
 export const createCCAvenuePayment = async (
   applicationId: string

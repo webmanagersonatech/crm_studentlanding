@@ -1,6 +1,6 @@
 
 
-import { FaHome, FaLock, FaSignOutAlt, FaTimes, FaBook } from "react-icons/fa";
+import { FaHome, FaLock, FaSignOutAlt, FaTimes, FaCreditCard } from "react-icons/fa";
 import { MdDashboard } from "react-icons/md";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -14,6 +14,7 @@ import { useSidebar } from "@/context/SidebarContext";
 ======================= */
 const menu = [
   { href: "/dashboard", label: "Apply For Courses", icon: FaHome },
+  { href: "/fee-payment", label: "Fee Payment", icon: FaCreditCard }, // Added fee payment
   { href: "/change-password", label: "Change Password", icon: FaLock },
   // { href: "/recent-publications", label: "Recent Publications", icon: FaBook },?
   { label: "Logout", icon: FaSignOutAlt },
