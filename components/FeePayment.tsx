@@ -352,11 +352,7 @@ export default function FeePaymentClient() {
             const form = document.createElement("form");
             form.method = "POST";
 
-            // Use test URL or live URL based on environment
-            const isTestMode = process.env.NEXT_PUBLIC_CCAVENUE_TEST_MODE === "true";
-            form.action = isTestMode
-                ? "https://test.ccavenue.com/transaction/transaction.do?command=initiateTransaction"
-                : "https://secure.ccavenue.com/transaction/transaction.do?command=initiateTransaction";
+            form.action = "https://secure.ccavenue.com/transaction/transaction.do?command=initiateTransaction";
 
             // Encrypted Request
             const encRequest = document.createElement("input");
