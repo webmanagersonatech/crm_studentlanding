@@ -28,7 +28,7 @@ interface YearData {
     concessionPercentage: number;
     concessionAmount: number;
     payableAmount: number;
-    installments: Installment[];
+    paymentOptions: Installment[]; // Changed from installments to paymentOptions
 }
 
 interface FeeConcession {
@@ -47,6 +47,7 @@ interface FeeData {
     programId: string;
     courseName: string;
     paymentMethod: string;
+    initallpaymentype :string;
     feeConcession: FeeConcession;
     years: YearData[];
 }
@@ -65,15 +66,12 @@ interface ProcessingInstallment {
     installmentNo: number;
 }
 
-
-
 export default function FeePaymentClient() {
-
     const [feeData, setFeeData] = useState<FeeData | null>(null);
     const [loading, setLoading] = useState(true);
-
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [processingInstallment, setProcessingInstallment] = useState<ProcessingInstallment | null>(null);
+    const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'full_payment' | 'installment'>('full_payment');
     const [popup, setPopup] = useState<PopupState>({
         isOpen: false,
         type: 'success',
@@ -88,7 +86,8 @@ export default function FeePaymentClient() {
                 setLoading(true);
                 setErrorMessage(null);
 
-                const res = await getFeeConfiguration();
+                // Pass the selected payment method to the API
+                const res = await getFeeConfiguration(selectedPaymentMethod);
 
                 if (res.success && res.data) {
                     setFeeData(res.data);
@@ -118,9 +117,16 @@ export default function FeePaymentClient() {
         };
 
         fetchFeeDetails();
-    }, []);
-
-    // Handle URL parameters for payment gateway redirects
+    }, [selectedPaymentMethod]); // Re-fetch when payment method changes
+    useEffect(() => {
+        if (feeData?.initallpaymentype) {
+            setSelectedPaymentMethod(
+                feeData.initallpaymentype === "installment"
+                    ? "installment"
+                    : "full_payment"
+            );
+        }
+    }, [feeData]);
     // Handle URL parameters for payment gateway redirects
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
@@ -451,6 +457,11 @@ export default function FeePaymentClient() {
         }
     };
 
+    const handlePaymentMethodToggle = (method: 'full_payment' | 'installment') => {
+        setSelectedPaymentMethod(method);
+        // The useEffect will handle fetching new data
+    };
+
     // Loading State
     if (loading) {
         return (
@@ -557,7 +568,43 @@ export default function FeePaymentClient() {
             />
 
             <div className="max-w-4xl mx-auto px-4 py-8">
-
+                {/* Toggle for Full Payment vs Installment */}
+                <div className="mb-8">
+                    <div className="bg-white rounded-lg border border-gray-200 p-4">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                                <label className="text-sm font-medium text-gray-700">
+                                    Payment Method:
+                                </label>
+                                <div className="flex rounded-lg overflow-hidden border border-gray-300">
+                                    <button
+                                        onClick={() => handlePaymentMethodToggle('full_payment')}
+                                        className={`px-4 py-2 text-sm font-medium transition-colors ${selectedPaymentMethod === 'full_payment'
+                                            ? 'bg-blue-600 text-white'
+                                            : 'bg-white text-gray-700 hover:bg-gray-50'
+                                            }`}
+                                    >
+                                        Full Payment
+                                    </button>
+                                    <button
+                                        onClick={() => handlePaymentMethodToggle('installment')}
+                                        className={`px-4 py-2 text-sm font-medium transition-colors border-l border-gray-300 ${selectedPaymentMethod === 'installment'
+                                            ? 'bg-blue-600 text-white'
+                                            : 'bg-white text-gray-700 hover:bg-gray-50'
+                                            }`}
+                                    >
+                                        Installments
+                                    </button>
+                                </div>
+                            </div>
+                            <div className="text-sm text-gray-500">
+                                {selectedPaymentMethod === 'full_payment'
+                                    ? 'Pay the full amount at once'
+                                    : 'Pay in multiple installments'}
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
                 {/* Header */}
                 <div className="mb-8">
@@ -638,12 +685,24 @@ export default function FeePaymentClient() {
                         </div>
 
                         <div className="p-4">
-                            {year.installments && year.installments.length > 0 ? (
+                            {year.paymentOptions && year.paymentOptions.length > 0 ? (
                                 <div className="space-y-3">
-                                    {year.installments.map((installment: Installment, idx: number) => {
-                                        const isPastDue = isDueDatePassed(installment.dueDate);
-                                        const isPaid = installment.paid;
-                                        const isProcessing = isInstallmentProcessing(year.year, installment.number);
+                                    {year.paymentOptions.map((option: Installment, idx: number) => {
+                                        const isPastDue = isDueDatePassed(option.dueDate);
+                                        const isPaid = option.paid;
+                                        const isProcessing = isInstallmentProcessing(year.year, option.number);
+
+                                        // Determine the label based on the payment method
+                                        let label = `Option ${option.number}`;
+                                        if (selectedPaymentMethod === 'full_payment') {
+                                            label = 'Full Payment';
+                                        } else if (selectedPaymentMethod === 'installment') {
+                                            if (option.number === 0) {
+                                                label = 'Full Payment';
+                                            } else {
+                                                label = `Installment ${option.number}`;
+                                            }
+                                        }
 
                                         return (
                                             <div
@@ -658,7 +717,7 @@ export default function FeePaymentClient() {
                                                 <div className="flex-1">
                                                     <div className="flex items-center gap-2">
                                                         <p className="font-medium text-gray-800">
-                                                            Installment {installment.number}
+                                                            {label}
                                                         </p>
                                                         {isPaid && (
                                                             <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
@@ -679,28 +738,28 @@ export default function FeePaymentClient() {
 
                                                     <div className="mt-1 space-y-0.5">
                                                         <p className={`text-sm ${isPastDue && !isPaid ? "text-red-600" : "text-gray-500"}`}>
-                                                            Due: {new Date(installment.dueDate).toLocaleDateString('en-IN', {
+                                                            Due: {new Date(option.dueDate).toLocaleDateString('en-IN', {
                                                                 day: '2-digit',
                                                                 month: 'short',
                                                                 year: 'numeric'
                                                             })}
                                                         </p>
 
-                                                        {installment.discountAmount > 0 && (
+                                                        {option.discountAmount > 0 && (
                                                             <p className="text-xs text-green-600">
-                                                                Discount: ₹{installment.discountAmount}
+                                                                Discount: ₹{option.discountAmount}
                                                             </p>
                                                         )}
 
-                                                        {isPaid && installment.paidDate && (
+                                                        {isPaid && option.paidDate && (
                                                             <p className="text-sm text-green-600">
-                                                                Paid on: {formatDate(installment.paidDate)}
+                                                                Paid on: {formatDate(option.paidDate)}
                                                             </p>
                                                         )}
 
-                                                        {isPaid && installment.paymentId && (
+                                                        {isPaid && option.paymentId && (
                                                             <p className="text-xs text-gray-400">
-                                                                Transaction ID: {installment.paymentId}
+                                                                Transaction ID: {option.paymentId}
                                                             </p>
                                                         )}
                                                     </div>
@@ -708,19 +767,19 @@ export default function FeePaymentClient() {
 
                                                 <div className="flex items-center gap-4">
                                                     <div className="text-right">
-                                                        {installment.discountAmount > 0 && (
+                                                        {option.discountAmount > 0 && (
                                                             <p className="text-xs text-gray-400 line-through">
-                                                                ₹{installment.originalAmount}
+                                                                ₹{option.originalAmount}
                                                             </p>
                                                         )}
                                                         <p className="font-bold text-gray-800">
-                                                            ₹{installment.payableAmount}
+                                                            ₹{option.payableAmount}
                                                         </p>
                                                     </div>
 
                                                     {isPaid ? (
                                                         <button
-                                                            onClick={() => handleViewReceipt(installment.paymentId!)}
+                                                            onClick={() => handleViewReceipt(option.paymentId!)}
                                                             className="px-5 py-2 rounded-lg transition text-sm font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200"
                                                             disabled={isProcessing}
                                                         >
@@ -731,12 +790,12 @@ export default function FeePaymentClient() {
                                                             onClick={() =>
                                                                 handlePayNow(
                                                                     year.year,
-                                                                    installment.number,
+                                                                    option.number,
                                                                 )
                                                             }
                                                             className={`px-5 py-2 rounded-lg transition text-sm font-medium min-w-[100px] ${isPastDue
-                                                                    ? "bg-red-600 hover:bg-red-700 text-white"
-                                                                    : "bg-gradient-to-b from-[#003B73] to-[#0057A0] text-white hover:opacity-90"
+                                                                ? "bg-red-600 hover:bg-red-700 text-white"
+                                                                : "bg-gradient-to-b from-[#003B73] to-[#0057A0] text-white hover:opacity-90"
                                                                 } ${isProcessing ? "opacity-50 cursor-not-allowed" : ""}`}
                                                             disabled={isPaid || isProcessing}
                                                         >
@@ -750,7 +809,7 @@ export default function FeePaymentClient() {
                                 </div>
                             ) : (
                                 <div className="text-center py-6 text-gray-500">
-                                    No installment details available.
+                                    No payment options available.
                                 </div>
                             )}
                         </div>

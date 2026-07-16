@@ -60,6 +60,7 @@ export type FeeConfigurationResponse = {
     programId: string;
     courseName: string;
     paymentMethod: string;
+    initallpaymentype: string;
     feeConcession: {
       referralIds: string[];
       matchedReferrals: {
@@ -75,8 +76,9 @@ export type FeeConfigurationResponse = {
       concessionPercentage: number;
       concessionAmount: number;
       payableAmount: number;
-      installments: {
+      paymentOptions: {
         number: number;
+        type: string;
         originalAmount: number;
         discountAmount: number;
         payableAmount: number;
@@ -208,10 +210,16 @@ export const loginStudent = async (username: string, password: string) => {
     return { success: false, message: err.response?.data?.message || "Login failed" };
   }
 };
-export const getFeeConfiguration = async (): Promise<FeeConfigurationResponse> => {
+export const getFeeConfiguration = async (paymentMethod?: string): Promise<FeeConfigurationResponse> => {
   try {
+    // Build the URL with query parameter if paymentMethod is provided
+    let url = `${API_BASE}/fee-configuration/student`;
+    if (paymentMethod) {
+      url += `?paymentmethod=${paymentMethod}`;
+    }
+
     const res = await axios.get(
-      `${API_BASE}/fee-configuration/student`,
+      url,
       {
         withCredentials: true,
       }
