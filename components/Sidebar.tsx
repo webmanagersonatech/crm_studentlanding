@@ -1,29 +1,14 @@
-
-
 import { FaHome, FaLock, FaSignOutAlt, FaTimes, FaCreditCard } from "react-icons/fa";
 import { MdDashboard } from "react-icons/md";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { logoutStudent } from "@/lib/api";
-
+import { logoutStudent, getStudentwithtoken } from "@/lib/api";
 import { useSidebar } from "@/context/SidebarContext";
-
-/* =======================
-   Menu (NO logout href)
-======================= */
-const menu = [
-  { href: "/dashboard", label: "Apply For Courses", icon: FaHome },
-  // { href: "/fee-payment", label: "Fee Payment", icon: FaCreditCard },
-  { href: "/change-password", label: "Change Password", icon: FaLock },
-  // { href: "/recent-publications", label: "Recent Publications", icon: FaBook },?
-  { label: "Logout", icon: FaSignOutAlt },
-];
 
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
-
   const { open, toggle, isMobile } = useSidebar();
 
   /* =======================
@@ -32,22 +17,114 @@ export function Sidebar() {
   const [logo, setLogo] = useState<string | null>(null);
   const [instituteName, setInstituteName] = useState<string>("Admission Portal");
   const [studentName, setStudentName] = useState<string>("Student");
+  const [studentEmail, setStudentEmail] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(true);
+  const [showFeePayment, setShowFeePayment] = useState<boolean>(true);
 
   /* =======================
-     Load Student (localStorage)
+     Helper: Format Student Name
+  ======================= */
+  const formatStudentName = (firstname: string, lastname: string, studentId: string): string => {
+    const firstName = firstname?.trim() || "";
+    const lastName = lastname?.trim() || "";
+    
+    if (firstName && lastName) {
+      return `${firstName} ${lastName}`;
+    }
+    
+    if (firstName) {
+      return firstName;
+    }
+    
+    if (lastName) {
+      return lastName;
+    }
+    
+    return studentId || "Student";
+  };
+
+  /* =======================
+     Fetch Student Data from API
   ======================= */
   useEffect(() => {
-    const user = localStorage.getItem("user") || localStorage.getItem("student");
-    if (user) {
+    const fetchStudentData = async () => {
       try {
-        const parsed = JSON.parse(user);
-        setStudentName(
-          parsed.name || `${parsed.firstname || ""} ${parsed.lastname || ""}`.trim() || "Student"
-        );
-      } catch {
-        setStudentName("Student");
+        setLoading(true);
+        const response = await getStudentwithtoken();
+
+        console.log("Student API Response:", response);
+
+        if (response.success && response.data) {
+          const studentData = response.data.student;
+
+          const formattedName = formatStudentName(
+            studentData.firstname,
+            studentData.lastname,
+            studentData.studentId
+          );
+          setStudentName(formattedName);
+
+          if (studentData.email) {
+            setStudentEmail(studentData.email);
+          }
+
+          if (studentData.insuitelogo) {
+            setLogo(studentData.insuitelogo);
+          }
+
+          if (studentData.instituteName) {
+            setInstituteName(studentData.instituteName);
+          }
+
+          if (studentData.shownturtionfeepayment !== undefined) {
+            setShowFeePayment(studentData.shownturtionfeepayment);
+          }
+
+        } else {
+          const user = localStorage.getItem("user") || localStorage.getItem("student");
+          if (user) {
+            try {
+              const parsed = JSON.parse(user);
+              const formattedName = formatStudentName(
+                parsed.firstname,
+                parsed.lastname,
+                parsed.studentId
+              );
+              setStudentName(formattedName || parsed.name || "Student");
+              
+              if (parsed.email) setStudentEmail(parsed.email);
+              if (parsed.logo) setLogo(parsed.logo);
+              if (parsed.instituteName) setInstituteName(parsed.instituteName);
+              if (parsed.shownturtionfeepayment !== undefined) {
+                setShowFeePayment(parsed.shownturtionfeepayment);
+              }
+            } catch {
+              setStudentName("Student");
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch student data:", error);
+        const user = localStorage.getItem("user") || localStorage.getItem("student");
+        if (user) {
+          try {
+            const parsed = JSON.parse(user);
+            const formattedName = formatStudentName(
+              parsed.firstname,
+              parsed.lastname,
+              parsed.studentId
+            );
+            setStudentName(formattedName || parsed.name || "Student");
+          } catch {
+            setStudentName("Student");
+          }
+        }
+      } finally {
+        setLoading(false);
       }
-    }
+    };
+
+    fetchStudentData();
   }, []);
 
   /* =======================
@@ -55,19 +132,69 @@ export function Sidebar() {
   ======================= */
   const handleLogout = async () => {
     try {
-      await logoutStudent(); // clears HttpOnly cookie
+      await logoutStudent();
 
-      // Clear localStorage
       localStorage.removeItem("token");
       localStorage.removeItem("user");
       localStorage.removeItem("student");
 
       if (isMobile) toggle();
 
-      router.replace("/"); // better than push
+      router.replace("/");
     } catch (error) {
       console.error("Logout failed:", error);
     }
+  };
+
+  /* =======================
+     Menu Items Definition
+  ======================= */
+  interface MenuItem {
+    href: string;
+    label: string;
+    icon: React.ComponentType<{ size?: number; className?: string }>;
+  }
+
+  const getMenuItems = (): MenuItem[] => {
+    const items: MenuItem[] = [
+      { href: "/dashboard", label: "Apply For Courses", icon: FaHome }
+    ];
+
+    if (showFeePayment) {
+      items.push({ href: "/fee-payment", label: "Fee Payment", icon: FaCreditCard });
+    }
+
+    items.push({ href: "/change-password", label: "Change Password", icon: FaLock });
+
+    return items;
+  };
+
+  /* =======================
+     Render Navigation Links
+  ======================= */
+  const renderNavLinks = () => {
+    return getMenuItems().map((item) => {
+      const Icon = item.icon;
+      const isActive = pathname === item.href;
+
+      return (
+        <Link
+          key={item.href}
+          href={item.href}
+          onClick={() => isMobile && toggle()}
+          className={`
+            flex items-center gap-3 px-4 py-3 rounded-lg text-sm transition-all
+            ${isActive
+              ? "bg-white text-blue-700 shadow font-semibold"
+              : "text-blue-100 hover:bg-blue-800/50 hover:text-white"
+            }
+          `}
+        >
+          <Icon size={18} />
+          {item.label}
+        </Link>
+      );
+    });
   };
 
   return (
@@ -101,15 +228,32 @@ export function Sidebar() {
           </div>
 
           {/* TITLES */}
-          <div className="flex-1">
-            <p className="text-white font-bold text-sm leading-tight">{instituteName}</p>
-            <p className="text-blue-200 text-xs mt-1">{studentName}</p>
+          <div className="flex-1 min-w-0">
+            <p className="text-white font-bold text-sm leading-tight truncate">
+              {instituteName}
+            </p>
+            <div className="mt-1">
+              {loading ? (
+                <p className="text-blue-200 text-xs animate-pulse">Loading...</p>
+              ) : (
+                <>
+                  <p className="text-blue-200 text-xs truncate font-medium">
+                    {studentName}
+                  </p>
+                  {studentEmail && (
+                    <p className="text-blue-300 text-[10px] truncate opacity-75">
+                      {studentEmail}
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
           </div>
 
           {/* Close (mobile) */}
           <button
             onClick={toggle}
-            className="md:hidden p-1 rounded-lg hover:bg-blue-700/50"
+            className="md:hidden p-1 rounded-lg hover:bg-blue-700/50 flex-shrink-0"
           >
             <FaTimes size={18} />
           </button>
@@ -117,45 +261,19 @@ export function Sidebar() {
 
         {/* MENU */}
         <nav className="p-4 space-y-2">
-          {menu.map((item) => {
-            const Icon = item.icon;
-
-            if (item.label === "Logout") {
-              return (
-                <button
-                  key="logout"
-                  onClick={handleLogout}
-                  className="
-                    w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm
-                    text-blue-100 hover:bg-red-600/80 hover:text-white transition
-                  "
-                >
-                  <Icon size={18} />
-                  Logout
-                </button>
-              );
-            }
-
-            const active = pathname === item.href;
-
-            return (
-              <Link
-                key={item.href}
-                href={item.href as any}
-                onClick={() => isMobile && toggle()}
-                className={`
-                  flex items-center gap-3 px-4 py-3 rounded-lg text-sm transition-all
-                  ${active
-                    ? "bg-white text-blue-700 shadow font-semibold"
-                    : "text-blue-100 hover:bg-blue-800/50 hover:text-white"
-                  }
-                `}
-              >
-                <Icon size={18} />
-                {item.label}
-              </Link>
-            );
-          })}
+          {renderNavLinks()}
+          
+          {/* LOGOUT BUTTON */}
+          <button
+            onClick={handleLogout}
+            className="
+              w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm
+              text-blue-100 hover:bg-red-600/80 hover:text-white transition
+            "
+          >
+            <FaSignOutAlt size={18} />
+            Logout
+          </button>
         </nav>
 
         {/* FOOTER */}

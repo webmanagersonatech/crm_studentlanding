@@ -707,4 +707,17 @@ export const getTuitionFeeReceipt = async (
     };
   }
 };
-
+export const getStudentwithtoken = async () => {
+  try {
+    const res = await axios.get(
+      `${API_BASE}/student/me`, 
+      { withCredentials: true }
+    );
+    return res.data;
+  } catch (err: any) {
+    return {
+      success: false,
+      message: err.response?.data?.message || "Failed to fetch student",
+    };
+  }
+};
