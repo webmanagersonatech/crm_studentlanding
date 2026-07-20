@@ -47,7 +47,7 @@ interface FeeData {
     programId: string;
     courseName: string;
     paymentMethod: string;
-    initallpaymentype :string;
+    initallpaymentype: string;
     feeConcession: FeeConcession;
     years: YearData[];
 }
@@ -407,7 +407,7 @@ export default function FeePaymentClient() {
     };
 
     const handleViewReceipt = (paymentId: string) => {
-        window.open(`/receipt/${paymentId}`, '_blank');
+        window.open(`/fee-receipt/${paymentId}`, '_blank');
     };
 
     const isDueDatePassed = (dueDate: string) => {
@@ -567,37 +567,37 @@ export default function FeePaymentClient() {
                 autoCloseDelay={3000}
             />
 
-            <div className="max-w-4xl mx-auto px-4 py-8">
+            <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
                 {/* Toggle for Full Payment vs Installment */}
-                <div className="mb-8">
-                    <div className="bg-white rounded-lg border border-gray-200 p-4">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-4">
-                                <label className="text-sm font-medium text-gray-700">
+                <div className="mb-6 sm:mb-8">
+                    <div className="bg-white rounded-lg border border-gray-200 p-3 sm:p-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+                            <div className="flex flex-col xs:flex-row xs:items-center gap-2 xs:gap-4 w-full sm:w-auto">
+                                <label className="text-xs sm:text-sm font-medium text-gray-700 whitespace-nowrap">
                                     Payment Method:
                                 </label>
-                                <div className="flex rounded-lg overflow-hidden border border-gray-300">
+                                <div className="flex rounded-lg overflow-hidden border border-gray-300 w-full xs:w-auto">
                                     <button
                                         onClick={() => handlePaymentMethodToggle('full_payment')}
-                                        className={`px-4 py-2 text-sm font-medium transition-colors ${selectedPaymentMethod === 'full_payment'
-                                            ? 'bg-blue-600 text-white'
-                                            : 'bg-white text-gray-700 hover:bg-gray-50'
+                                        className={`flex-1 xs:flex-none px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition-colors ${selectedPaymentMethod === 'full_payment'
+                                                ? 'bg-blue-600 text-white'
+                                                : 'bg-white text-gray-700 hover:bg-gray-50'
                                             }`}
                                     >
                                         Full Payment
                                     </button>
                                     <button
                                         onClick={() => handlePaymentMethodToggle('installment')}
-                                        className={`px-4 py-2 text-sm font-medium transition-colors border-l border-gray-300 ${selectedPaymentMethod === 'installment'
-                                            ? 'bg-blue-600 text-white'
-                                            : 'bg-white text-gray-700 hover:bg-gray-50'
+                                        className={`flex-1 xs:flex-none px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition-colors border-l border-gray-300 ${selectedPaymentMethod === 'installment'
+                                                ? 'bg-blue-600 text-white'
+                                                : 'bg-white text-gray-700 hover:bg-gray-50'
                                             }`}
                                     >
                                         Installments
                                     </button>
                                 </div>
                             </div>
-                            <div className="text-sm text-gray-500">
+                            <div className="text-xs sm:text-sm text-gray-500 text-center sm:text-right">
                                 {selectedPaymentMethod === 'full_payment'
                                     ? 'Pay the full amount at once'
                                     : 'Pay in multiple installments'}
@@ -607,43 +607,43 @@ export default function FeePaymentClient() {
                 </div>
 
                 {/* Header */}
-                <div className="mb-8">
-                    <h1 className="text-2xl font-bold text-gray-800">Fee Payment</h1>
+                <div className="mb-6 sm:mb-8">
+                    <h1 className="text-xl sm:text-2xl font-bold text-gray-800">Fee Payment</h1>
 
-                    <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <div className="bg-gray-50 rounded-lg p-3">
-                            <p className="text-xs text-gray-500">Student ID</p>
-                            <p className="font-semibold text-gray-800">{feeData.studentId}</p>
+                    <div className="mt-4 grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
+                        <div className="bg-gray-50 rounded-lg p-2.5 sm:p-3">
+                            <p className="text-[10px] xs:text-xs text-gray-500">Student ID</p>
+                            <p className="text-sm sm:text-base font-semibold text-gray-800 truncate">{feeData.studentId}</p>
                         </div>
 
-                        <div className="bg-gray-50 rounded-lg p-3">
-                            <p className="text-xs text-gray-500">Student Name</p>
-                            <p className="font-semibold text-gray-800">{feeData.studentName}</p>
+                        <div className="bg-gray-50 rounded-lg p-2.5 sm:p-3">
+                            <p className="text-[10px] xs:text-xs text-gray-500">Student Name</p>
+                            <p className="text-sm sm:text-base font-semibold text-gray-800 truncate">{feeData.studentName}</p>
                         </div>
 
-                        <div className="bg-gray-50 rounded-lg p-3">
-                            <p className="text-xs text-gray-500">Course</p>
-                            <p className="font-semibold text-gray-800">{feeData.courseName}</p>
+                        <div className="bg-gray-50 rounded-lg p-2.5 sm:p-3 xs:col-span-2 sm:col-span-1">
+                            <p className="text-[10px] xs:text-xs text-gray-500">Course</p>
+                            <p className="text-sm sm:text-base font-semibold text-gray-800 truncate">{feeData.courseName}</p>
                         </div>
                     </div>
 
                     {/* Fee Concession Section */}
                     {feeData.feeConcession && feeData.feeConcession.concessionPercentage > 0 && (
-                        <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
-                            <div className="flex items-start gap-3">
+                        <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4">
+                            <div className="flex flex-col xs:flex-row items-start gap-2 xs:gap-3">
                                 <div className="flex-shrink-0">
-                                    <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
                                 </div>
-                                <div className="flex-1">
-                                    <p className="text-sm font-medium text-blue-800">
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-xs sm:text-sm font-medium text-blue-800">
                                         Fee Concession Applied: {feeData.feeConcession.concessionPercentage}% off
                                     </p>
                                     {feeData.feeConcession.matchedReferrals && feeData.feeConcession.matchedReferrals.length > 0 && (
-                                        <div className="mt-1 space-y-1">
+                                        <div className="mt-1 space-y-0.5">
                                             {feeData.feeConcession.matchedReferrals.map((referral, idx) => (
-                                                <p key={idx} className="text-xs text-blue-700">
+                                                <p key={idx} className="text-[10px] xs:text-xs text-blue-700 truncate">
                                                     • {referral.name} ({referral.percentage}% discount)
                                                 </p>
                                             ))}
@@ -661,22 +661,22 @@ export default function FeePaymentClient() {
                         key={index}
                         className="bg-white rounded-lg border border-gray-200 mb-4 overflow-hidden"
                     >
-                        <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
-                            <div className="flex justify-between items-center">
-                                <h2 className="text-lg font-semibold text-gray-800">
+                        <div className="px-3 sm:px-4 py-2.5 sm:py-3 border-b border-gray-200 bg-gray-50">
+                            <div className="flex flex-col xs:flex-row xs:justify-between xs:items-center gap-1 xs:gap-0">
+                                <h2 className="text-base sm:text-lg font-semibold text-gray-800">
                                     Year {year.year}
                                 </h2>
                                 <div className="text-right">
                                     {year.concessionPercentage > 0 && (
-                                        <p className="text-xs text-gray-500 line-through">
+                                        <p className="text-[10px] xs:text-xs text-gray-500 line-through">
                                             ₹{year.originalAmount}
                                         </p>
                                     )}
-                                    <p className="text-sm font-bold text-gray-800">
+                                    <p className="text-sm sm:text-base font-bold text-gray-800">
                                         Total: ₹{year.payableAmount}
                                     </p>
                                     {year.concessionAmount > 0 && (
-                                        <p className="text-xs text-green-600">
+                                        <p className="text-[10px] xs:text-xs text-green-600">
                                             Saved: ₹{year.concessionAmount}
                                         </p>
                                     )}
@@ -684,15 +684,14 @@ export default function FeePaymentClient() {
                             </div>
                         </div>
 
-                        <div className="p-4">
+                        <div className="p-3 sm:p-4">
                             {year.paymentOptions && year.paymentOptions.length > 0 ? (
-                                <div className="space-y-3">
+                                <div className="space-y-2 sm:space-y-3">
                                     {year.paymentOptions.map((option: Installment, idx: number) => {
                                         const isPastDue = isDueDatePassed(option.dueDate);
                                         const isPaid = option.paid;
                                         const isProcessing = isInstallmentProcessing(year.year, option.number);
 
-                                        // Determine the label based on the payment method
                                         let label = `Option ${option.number}`;
                                         if (selectedPaymentMethod === 'full_payment') {
                                             label = 'Full Payment';
@@ -707,37 +706,37 @@ export default function FeePaymentClient() {
                                         return (
                                             <div
                                                 key={idx}
-                                                className={`flex items-center justify-between p-3 rounded-lg ${isPaid
-                                                    ? "bg-green-50 border border-green-200"
-                                                    : isPastDue
-                                                        ? "bg-red-50 border border-red-200"
-                                                        : "bg-gray-50"
+                                                className={`flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 rounded-lg gap-3 sm:gap-4 ${isPaid
+                                                        ? "bg-green-50 border border-green-200"
+                                                        : isPastDue
+                                                            ? "bg-red-50 border border-red-200"
+                                                            : "bg-gray-50"
                                                     }`}
                                             >
-                                                <div className="flex-1">
-                                                    <div className="flex items-center gap-2">
-                                                        <p className="font-medium text-gray-800">
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                                                        <p className="text-sm sm:text-base font-medium text-gray-800">
                                                             {label}
                                                         </p>
                                                         {isPaid && (
-                                                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                                            <span className="inline-flex items-center px-1.5 sm:px-2 py-0.5 rounded text-[10px] xs:text-xs font-medium bg-green-100 text-green-800">
                                                                 Paid
                                                             </span>
                                                         )}
                                                         {!isPaid && isPastDue && (
-                                                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
+                                                            <span className="inline-flex items-center px-1.5 sm:px-2 py-0.5 rounded text-[10px] xs:text-xs font-medium bg-red-100 text-red-800">
                                                                 Overdue
                                                             </span>
                                                         )}
                                                         {isProcessing && (
-                                                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                                            <span className="inline-flex items-center px-1.5 sm:px-2 py-0.5 rounded text-[10px] xs:text-xs font-medium bg-blue-100 text-blue-800">
                                                                 Processing...
                                                             </span>
                                                         )}
                                                     </div>
 
-                                                    <div className="mt-1 space-y-0.5">
-                                                        <p className={`text-sm ${isPastDue && !isPaid ? "text-red-600" : "text-gray-500"}`}>
+                                                    <div className="mt-0.5 sm:mt-1 space-y-0.5">
+                                                        <p className={`text-xs sm:text-sm ${isPastDue && !isPaid ? "text-red-600" : "text-gray-500"}`}>
                                                             Due: {new Date(option.dueDate).toLocaleDateString('en-IN', {
                                                                 day: '2-digit',
                                                                 month: 'short',
@@ -746,33 +745,33 @@ export default function FeePaymentClient() {
                                                         </p>
 
                                                         {option.discountAmount > 0 && (
-                                                            <p className="text-xs text-green-600">
+                                                            <p className="text-[10px] xs:text-xs text-green-600">
                                                                 Discount: ₹{option.discountAmount}
                                                             </p>
                                                         )}
 
                                                         {isPaid && option.paidDate && (
-                                                            <p className="text-sm text-green-600">
+                                                            <p className="text-xs sm:text-sm text-green-600">
                                                                 Paid on: {formatDate(option.paidDate)}
                                                             </p>
                                                         )}
 
                                                         {isPaid && option.paymentId && (
-                                                            <p className="text-xs text-gray-400">
+                                                            <p className="text-[10px] xs:text-xs text-gray-400 truncate">
                                                                 Transaction ID: {option.paymentId}
                                                             </p>
                                                         )}
                                                     </div>
                                                 </div>
 
-                                                <div className="flex items-center gap-4">
+                                                <div className="flex flex-row sm:flex-row items-center justify-between sm:justify-end gap-3 sm:gap-4 w-full sm:w-auto">
                                                     <div className="text-right">
                                                         {option.discountAmount > 0 && (
-                                                            <p className="text-xs text-gray-400 line-through">
+                                                            <p className="text-[10px] xs:text-xs text-gray-400 line-through">
                                                                 ₹{option.originalAmount}
                                                             </p>
                                                         )}
-                                                        <p className="font-bold text-gray-800">
+                                                        <p className="text-sm sm:text-base font-bold text-gray-800">
                                                             ₹{option.payableAmount}
                                                         </p>
                                                     </div>
@@ -780,7 +779,7 @@ export default function FeePaymentClient() {
                                                     {isPaid ? (
                                                         <button
                                                             onClick={() => handleViewReceipt(option.paymentId!)}
-                                                            className="px-5 py-2 rounded-lg transition text-sm font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200"
+                                                            className="px-3 sm:px-5 py-1.5 sm:py-2 rounded-lg transition text-xs sm:text-sm font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 whitespace-nowrap"
                                                             disabled={isProcessing}
                                                         >
                                                             View Receipt
@@ -793,9 +792,9 @@ export default function FeePaymentClient() {
                                                                     option.number,
                                                                 )
                                                             }
-                                                            className={`px-5 py-2 rounded-lg transition text-sm font-medium min-w-[100px] ${isPastDue
-                                                                ? "bg-red-600 hover:bg-red-700 text-white"
-                                                                : "bg-gradient-to-b from-[#003B73] to-[#0057A0] text-white hover:opacity-90"
+                                                            className={`px-3 sm:px-5 py-1.5 sm:py-2 rounded-lg transition text-xs sm:text-sm font-medium min-w-[70px] sm:min-w-[100px] whitespace-nowrap ${isPastDue
+                                                                    ? "bg-red-600 hover:bg-red-700 text-white"
+                                                                    : "bg-gradient-to-b from-[#003B73] to-[#0057A0] text-white hover:opacity-90"
                                                                 } ${isProcessing ? "opacity-50 cursor-not-allowed" : ""}`}
                                                             disabled={isPaid || isProcessing}
                                                         >
@@ -808,7 +807,7 @@ export default function FeePaymentClient() {
                                     })}
                                 </div>
                             ) : (
-                                <div className="text-center py-6 text-gray-500">
+                                <div className="text-center py-4 sm:py-6 text-gray-500 text-sm sm:text-base">
                                     No payment options available.
                                 </div>
                             )}

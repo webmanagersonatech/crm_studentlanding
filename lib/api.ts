@@ -676,5 +676,35 @@ export const getApplicationByStudent = async () => {
   }
 };
 
+export type TuitionFeeReceiptResponse = {
+  success: boolean;
+  message?: string;
+  data?: any;
+};
 
+export const getTuitionFeeReceipt = async (
+  paymentId: string
+): Promise<TuitionFeeReceiptResponse> => {
+  try {
+    const res = await axios.get(
+      `${API_BASE}/tuition-fee/receipt/${paymentId}`,
+      {
+        withCredentials: true,
+      }
+    );
+
+    return {
+      success: true,
+      data: res.data.data,
+      message: res.data.message,
+    };
+  } catch (err: any) {
+    return {
+      success: false,
+      message:
+        err.response?.data?.message ||
+        "Failed to fetch tuition fee receipt",
+    };
+  }
+};
 
