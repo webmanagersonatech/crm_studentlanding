@@ -11,24 +11,102 @@ import {
 import { API_BASE } from "@/lib/api";
 import Popup from "./PaymentPopup";
 
+// SVG Icons as components
+const Icons = {
+    Payment: () => (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+        </svg>
+    ),
+    Calendar: () => (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+    ),
+    Receipt: () => (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+    ),
+    Discount: () => (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+    ),
+    User: () => (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+        </svg>
+    ),
+    Graduation: () => (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222" />
+        </svg>
+    ),
+    IdCard: () => (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
+        </svg>
+    ),
+    Check: () => (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+        </svg>
+    ),
+    Alert: () => (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+    ),
+    Spinner: () => (
+        <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+        </svg>
+    ),
+    CreditCard: () => (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+        </svg>
+    ),
+    Money: () => (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+    ),
+};
+
 interface Installment {
     number: number;
     originalAmount: number;
+    tuitionFee: number;
+    otherFee: number;
+    tuitionConcession: number;
+    otherFeeConcession: number;
     discountAmount: number;
     payableAmount: number;
     dueDate: string;
     paid: boolean;
     paidDate: string | null;
     paymentId: string | null;
+    paymentOptionId: string;
+    name?: string;
+    type?: string;
+    paymentAmount?: number; // Actual amount paid
 }
 
 interface YearData {
     year: string;
     originalAmount: number;
+    tuitionFee: number;
+    otherFee: number;
     concessionPercentage: number;
+    tuitionConcession: number;
+    otherFeeConcession: number;
     concessionAmount: number;
     payableAmount: number;
-    paymentOptions: Installment[]; // Changed from installments to paymentOptions
+    paymentMethod: string;
+    paymentOptions: Installment[];
 }
 
 interface FeeConcession {
@@ -39,6 +117,7 @@ interface FeeConcession {
         percentage: number;
     }>;
     concessionPercentage: number;
+    appliedOn?: string;
 }
 
 interface FeeData {
@@ -47,6 +126,7 @@ interface FeeData {
     programId: string;
     courseName: string;
     paymentMethod: string;
+    initialPaymentType?: string;
     initallpaymentype: string;
     feeConcession: FeeConcession;
     years: YearData[];
@@ -85,8 +165,6 @@ export default function FeePaymentClient() {
             try {
                 setLoading(true);
                 setErrorMessage(null);
-
-                // Pass the selected payment method to the API
                 const res = await getFeeConfiguration(selectedPaymentMethod);
 
                 if (res.success && res.data) {
@@ -99,7 +177,6 @@ export default function FeePaymentClient() {
                 }
             } catch (error) {
                 let errorMessage = "Failed to load fee details";
-
                 if (error instanceof Error) {
                     errorMessage = error.message;
                 } else if (typeof error === "string") {
@@ -107,7 +184,6 @@ export default function FeePaymentClient() {
                 } else if (error && typeof error === "object" && "message" in error) {
                     errorMessage = String(error.message);
                 }
-
                 setErrorMessage(errorMessage);
                 toast.error(errorMessage);
                 setFeeData(null);
@@ -117,23 +193,29 @@ export default function FeePaymentClient() {
         };
 
         fetchFeeDetails();
-    }, [selectedPaymentMethod]); // Re-fetch when payment method changes
+    }, [selectedPaymentMethod]);
+
+    const initialPaymentType = feeData?.initialPaymentType || null;
+
+    const isFullPaymentDisabled = initialPaymentType === "installment";
+    const isInstallmentDisabled = initialPaymentType === "full_payment";
+
     useEffect(() => {
-        if (feeData?.initallpaymentype) {
+        if (feeData?.initialPaymentType) {
             setSelectedPaymentMethod(
-                feeData.initallpaymentype === "installment"
+                feeData.initialPaymentType === "installment"
                     ? "installment"
                     : "full_payment"
             );
         }
     }, [feeData]);
+
     // Handle URL parameters for payment gateway redirects
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
         const statusParam = urlParams.get("status");
         const normalizedStatus = statusParam?.toLowerCase();
 
-        // SUCCESS CASES
         if (normalizedStatus === "success" || normalizedStatus === "credit") {
             setPopup({
                 isOpen: true,
@@ -149,9 +231,7 @@ export default function FeePaymentClient() {
                     }, 300);
                 },
             });
-        }
-        // FAILED CASE
-        else if (normalizedStatus === "failed" || normalizedStatus === "cancelled") {
+        } else if (normalizedStatus === "failed" || normalizedStatus === "cancelled") {
             setPopup({
                 isOpen: true,
                 type: 'failure',
@@ -165,9 +245,7 @@ export default function FeePaymentClient() {
                     setProcessingInstallment(null);
                 },
             });
-        }
-        // ERROR CASE
-        else if (normalizedStatus === "error") {
+        } else if (normalizedStatus === "error") {
             setPopup({
                 isOpen: true,
                 type: 'failure',
@@ -182,10 +260,10 @@ export default function FeePaymentClient() {
         }
     }, []);
 
-    const handleRazorpayPayment = async (year: string, installmentNo: number) => {
+    const handleRazorpayPayment = async (year: string, installmentNo: number, paymentOptionId: string) => {
         try {
             setProcessingInstallment({ year, installmentNo });
-            const result = await createTuitionFeePayment(year, installmentNo);
+            const result = await createTuitionFeePayment(year, installmentNo, paymentOptionId);
 
             if (!result.success) {
                 toast.error(result.message);
@@ -200,19 +278,15 @@ export default function FeePaymentClient() {
                 name: "Student Portal",
                 description: `Tuition Fee - Year ${year} - Installment ${installmentNo}`,
                 order_id: result.orderId,
-
                 prefill: {
                     name: feeData?.studentName,
                 },
-
                 handler: async function (response: any) {
                     try {
                         const verifyRes = await axios.post(
                             `${API_BASE}/tuition-fee/verify/razorpay`,
                             response,
-                            {
-                                withCredentials: true,
-                            }
+                            { withCredentials: true }
                         );
 
                         if (verifyRes.data.success) {
@@ -257,7 +331,6 @@ export default function FeePaymentClient() {
                         });
                     }
                 },
-
                 theme: {
                     color: "#003B73",
                 },
@@ -295,10 +368,10 @@ export default function FeePaymentClient() {
         }
     };
 
-    const handleInstamojoPayment = async (year: string, installmentNo: number) => {
+    const handleInstamojoPayment = async (year: string, installmentNo: number, paymentOptionId: string) => {
         try {
             setProcessingInstallment({ year, installmentNo });
-            const result = await createInstamojoTuitionPayment(year, installmentNo);
+            const result = await createInstamojoTuitionPayment(year, installmentNo, paymentOptionId);
 
             if (!result.success) {
                 setPopup({
@@ -315,7 +388,6 @@ export default function FeePaymentClient() {
                 return;
             }
 
-            // Redirect to Instamojo payment page
             window.location.href = result.paymentUrl;
         } catch (error: any) {
             setPopup({
@@ -332,12 +404,10 @@ export default function FeePaymentClient() {
         }
     };
 
-    const handleCCAvenuePayment = async (year: string, installmentNo: number) => {
+    const handleCCAvenuePayment = async (year: string, installmentNo: number, paymentOptionId: string) => {
         try {
             setProcessingInstallment({ year, installmentNo });
-            const result = await createCCAvenueTuitionPayment(year, installmentNo);
-
-            console.log("CCAvenue Result:", result);
+            const result = await createCCAvenueTuitionPayment(year, installmentNo, paymentOptionId);
 
             if (!result.success) {
                 setPopup({
@@ -354,19 +424,15 @@ export default function FeePaymentClient() {
                 return;
             }
 
-            // Create and submit CCAvenue form
             const form = document.createElement("form");
             form.method = "POST";
-
             form.action = "https://secure.ccavenue.com/transaction/transaction.do?command=initiateTransaction";
 
-            // Encrypted Request
             const encRequest = document.createElement("input");
             encRequest.type = "hidden";
             encRequest.name = "encRequest";
             encRequest.value = result.encryptedData;
 
-            // Access Code
             const accessCode = document.createElement("input");
             accessCode.type = "hidden";
             accessCode.name = "access_code";
@@ -392,17 +458,15 @@ export default function FeePaymentClient() {
         }
     };
 
-    const handlePayNow = async (year: string, installmentNo: number) => {
-        // Determine which payment method to use
+    const handlePayNow = async (year: string, installmentNo: number, paymentOptionId: string) => {
         const paymentMethod = feeData?.paymentMethod || 'razorpay';
 
         if (paymentMethod === 'instamojo') {
-            await handleInstamojoPayment(year, installmentNo);
+            await handleInstamojoPayment(year, installmentNo, paymentOptionId);
         } else if (paymentMethod === 'ccavenue') {
-            await handleCCAvenuePayment(year, installmentNo);
+            await handleCCAvenuePayment(year, installmentNo, paymentOptionId);
         } else {
-            // Default to Razorpay
-            await handleRazorpayPayment(year, installmentNo);
+            await handleRazorpayPayment(year, installmentNo, paymentOptionId);
         }
     };
 
@@ -438,7 +502,6 @@ export default function FeePaymentClient() {
     const closePopup = () => {
         const shouldRefresh = popup.shouldRefresh;
         setPopup(prev => ({ ...prev, isOpen: false }));
-
         if (shouldRefresh) {
             setTimeout(() => {
                 window.location.reload();
@@ -449,7 +512,6 @@ export default function FeePaymentClient() {
     const handlePopupAutoClose = () => {
         const shouldRefresh = popup.shouldRefresh;
         setPopup(prev => ({ ...prev, isOpen: false }));
-
         if (shouldRefresh) {
             setTimeout(() => {
                 window.location.reload();
@@ -459,7 +521,6 @@ export default function FeePaymentClient() {
 
     const handlePaymentMethodToggle = (method: 'full_payment' | 'installment') => {
         setSelectedPaymentMethod(method);
-        // The useEffect will handle fetching new data
     };
 
     // Loading State
@@ -483,29 +544,12 @@ export default function FeePaymentClient() {
                     <div className="bg-red-50 border border-red-200 rounded-lg p-8 text-center">
                         <div className="flex justify-center mb-4">
                             <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
-                                <svg
-                                    className="w-8 h-8 text-red-600"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                                    />
-                                </svg>
+                                <Icons.Alert />
                             </div>
                         </div>
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                            Unable to Load Fee Details
-                        </h3>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">Unable to Load Fee Details</h3>
                         <p className="text-gray-700 mb-4">{errorMessage}</p>
-                        <button
-                            onClick={() => window.location.reload()}
-                            className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                        >
+                        <button onClick={() => window.location.reload()} className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
                             Try Again
                         </button>
                     </div>
@@ -523,34 +567,20 @@ export default function FeePaymentClient() {
                     <div className="text-center py-24">
                         <div className="flex justify-center mb-4">
                             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
-                                <svg
-                                    className="w-8 h-8 text-gray-400"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-                                    />
+                                <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                                 </svg>
                             </div>
                         </div>
-                        <h2 className="text-2xl font-semibold text-gray-800">
-                            Fee Structure Not Available
-                        </h2>
-                        <p className="mt-2 text-gray-600">
-                            No fee configuration found for your course.
-                        </p>
+                        <h2 className="text-2xl font-semibold text-gray-800">Fee Structure Not Available</h2>
+                        <p className="mt-2 text-gray-600">No fee configuration found for your course.</p>
                     </div>
                 </div>
             </AppShell>
         );
     }
 
-    // Success State - Show Fee Data
+    // Main Render
     return (
         <AppShell>
             <Toaster position="top-right" />
@@ -567,248 +597,362 @@ export default function FeePaymentClient() {
                 autoCloseDelay={3000}
             />
 
-            <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
-                {/* Toggle for Full Payment vs Installment */}
+            <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
+                {/* Payment Method Toggle */}
                 <div className="mb-6 sm:mb-8">
-                    <div className="bg-white rounded-lg border border-gray-200 p-3 sm:p-4">
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                             <div className="flex flex-col xs:flex-row xs:items-center gap-2 xs:gap-4 w-full sm:w-auto">
-                                <label className="text-xs sm:text-sm font-medium text-gray-700 whitespace-nowrap">
-                                    Payment Method:
+                                <label className="text-sm font-semibold text-gray-700 whitespace-nowrap">
+                                    Payment Plan:
                                 </label>
-                                <div className="flex rounded-lg overflow-hidden border border-gray-300 w-full xs:w-auto">
+                                <div className="flex rounded-lg overflow-hidden border-2 border-gray-200 w-full xs:w-auto">
                                     <button
-                                        onClick={() => handlePaymentMethodToggle('full_payment')}
-                                        className={`flex-1 xs:flex-none px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition-colors ${selectedPaymentMethod === 'full_payment'
-                                                ? 'bg-blue-600 text-white'
-                                                : 'bg-white text-gray-700 hover:bg-gray-50'
+                                        onClick={() => handlePaymentMethodToggle("full_payment")}
+                                        disabled={isFullPaymentDisabled}
+                                        className={`flex-1 xs:flex-none px-4 sm:px-6 py-2 text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2
+    ${selectedPaymentMethod === "full_payment"
+                                                ? "bg-blue-600 text-white shadow-md"
+                                                : "bg-white text-gray-700 hover:bg-gray-50"
+                                            }
+    ${isFullPaymentDisabled
+                                                ? "opacity-50 cursor-not-allowed bg-gray-100 hover:bg-gray-100"
+                                                : ""
                                             }`}
                                     >
+                                        <Icons.Payment />
                                         Full Payment
                                     </button>
                                     <button
-                                        onClick={() => handlePaymentMethodToggle('installment')}
-                                        className={`flex-1 xs:flex-none px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition-colors border-l border-gray-300 ${selectedPaymentMethod === 'installment'
-                                                ? 'bg-blue-600 text-white'
-                                                : 'bg-white text-gray-700 hover:bg-gray-50'
+                                        onClick={() => handlePaymentMethodToggle("installment")}
+                                        disabled={isInstallmentDisabled}
+                                        className={`flex-1 xs:flex-none px-4 sm:px-6 py-2 text-sm font-medium transition-all duration-200 border-l-2 border-gray-200 flex items-center justify-center gap-2
+    ${selectedPaymentMethod === "installment"
+                                                ? "bg-blue-600 text-white shadow-md"
+                                                : "bg-white text-gray-700 hover:bg-gray-50"
+                                            }
+    ${isInstallmentDisabled
+                                                ? "opacity-50 cursor-not-allowed bg-gray-100 hover:bg-gray-100"
+                                                : ""
                                             }`}
                                     >
+                                        <Icons.Calendar />
                                         Installments
                                     </button>
                                 </div>
                             </div>
                             <div className="text-xs sm:text-sm text-gray-500 text-center sm:text-right">
                                 {selectedPaymentMethod === 'full_payment'
-                                    ? 'Pay the full amount at once'
-                                    : 'Pay in multiple installments'}
+                                    ? 'Pay the full amount at once and save on processing fees'
+                                    : 'Split your payment into 2 easy installments'}
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Header */}
-                <div className="mb-6 sm:mb-8">
-                    <h1 className="text-xl sm:text-2xl font-bold text-gray-800">Fee Payment</h1>
-
-                    <div className="mt-4 grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
-                        <div className="bg-gray-50 rounded-lg p-2.5 sm:p-3">
-                            <p className="text-[10px] xs:text-xs text-gray-500">Student ID</p>
-                            <p className="text-sm sm:text-base font-semibold text-gray-800 truncate">{feeData.studentId}</p>
+                {/* Student Info Card */}
+                <div className="mb-6">
+                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100 p-6">
+                        <div className="flex items-center justify-between mb-4">
+                            <h1 className="text-xl sm:text-2xl font-bold text-gray-800">
+                                Fee Payment Details
+                            </h1>
+                            {feeData.feeConcession.concessionPercentage > 0 && (
+                                <div className="bg-green-100 text-green-800 px-4 py-2 rounded-full text-sm font-semibold flex items-center gap-2">
+                                    <Icons.Discount />
+                                    {feeData.feeConcession.concessionPercentage}% OFF
+                                </div>
+                            )}
                         </div>
-
-                        <div className="bg-gray-50 rounded-lg p-2.5 sm:p-3">
-                            <p className="text-[10px] xs:text-xs text-gray-500">Student Name</p>
-                            <p className="text-sm sm:text-base font-semibold text-gray-800 truncate">{feeData.studentName}</p>
-                        </div>
-
-                        <div className="bg-gray-50 rounded-lg p-2.5 sm:p-3 xs:col-span-2 sm:col-span-1">
-                            <p className="text-[10px] xs:text-xs text-gray-500">Course</p>
-                            <p className="text-sm sm:text-base font-semibold text-gray-800 truncate">{feeData.courseName}</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div className="flex items-start gap-3">
+                                <div className="flex-shrink-0 mt-0.5">
+                                    <Icons.IdCard />
+                                </div>
+                                <div>
+                                    <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">Student ID</p>
+                                    <p className="text-base font-semibold text-gray-800 mt-1">{feeData.studentId}</p>
+                                </div>
+                            </div>
+                            <div className="flex items-start gap-3">
+                                <div className="flex-shrink-0 mt-0.5">
+                                    <Icons.User />
+                                </div>
+                                <div>
+                                    <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">Student Name</p>
+                                    <p className="text-base font-semibold text-gray-800 mt-1">{feeData.studentName}</p>
+                                </div>
+                            </div>
+                            <div className="flex items-start gap-3">
+                                <div className="flex-shrink-0 mt-0.5">
+                                    <Icons.Graduation />
+                                </div>
+                                <div>
+                                    <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">Course</p>
+                                    <p className="text-base font-semibold text-gray-800 mt-1">{feeData.courseName}</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
+                </div>
 
-                    {/* Fee Concession Section */}
-                    {feeData.feeConcession && feeData.feeConcession.concessionPercentage > 0 && (
-                        <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4">
-                            <div className="flex flex-col xs:flex-row items-start gap-2 xs:gap-3">
-                                <div className="flex-shrink-0">
-                                    <svg className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
+                {/* Fee Concession Details */}
+                {feeData.feeConcession && feeData.feeConcession.concessionPercentage > 0 && (
+                    <div className="mb-6 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-4 sm:p-5">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                            <div className="flex-shrink-0 bg-green-100 rounded-full p-2">
+                                <Icons.Discount />
+                            </div>
+                            <div className="flex-1">
+                                <p className="text-sm sm:text-base font-semibold text-green-800">
+                                    Fee Concession Applied
+                                </p>
+                                <p className="text-xs sm:text-sm text-green-700">
+                                    {feeData.feeConcession.concessionPercentage}% discount on <strong>Tuition Fee</strong>
+                                    {feeData.feeConcession.appliedOn && (
+                                        <span className="ml-1 text-green-600 font-normal">
+                                            (applied only on tuition fee, other fee remains unchanged)
+                                        </span>
+                                    )}
+                                </p>
+                                {feeData.feeConcession.matchedReferrals && feeData.feeConcession.matchedReferrals.length > 0 && (
+                                    <div className="mt-2 flex flex-wrap gap-2">
+                                        {feeData.feeConcession.matchedReferrals.map((referral, idx) => (
+                                            <span key={idx} className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                                                {referral.name} ({referral.percentage}%)
+                                            </span>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Fee Structure */}
+                {feeData.years?.map((year: YearData, index: number) => (
+                    <div key={index} className="mb-6">
+                        {/* Year Header */}
+                        <div className="bg-white rounded-t-xl border border-gray-200 border-b-0 p-4 sm:p-6">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                                <div>
+                                    <h2 className="text-lg sm:text-xl font-bold text-gray-800 flex items-center gap-2">
+                                        <Icons.Graduation />
+                                        Year {year.year}
+                                    </h2>
+                                    <div className="mt-1 flex flex-wrap items-center gap-2 text-xs sm:text-sm text-gray-500">
+                                        <span>Tuition: ₹{year.tuitionFee.toLocaleString()}</span>
+                                        <span className="hidden xs:inline">•</span>
+                                        <span>Other Fee: ₹{year.otherFee.toLocaleString()}</span>
+                                        <span className="hidden xs:inline">•</span>
+                                        <span className="font-medium text-gray-700">
+                                            Total: ₹{year.originalAmount.toLocaleString()}
+                                        </span>
+                                    </div>
                                 </div>
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-xs sm:text-sm font-medium text-blue-800">
-                                        Fee Concession Applied: {feeData.feeConcession.concessionPercentage}% off
-                                    </p>
-                                    {feeData.feeConcession.matchedReferrals && feeData.feeConcession.matchedReferrals.length > 0 && (
-                                        <div className="mt-1 space-y-0.5">
-                                            {feeData.feeConcession.matchedReferrals.map((referral, idx) => (
-                                                <p key={idx} className="text-[10px] xs:text-xs text-blue-700 truncate">
-                                                    • {referral.name} ({referral.percentage}% discount)
-                                                </p>
-                                            ))}
+                                <div className="text-right">
+                                    {year.concessionPercentage > 0 && (
+                                        <div className="text-sm text-green-600 font-medium flex items-center justify-end gap-1">
+                                            <Icons.Money />
+                                            You Save: ₹{year.concessionAmount.toLocaleString()}
+                                        </div>
+                                    )}
+                                    <div className="text-base sm:text-lg font-bold text-blue-600">
+                                        Payable: ₹{year.payableAmount.toLocaleString()}
+                                    </div>
+                                    {year.concessionPercentage > 0 && (
+                                        <div className="text-xs text-gray-400 line-through">
+                                            Original: ₹{year.originalAmount.toLocaleString()}
                                         </div>
                                     )}
                                 </div>
                             </div>
                         </div>
-                    )}
-                </div>
 
-                {/* Fee Structure */}
-                {feeData.years?.map((year: YearData, index: number) => (
-                    <div
-                        key={index}
-                        className="bg-white rounded-lg border border-gray-200 mb-4 overflow-hidden"
-                    >
-                        <div className="px-3 sm:px-4 py-2.5 sm:py-3 border-b border-gray-200 bg-gray-50">
-                            <div className="flex flex-col xs:flex-row xs:justify-between xs:items-center gap-1 xs:gap-0">
-                                <h2 className="text-base sm:text-lg font-semibold text-gray-800">
-                                    Year {year.year}
-                                </h2>
-                                <div className="text-right">
-                                    {year.concessionPercentage > 0 && (
-                                        <p className="text-[10px] xs:text-xs text-gray-500 line-through">
-                                            ₹{year.originalAmount}
-                                        </p>
-                                    )}
-                                    <p className="text-sm sm:text-base font-bold text-gray-800">
-                                        Total: ₹{year.payableAmount}
-                                    </p>
-                                    {year.concessionAmount > 0 && (
-                                        <p className="text-[10px] xs:text-xs text-green-600">
-                                            Saved: ₹{year.concessionAmount}
-                                        </p>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="p-3 sm:p-4">
+                        {/* Payment Options */}
+                        <div className="bg-gray-50 rounded-b-xl border border-gray-200 border-t-0 p-4 sm:p-6">
                             {year.paymentOptions && year.paymentOptions.length > 0 ? (
-                                <div className="space-y-2 sm:space-y-3">
+                                <div className="space-y-3">
                                     {year.paymentOptions.map((option: Installment, idx: number) => {
                                         const isPastDue = isDueDatePassed(option.dueDate);
                                         const isPaid = option.paid;
                                         const isProcessing = isInstallmentProcessing(year.year, option.number);
 
-                                        let label = `Option ${option.number}`;
+                                        let label = '';
+                                        let subLabel = '';
                                         if (selectedPaymentMethod === 'full_payment') {
                                             label = 'Full Payment';
+                                            subLabel = 'One-time payment';
                                         } else if (selectedPaymentMethod === 'installment') {
-                                            if (option.number === 0) {
-                                                label = 'Full Payment';
-                                            } else {
-                                                label = `Installment ${option.number}`;
-                                            }
+                                            label = `Installment ${option.number} of ${year.paymentOptions.length}`;
+                                            subLabel = `Due: ${new Date(option.dueDate).toLocaleDateString('en-IN', {
+                                                day: '2-digit',
+                                                month: 'short',
+                                                year: 'numeric'
+                                            })}`;
                                         }
+
+                                        // Determine the amount to display
+                                        const displayAmount = isPaid
+                                            ? (option.paymentAmount || option.payableAmount)
+                                            : option.payableAmount;
 
                                         return (
                                             <div
                                                 key={idx}
-                                                className={`flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 rounded-lg gap-3 sm:gap-4 ${isPaid
-                                                        ? "bg-green-50 border border-green-200"
-                                                        : isPastDue
-                                                            ? "bg-red-50 border border-red-200"
-                                                            : "bg-gray-50"
+                                                className={`rounded-xl border-2 p-4 sm:p-5 transition-all duration-200 ${isPaid
+                                                    ? 'bg-green-50 border-green-300'
+                                                    : isPastDue
+                                                        ? 'bg-red-50 border-red-300'
+                                                        : 'bg-white border-gray-200 hover:border-blue-300 hover:shadow-md'
                                                     }`}
                                             >
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                                                        <p className="text-sm sm:text-base font-medium text-gray-800">
-                                                            {label}
+                                                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                                                    {/* Left - Details */}
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex flex-wrap items-center gap-2">
+                                                            <h3 className="text-base sm:text-lg font-semibold text-gray-800">
+                                                                {label}
+                                                            </h3>
+                                                            {isPaid && (
+                                                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-200 text-green-800">
+                                                                    <Icons.Check />
+                                                                    Paid
+                                                                </span>
+                                                            )}
+                                                            {!isPaid && isPastDue && (
+                                                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-200 text-red-800">
+                                                                    <Icons.Alert />
+                                                                    Overdue
+                                                                </span>
+                                                            )}
+                                                            {isProcessing && (
+                                                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-200 text-blue-800">
+                                                                    <Icons.Spinner />
+                                                                    Processing...
+                                                                </span>
+                                                            )}
+                                                        </div>
+
+                                                        <p className="text-xs sm:text-sm text-gray-500 mt-1">
+                                                            {subLabel}
                                                         </p>
+
+                                                        {/* Fee Breakdown - Only show for unpaid items */}
+                                                        {!isPaid && (
+                                                            <div className="mt-2 flex flex-wrap items-center gap-3 text-xs sm:text-sm">
+                                                                <div className="flex items-center gap-1">
+                                                                    <span className="text-gray-500">Tuition:</span>
+                                                                    <span className="font-medium">₹{option.tuitionFee.toLocaleString()}</span>
+                                                                    {option.tuitionConcession > 0 && (
+                                                                        <span className="text-green-600 font-medium">
+                                                                            (-₹{option.tuitionConcession.toLocaleString()})
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                                <div className="flex items-center gap-1">
+                                                                    <span className="text-gray-500">Other:</span>
+                                                                    <span className="font-medium">₹{option.otherFee.toLocaleString()}</span>
+                                                                </div>
+                                                                {option.discountAmount > 0 && (
+                                                                    <div className="flex items-center gap-1 bg-green-100 px-2 py-0.5 rounded-full">
+                                                                        <Icons.Money />
+                                                                        <span className="text-green-700 font-medium">
+                                                                            Save ₹{option.discountAmount.toLocaleString()}
+                                                                        </span>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        )}
+
+                                                        {/* Paid Details - Only show for paid items */}
                                                         {isPaid && (
-                                                            <span className="inline-flex items-center px-1.5 sm:px-2 py-0.5 rounded text-[10px] xs:text-xs font-medium bg-green-100 text-green-800">
-                                                                Paid
-                                                            </span>
-                                                        )}
-                                                        {!isPaid && isPastDue && (
-                                                            <span className="inline-flex items-center px-1.5 sm:px-2 py-0.5 rounded text-[10px] xs:text-xs font-medium bg-red-100 text-red-800">
-                                                                Overdue
-                                                            </span>
-                                                        )}
-                                                        {isProcessing && (
-                                                            <span className="inline-flex items-center px-1.5 sm:px-2 py-0.5 rounded text-[10px] xs:text-xs font-medium bg-blue-100 text-blue-800">
-                                                                Processing...
-                                                            </span>
-                                                        )}
-                                                    </div>
-
-                                                    <div className="mt-0.5 sm:mt-1 space-y-0.5">
-                                                        <p className={`text-xs sm:text-sm ${isPastDue && !isPaid ? "text-red-600" : "text-gray-500"}`}>
-                                                            Due: {new Date(option.dueDate).toLocaleDateString('en-IN', {
-                                                                day: '2-digit',
-                                                                month: 'short',
-                                                                year: 'numeric'
-                                                            })}
-                                                        </p>
-
-                                                        {option.discountAmount > 0 && (
-                                                            <p className="text-[10px] xs:text-xs text-green-600">
-                                                                Discount: ₹{option.discountAmount}
-                                                            </p>
-                                                        )}
-
-                                                        {isPaid && option.paidDate && (
-                                                            <p className="text-xs sm:text-sm text-green-600">
-                                                                Paid on: {formatDate(option.paidDate)}
-                                                            </p>
-                                                        )}
-
-                                                        {isPaid && option.paymentId && (
-                                                            <p className="text-[10px] xs:text-xs text-gray-400 truncate">
-                                                                Transaction ID: {option.paymentId}
-                                                            </p>
+                                                            <div className="mt-2 flex flex-col gap-0.5">
+                                                                {option.paidDate && (
+                                                                    <p className="text-xs text-green-600">
+                                                                        Paid on: {formatDate(option.paidDate)}
+                                                                    </p>
+                                                                )}
+                                                                {option.paymentId && (
+                                                                    <p className="text-xs text-gray-400 truncate">
+                                                                        Payment ID: {option.paymentId}
+                                                                    </p>
+                                                                )}
+                                                            </div>
                                                         )}
                                                     </div>
-                                                </div>
 
-                                                <div className="flex flex-row sm:flex-row items-center justify-between sm:justify-end gap-3 sm:gap-4 w-full sm:w-auto">
-                                                    <div className="text-right">
-                                                        {option.discountAmount > 0 && (
-                                                            <p className="text-[10px] xs:text-xs text-gray-400 line-through">
-                                                                ₹{option.originalAmount}
-                                                            </p>
-                                                        )}
-                                                        <p className="text-sm sm:text-base font-bold text-gray-800">
-                                                            ₹{option.payableAmount}
-                                                        </p>
-                                                    </div>
+                                                    {/* Right - Amount & Actions */}
+                                                    <div className="flex items-center gap-3 sm:gap-4">
+                                                        {/* Amount Display */}
+                                                        <div className="text-right">
+                                                            {isPaid ? (
+                                                                <>
+                                                                    <p className="text-lg sm:text-xl font-bold text-green-600">
+                                                                        ₹{displayAmount.toLocaleString()}
+                                                                    </p>
+                                                                    <p className="text-xs text-green-500 font-medium">
+                                                                        Paid
+                                                                    </p>
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    {option.discountAmount > 0 && (
+                                                                        <p className="text-xs text-gray-400 line-through">
+                                                                            ₹{option.originalAmount.toLocaleString()}
+                                                                        </p>
+                                                                    )}
+                                                                    <p className="text-lg sm:text-xl font-bold text-gray-800">
+                                                                        ₹{displayAmount.toLocaleString()}
+                                                                    </p>
+                                                                </>
+                                                            )}
+                                                        </div>
 
-                                                    {isPaid ? (
-                                                        <button
-                                                            onClick={() => handleViewReceipt(option.paymentId!)}
-                                                            className="px-3 sm:px-5 py-1.5 sm:py-2 rounded-lg transition text-xs sm:text-sm font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 whitespace-nowrap"
-                                                            disabled={isProcessing}
-                                                        >
-                                                            View Receipt
-                                                        </button>
-                                                    ) : (
-                                                        <button
-                                                            onClick={() =>
-                                                                handlePayNow(
+                                                        {/* Action Button */}
+                                                        {isPaid ? (
+                                                            <button
+                                                                onClick={() => handleViewReceipt(option.paymentId!)}
+                                                                className="px-4 py-2 rounded-lg text-sm font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 transition-all whitespace-nowrap flex items-center gap-2"
+                                                            >
+                                                                <Icons.Receipt />
+                                                                Receipt
+                                                            </button>
+                                                        ) : (
+                                                            <button
+                                                                onClick={() => handlePayNow(
                                                                     year.year,
                                                                     option.number,
-                                                                )
-                                                            }
-                                                            className={`px-3 sm:px-5 py-1.5 sm:py-2 rounded-lg transition text-xs sm:text-sm font-medium min-w-[70px] sm:min-w-[100px] whitespace-nowrap ${isPastDue
-                                                                    ? "bg-red-600 hover:bg-red-700 text-white"
-                                                                    : "bg-gradient-to-b from-[#003B73] to-[#0057A0] text-white hover:opacity-90"
-                                                                } ${isProcessing ? "opacity-50 cursor-not-allowed" : ""}`}
-                                                            disabled={isPaid || isProcessing}
-                                                        >
-                                                            {isProcessing ? "Processing..." : "Pay Now"}
-                                                        </button>
-                                                    )}
+                                                                    option.paymentOptionId
+                                                                )}
+                                                                disabled={isProcessing}
+                                                                className={`px-5 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${isPastDue
+                                                                    ? 'bg-red-600 hover:bg-red-700 text-white shadow-md'
+                                                                    : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md hover:shadow-lg'
+                                                                    } ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                            >
+                                                                {isProcessing ? (
+                                                                    <>
+                                                                        <Icons.Spinner />
+                                                                        Processing
+                                                                    </>
+                                                                ) : (
+                                                                    <>
+                                                                        <Icons.CreditCard />
+                                                                        Pay Now
+                                                                    </>
+                                                                )}
+                                                            </button>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
                                         );
                                     })}
                                 </div>
                             ) : (
-                                <div className="text-center py-4 sm:py-6 text-gray-500 text-sm sm:text-base">
-                                    No payment options available.
+                                <div className="text-center py-8 text-gray-500">
+                                    No payment options available for this year.
                                 </div>
                             )}
                         </div>

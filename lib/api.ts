@@ -69,24 +69,38 @@ export type FeeConfigurationResponse = {
         percentage: number;
       }[];
       concessionPercentage: number;
+      appliedOn?: string; // Indicates where concession is applied (e.g., "tuitionFee")
     };
     years: {
       year: string;
       originalAmount: number;
+      tuitionFee: number; // Added: Original tuition fee
+      otherFee: number; // Added: Original other fee
       concessionPercentage: number;
-      concessionAmount: number;
-      payableAmount: number;
+
+      tuitionConcession: number; // Added: Concession amount on tuition fee
+      otherFeeConcession: number; // Added: Concession on other fee (always 0)
+      concessionAmount: number; // Total concession amount (only from tuition fee)
+      payableAmount: number; // Total payable (discounted tuition + other fee)
+      paymentMethod: string; // Added: Selected payment method
       paymentOptions: {
+        paymentOptionId: string; // Added: ID of the payment option
+        name?: string; // Added: Name of the payment option
         number: number;
         type: string;
         originalAmount: number;
-        discountAmount: number;
-        payableAmount: number;
+        tuitionFee: number; // Added: Tuition fee portion of installment
+        otherFee: number; // Added: Other fee portion of installment
+        tuitionConcession: number; // Added: Concession on tuition fee portion
+        otherFeeConcession: number; // Added: Concession on other fee (always 0)
+        discountAmount: number; // Total discount (tuitionConcession only)
+        payableAmount: number; // Payable amount (discounted tuition + other fee)
         dueDate: string;
         paid: boolean;
         paidDate: string | null;
         paymentId: string | null;
       }[];
+      message?: string; // Added: Optional message when no payment options available
     }[];
   };
 };
@@ -122,7 +136,8 @@ export const createStudentPayment = async (
 
 export const createTuitionFeePayment = async (
   year: string,
-  installmentNumber: number
+  installmentNumber: number,
+  paymentOptionId : string
 ) => {
   try {
     const res = await axios.post(
@@ -130,6 +145,7 @@ export const createTuitionFeePayment = async (
       {
         year,
         installmentNumber,
+        paymentOptionId
       },
       {
         withCredentials: true,
@@ -150,11 +166,11 @@ export const createTuitionFeePayment = async (
 // Add these to your lib/api.ts file
 
 // Create Instamojo Tuition Fee Payment
-export const createInstamojoTuitionPayment = async (year: string, installmentNo: number) => {
+export const createInstamojoTuitionPayment = async (year: string, installmentNo: number, paymentOptionId : string) => {
   try {
     const response = await axios.post(
       `${API_BASE}/tuition-fee/create/instamojo`,
-      { year, installmentNumber: installmentNo },
+      { year, installmentNumber: installmentNo,paymentOptionId },
       { withCredentials: true }
     );
     return response.data;
@@ -167,11 +183,11 @@ export const createInstamojoTuitionPayment = async (year: string, installmentNo:
 };
 
 // Create CCAvenue Tuition Fee Payment
-export const createCCAvenueTuitionPayment = async (year: string, installmentNo: number) => {
+export const createCCAvenueTuitionPayment = async (year: string, installmentNo: number, paymentOptionId : string) => {
   try {
     const response = await axios.post(
       `${API_BASE}/tuition-fee/create/ccavenue`,
-      { year, installmentNumber: installmentNo },
+      { year, installmentNumber: installmentNo,paymentOptionId },
       { withCredentials: true }
     );
     return response.data;
@@ -710,7 +726,7 @@ export const getTuitionFeeReceipt = async (
 export const getStudentwithtoken = async () => {
   try {
     const res = await axios.get(
-      `${API_BASE}/student/me`, 
+      `${API_BASE}/student/me`,
       { withCredentials: true }
     );
     return res.data;
