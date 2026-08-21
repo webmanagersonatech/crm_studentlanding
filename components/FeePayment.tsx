@@ -99,6 +99,7 @@ interface YearData {
     year: string;
     originalAmount: number;
     tuitionFee: number;
+    FeeDescription?: string;
     otherFee: number;
     concessionPercentage: number;
     tuitionConcession: number;
@@ -657,12 +658,7 @@ export default function FeePaymentClient() {
                             <h1 className="text-xl sm:text-2xl font-bold text-gray-800">
                                 Fee Payment Details
                             </h1>
-                            {feeData.feeConcession.concessionPercentage > 0 && (
-                                <div className="bg-green-100 text-green-800 px-4 py-2 rounded-full text-sm font-semibold flex items-center gap-2">
-                                    <Icons.Discount />
-                                    {feeData.feeConcession.concessionPercentage}% OFF
-                                </div>
-                            )}
+
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             <div className="flex items-start gap-3">
@@ -707,19 +703,12 @@ export default function FeePaymentClient() {
                                 <p className="text-sm sm:text-base font-semibold text-green-800">
                                     Fee Concession Applied
                                 </p>
-                                <p className="text-xs sm:text-sm text-green-700">
-                                    {feeData.feeConcession.concessionPercentage}% discount on <strong>Tuition Fee</strong>
-                                    {feeData.feeConcession.appliedOn && (
-                                        <span className="ml-1 text-green-600 font-normal">
-                                            (applied only on tuition fee, other fee remains unchanged)
-                                        </span>
-                                    )}
-                                </p>
+
                                 {feeData.feeConcession.matchedReferrals && feeData.feeConcession.matchedReferrals.length > 0 && (
                                     <div className="mt-2 flex flex-wrap gap-2">
                                         {feeData.feeConcession.matchedReferrals.map((referral, idx) => (
                                             <span key={idx} className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
-                                                {referral.name} ({referral.percentage}%)
+                                                {referral.name}
                                             </span>
                                         ))}
                                     </div>
@@ -741,32 +730,45 @@ export default function FeePaymentClient() {
                                         Year {year.year}
                                     </h2>
                                     <div className="mt-1 flex flex-wrap items-center gap-2 text-xs sm:text-sm text-gray-500">
-                                        <span>Tuition: ₹{year.tuitionFee.toLocaleString()}</span>
+                                        <span>
+                                            Tuition: ₹{(
+                                                year.concessionPercentage > 0
+                                                    ? year.tuitionFee - year.tuitionConcession
+                                                    : year.tuitionFee
+                                            ).toLocaleString()}
+                                        </span>
                                         <span className="hidden xs:inline">•</span>
                                         <span>Other Fee: ₹{year.otherFee.toLocaleString()}</span>
                                         <span className="hidden xs:inline">•</span>
                                         <span className="font-medium text-gray-700">
-                                            Total: ₹{year.originalAmount.toLocaleString()}
+                                            Total: ₹{year.payableAmount.toLocaleString()}
                                         </span>
                                     </div>
                                 </div>
                                 <div className="text-right">
                                     {year.concessionPercentage > 0 && (
                                         <div className="text-sm text-green-600 font-medium flex items-center justify-end gap-1">
-                                            <Icons.Money />
-                                            You Save: ₹{year.concessionAmount.toLocaleString()}
+
+                                            -₹{(year.concessionAmount).toLocaleString()}
                                         </div>
                                     )}
                                     <div className="text-base sm:text-lg font-bold text-blue-600">
                                         Payable: ₹{year.payableAmount.toLocaleString()}
                                     </div>
-                                    {year.concessionPercentage > 0 && (
-                                        <div className="text-xs text-gray-400 line-through">
-                                            Original: ₹{year.originalAmount.toLocaleString()}
-                                        </div>
-                                    )}
+
                                 </div>
                             </div>
+                            {year.FeeDescription && (
+                                <div className="mt-4 rounded-lg bg-gray-50 border border-gray-200 p-4">
+                                    <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                                        Fee Description
+                                    </h3>
+
+                                    <div className="text-sm text-gray-600 whitespace-pre-line leading-6">
+                                        {year.FeeDescription}
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         {/* Payment Options */}
@@ -843,25 +845,19 @@ export default function FeePaymentClient() {
                                                             <div className="mt-2 flex flex-wrap items-center gap-3 text-xs sm:text-sm">
                                                                 <div className="flex items-center gap-1">
                                                                     <span className="text-gray-500">Tuition:</span>
-                                                                    <span className="font-medium">₹{option.tuitionFee.toLocaleString()}</span>
-                                                                    {option.tuitionConcession > 0 && (
-                                                                        <span className="text-green-600 font-medium">
-                                                                            (-₹{option.tuitionConcession.toLocaleString()})
-                                                                        </span>
-                                                                    )}
+                                                                    <span className="font-medium">
+                                                                        ₹{(
+                                                                            option.tuitionConcession > 0
+                                                                                ? option.tuitionFee - option.tuitionConcession
+                                                                                : option.tuitionFee
+                                                                        ).toLocaleString()}
+                                                                    </span>
                                                                 </div>
                                                                 <div className="flex items-center gap-1">
                                                                     <span className="text-gray-500">Other:</span>
                                                                     <span className="font-medium">₹{option.otherFee.toLocaleString()}</span>
                                                                 </div>
-                                                                {option.discountAmount > 0 && (
-                                                                    <div className="flex items-center gap-1 bg-green-100 px-2 py-0.5 rounded-full">
-                                                                        <Icons.Money />
-                                                                        <span className="text-green-700 font-medium">
-                                                                            Save ₹{option.discountAmount.toLocaleString()}
-                                                                        </span>
-                                                                    </div>
-                                                                )}
+
                                                             </div>
                                                         )}
 
@@ -897,11 +893,7 @@ export default function FeePaymentClient() {
                                                                 </>
                                                             ) : (
                                                                 <>
-                                                                    {option.discountAmount > 0 && (
-                                                                        <p className="text-xs text-gray-400 line-through">
-                                                                            ₹{option.originalAmount.toLocaleString()}
-                                                                        </p>
-                                                                    )}
+
                                                                     <p className="text-lg sm:text-xl font-bold text-gray-800">
                                                                         ₹{displayAmount.toLocaleString()}
                                                                     </p>

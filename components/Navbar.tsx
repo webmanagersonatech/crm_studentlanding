@@ -17,7 +17,7 @@ export function Navbar({ toggle }: Props) {
   /* =======================
      State
   ======================= */
-  const [instituteName, setInstituteName] = useState("Admission Portal");
+  const [instituteName, setInstituteName] = useState("Student Portal");
   const [studentName, setStudentName] = useState("Student");
 
   /* =======================
@@ -53,7 +53,7 @@ export function Navbar({ toggle }: Props) {
   //     })
   //     .then((res) => {
   //       if (res.data?.success === true) {
-  //         setInstituteName(res.data.data?.instituteName || "Admission Portal");
+  //         setInstituteName(res.data.data?.instituteName || "Student Portal");
   //       }
   //     })
   //     .catch((err) => {
@@ -67,7 +67,7 @@ export function Navbar({ toggle }: Props) {
   /* =======================
      Helpers
   ======================= */
-  const avatarLetter = studentName.charAt(0).toUpperCase();
+
 
   return (
     <header className="sticky top-0 z-30 h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 md:px-6">

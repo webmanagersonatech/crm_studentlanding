@@ -213,7 +213,7 @@ export default function PaymentPage() {
                 key: result.key,
                 amount: result.amount,
                 currency: result.currency,
-                name: "Admission Portal",
+                name: "Student Portal",
                 description: "Application Fee Payment",
                 order_id: result.orderId,
 

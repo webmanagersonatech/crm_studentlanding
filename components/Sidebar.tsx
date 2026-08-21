@@ -15,7 +15,7 @@ export function Sidebar() {
      State
   ======================= */
   const [logo, setLogo] = useState<string | null>(null);
-  const [instituteName, setInstituteName] = useState<string>("Admission Portal");
+  const [instituteName, setInstituteName] = useState<string>("Student Portal");
   const [studentName, setStudentName] = useState<string>("Student");
   const [studentEmail, setStudentEmail] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);

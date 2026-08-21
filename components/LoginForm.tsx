@@ -20,11 +20,7 @@ export default function LoginForm({ instituteId }: Props) {
     const isApplicationOpen = institutdata?.isApplicationOpen ?? true;
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        // 🚫 Block login if application closed
-        if (!isApplicationOpen) {
-            setMsg("Applications are currently closed. Login is disabled.");
-            return;
-        }
+    
         setLoading(true);
         setMsg("");
 
@@ -59,7 +55,7 @@ export default function LoginForm({ instituteId }: Props) {
 
 
     return (
-        <AuthShell title="ADMISSION PORTAL - LOGIN" logo={institutdata?.logo || null} size="sm">
+        <AuthShell title="Student Management Portal"  subtitle="Application Forms • Application Payment • Tuition Payments"  logo={institutdata?.logo || null} size="sm">
             {!isApplicationOpen && (
                 <div className="mb-4 p-3 rounded-xl bg-red-100 text-red-700 text-center font-semibold">
                     🚫 Applications are currently closed.
@@ -74,7 +70,7 @@ export default function LoginForm({ instituteId }: Props) {
                     onChange={(e) => setUsername(e.target.value)}
                     placeholder="Username"
                     required
-                    disabled={!isApplicationOpen}
+
                     className="w-full h-12 px-4 rounded-xl border bg-white/20 text-white placeholder-white/80 outline-none"
                 />
 
@@ -87,7 +83,7 @@ export default function LoginForm({ instituteId }: Props) {
                         type={showPassword ? "text" : "password"}
                         placeholder="Password"
                         required
-                        disabled={!isApplicationOpen}
+
                         className="w-full h-12 px-4 rounded-xl border bg-white/20 text-white placeholder-white/80 outline-none"
                     />
                     <button
@@ -104,7 +100,7 @@ export default function LoginForm({ instituteId }: Props) {
                 {/* Submit */}
                 <button
                     type="submit"
-                    disabled={loading || !isApplicationOpen}
+                    disabled={loading}
                     className="w-full h-12 bg-indigo-600 text-white rounded-xl font-semibold disabled:opacity-50"
                 >
                     {loading ? "Signing in..." : "Sign In"}
@@ -113,12 +109,12 @@ export default function LoginForm({ instituteId }: Props) {
                 {msg && <p className="text-center text-red-600">{msg}</p>}
 
                 {/* Links */}
-                {isApplicationOpen && (<div className="text-center text-sm">
+                <div className="text-center text-sm">
                     {/* ✅ Allow registration only if open */}
 
-                    <Link href="/register" className="text-white/80 mx-2">
+                    {isApplicationOpen && (<Link href="/register" className="text-white/80 mx-2">
                         New User
-                    </Link>
+                    </Link>)}
 
 
                     {/* ✅ Forgot password always allowed */}
@@ -126,7 +122,7 @@ export default function LoginForm({ instituteId }: Props) {
                         Forgot Password?
                     </Link>
 
-                </div>)}
+                </div>
             </form>
         </AuthShell>
     );

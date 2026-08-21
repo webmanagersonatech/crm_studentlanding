@@ -296,25 +296,17 @@ export default function TuitionFeeReceipt() {
 
           {/* Amount Breakdown - Responsive */}
           <div className="px-4 sm:px-6 py-4 sm:py-5">
-            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Amount Breakdown</h3>
+     
             <div className="max-w-full sm:max-w-md">
-              <div className="flex justify-between py-1.5 border-b border-gray-100">
-                <span className="text-gray-600 text-sm sm:text-base">Original Amount</span>
-                <span className="font-medium text-gray-800 text-sm sm:text-base">{formatCurrency(receipt.payment.originalAmount)}</span>
-              </div>
-              {receipt.payment.concessionAmount > 0 && (
-                <div className="flex justify-between py-1.5 border-b border-gray-100 text-green-600">
-                  <span className="text-sm sm:text-base">Concession ({receipt.payment.concessionPercentage}%)</span>
-                  <span className="text-sm sm:text-base">-{formatCurrency(receipt.payment.concessionAmount)}</span>
-                </div>
-              )}
+           
+          
               {receipt.payment.gstAmount > 0 && (
                 <div className="flex justify-between py-1.5 border-b border-gray-100 text-gray-600">
                   <span className="text-sm sm:text-base">GST</span>
                   <span className="text-sm sm:text-base">{formatCurrency(receipt.payment.gstAmount)}</span>
                 </div>
               )}
-              <div className="flex justify-between py-2 mt-2 border-t-2 border-gray-300">
+              <div className="flex justify-between py-2 ">
                 <span className="font-semibold text-gray-800 text-sm sm:text-base">Total Amount Paid</span>
                 <span className="font-bold text-base sm:text-lg text-blue-600">{formatCurrency(receipt.payment.totalAmount)}</span>
               </div>

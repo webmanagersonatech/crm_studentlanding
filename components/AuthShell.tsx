@@ -3,6 +3,7 @@ import { ReactNode } from "react";
 
 interface AuthShellProps {
   children: ReactNode;
+  subtitle?: string;
   title: string;
   logo?: string | null;
   size?: "sm" | "md" | "lg";
@@ -10,6 +11,7 @@ interface AuthShellProps {
 
 export function AuthShell({
   children,
+  subtitle,
   title,
   logo,
   size = "sm",
@@ -36,10 +38,14 @@ export function AuthShell({
           />
         )}
 
-        <h2 className="text-center text-white text-2xl font-bold mb-6">
+        <h2 className="text-center text-white text-2xl font-bold ">
           {title}
         </h2>
-
+        {subtitle && (
+          <p className="text-center text-white/80 text-sm mb-6">
+            ({subtitle})
+          </p>
+        )}
         {children}
       </div>
     </div>
