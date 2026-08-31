@@ -55,7 +55,7 @@ export default function LoginForm({ instituteId }: Props) {
 
 
     return (
-        <AuthShell title="Student Management Portal"  subtitle="Application Forms • Application Payment • Tuition Payments"  logo={institutdata?.logo || null} size="sm">
+        <AuthShell title="Student Management Portal"  subtitle="Online Application & Payment Portal"  logo={institutdata?.logo || null} size="sm">
             {!isApplicationOpen && (
                 <div className="mb-4 p-3 rounded-xl bg-red-100 text-red-700 text-center font-semibold">
                     🚫 Applications are currently closed.
