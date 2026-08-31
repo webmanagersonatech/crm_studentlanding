@@ -296,10 +296,10 @@ export default function TuitionFeeReceipt() {
 
           {/* Amount Breakdown - Responsive */}
           <div className="px-4 sm:px-6 py-4 sm:py-5">
-     
+
             <div className="max-w-full sm:max-w-md">
-           
-          
+
+
               {receipt.payment.gstAmount > 0 && (
                 <div className="flex justify-between py-1.5 border-b border-gray-100 text-gray-600">
                   <span className="text-sm sm:text-base">GST</span>

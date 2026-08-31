@@ -111,6 +111,63 @@ export type ReceiptResponse = {
   data?: ReceiptData;
 };
 
+
+export type HostelRoomType = {
+  id: string;
+  name: string;
+  amount: number;
+  description: string;
+};
+
+export type HostelFeeYear = {
+  year: string;
+  dueDate: string;
+  roomTypes: HostelRoomType[];
+};
+
+export type AdditionalFeeConfigurationResponse = {
+  success: boolean;
+  message?: string;
+  data?: {
+    studentId: string;
+    studentName: string;
+    programId: string;
+    year: string;
+    hostelFee: HostelFeeYear;
+  };
+};
+
+
+
+export const getAdditionalFeeConfigurationByStudent = async (): Promise<AdditionalFeeConfigurationResponse> => {
+  try {
+    const res = await axios.get(
+      `${API_BASE}/additional-fee-configuration/student`,
+      { withCredentials: true }
+    );
+
+    return {
+      success: true,
+      data: res.data.data,
+      message: res.data.message,
+    };
+  } catch (err: any) {
+    const status = err.response?.status;
+    const message = err.response?.data?.message;
+
+    const errorMessages: Record<number, string> = {
+      401: "You are not authorized. Please login again.",
+      404: message || "Additional fee configuration not found",
+      400: message || "You are not admitted yet",
+    };
+
+    return {
+      success: false,
+      message: errorMessages[status] || message || "Server error while fetching additional fee configuration",
+    };
+  }
+};
+
 // ========================
 // Create Payment (Student)
 // ========================
@@ -137,7 +194,7 @@ export const createStudentPayment = async (
 export const createTuitionFeePayment = async (
   year: string,
   installmentNumber: number,
-  paymentOptionId : string
+  paymentOptionId: string
 ) => {
   try {
     const res = await axios.post(
@@ -166,11 +223,11 @@ export const createTuitionFeePayment = async (
 // Add these to your lib/api.ts file
 
 // Create Instamojo Tuition Fee Payment
-export const createInstamojoTuitionPayment = async (year: string, installmentNo: number, paymentOptionId : string) => {
+export const createInstamojoTuitionPayment = async (year: string, installmentNo: number, paymentOptionId: string) => {
   try {
     const response = await axios.post(
       `${API_BASE}/tuition-fee/create/instamojo`,
-      { year, installmentNumber: installmentNo,paymentOptionId },
+      { year, installmentNumber: installmentNo, paymentOptionId },
       { withCredentials: true }
     );
     return response.data;
@@ -183,11 +240,11 @@ export const createInstamojoTuitionPayment = async (year: string, installmentNo:
 };
 
 // Create CCAvenue Tuition Fee Payment
-export const createCCAvenueTuitionPayment = async (year: string, installmentNo: number, paymentOptionId : string) => {
+export const createCCAvenueTuitionPayment = async (year: string, installmentNo: number, paymentOptionId: string) => {
   try {
     const response = await axios.post(
       `${API_BASE}/tuition-fee/create/ccavenue`,
-      { year, installmentNumber: installmentNo,paymentOptionId },
+      { year, installmentNumber: installmentNo, paymentOptionId },
       { withCredentials: true }
     );
     return response.data;

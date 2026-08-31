@@ -1,14 +1,14 @@
-import { FaHome, FaLock, FaSignOutAlt, FaTimes, FaCreditCard } from "react-icons/fa";
+import { FaHome, FaLock, FaSignOutAlt, FaTimes, FaCreditCard, FaChevronDown, FaBuilding, FaGraduationCap } from "react-icons/fa";
 import { MdDashboard } from "react-icons/md";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { logoutStudent, getStudentwithtoken } from "@/lib/api";
 import { useSidebar } from "@/context/SidebarContext";
 
 export function Sidebar() {
-  const pathname = usePathname();
   const router = useRouter();
+  const pathname = router.pathname;
   const { open, toggle, isMobile } = useSidebar();
 
   /* =======================
@@ -19,7 +19,11 @@ export function Sidebar() {
   const [studentName, setStudentName] = useState<string>("Student");
   const [studentEmail, setStudentEmail] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
-  const [showFeePayment, setShowFeePayment] = useState<boolean>(true);
+
+  // Separate, condition-based flags for each fee type
+  const [showTuitionFee, setShowTuitionFee] = useState<boolean>(true);
+  const [showHostelFee, setShowHostelFee] = useState<boolean>(false);
+  const [feeMenuOpen, setFeeMenuOpen] = useState<boolean>(false);
 
   /* =======================
      Helper: Format Student Name
@@ -27,19 +31,19 @@ export function Sidebar() {
   const formatStudentName = (firstname: string, lastname: string, studentId: string): string => {
     const firstName = firstname?.trim() || "";
     const lastName = lastname?.trim() || "";
-    
+
     if (firstName && lastName) {
       return `${firstName} ${lastName}`;
     }
-    
+
     if (firstName) {
       return firstName;
     }
-    
+
     if (lastName) {
       return lastName;
     }
-    
+
     return studentId || "Student";
   };
 
@@ -52,11 +56,9 @@ export function Sidebar() {
         setLoading(true);
         const response = await getStudentwithtoken();
 
-        console.log("Student API Response:", response);
-
         if (response.success && response.data) {
           const studentData = response.data.student;
-
+   
           const formattedName = formatStudentName(
             studentData.firstname,
             studentData.lastname,
@@ -77,9 +79,12 @@ export function Sidebar() {
           }
 
           if (studentData.shownturtionfeepayment !== undefined) {
-            setShowFeePayment(studentData.shownturtionfeepayment);
+            setShowTuitionFee(studentData.shownturtionfeepayment);
           }
 
+          if (studentData.showhostelfeepayment !== undefined) {
+            setShowHostelFee(studentData.showhostelfeepayment);
+          }
         } else {
           const user = localStorage.getItem("user") || localStorage.getItem("student");
           if (user) {
@@ -91,12 +96,15 @@ export function Sidebar() {
                 parsed.studentId
               );
               setStudentName(formattedName || parsed.name || "Student");
-              
+
               if (parsed.email) setStudentEmail(parsed.email);
               if (parsed.logo) setLogo(parsed.logo);
               if (parsed.instituteName) setInstituteName(parsed.instituteName);
               if (parsed.shownturtionfeepayment !== undefined) {
-                setShowFeePayment(parsed.shownturtionfeepayment);
+                setShowTuitionFee(parsed.shownturtionfeepayment);
+              }
+              if (parsed.showhostelfeepayment !== undefined) {
+                setShowHostelFee(parsed.showhostelfeepayment);
               }
             } catch {
               setStudentName("Student");
@@ -115,6 +123,13 @@ export function Sidebar() {
               parsed.studentId
             );
             setStudentName(formattedName || parsed.name || "Student");
+
+            if (parsed.shownturtionfeepayment !== undefined) {
+              setShowTuitionFee(parsed.shownturtionfeepayment);
+            }
+            if (parsed.showhostelfeepayment !== undefined) {
+              setShowHostelFee(parsed.showhostelfeepayment);
+            }
           } catch {
             setStudentName("Student");
           }
@@ -126,6 +141,15 @@ export function Sidebar() {
 
     fetchStudentData();
   }, []);
+
+  /* =======================
+     Auto-open Fee submenu if currently on a fee route
+  ======================= */
+  useEffect(() => {
+    if (pathname === "/fee-payment" || pathname === "/additional-payment") {
+      setFeeMenuOpen(true);
+    }
+  }, [pathname]);
 
   /* =======================
      Logout Handler
@@ -147,55 +171,17 @@ export function Sidebar() {
   };
 
   /* =======================
-     Menu Items Definition
+     Fee Payment sub-menu items
+     /fee-payment        -> Tuition Fee   (condition: showTuitionFee)
+     /additional-payment -> Hostel Fee    (condition: showHostelFee)
   ======================= */
-  interface MenuItem {
-    href: string;
-    label: string;
-    icon: React.ComponentType<{ size?: number; className?: string }>;
-  }
+  const feeSubItems = [
+    { href: "/fee-payment", label: "Tuition Fee", icon: FaGraduationCap, show: showTuitionFee },
+    { href: "/additional-payment", label: "Hostel Fee", icon: FaBuilding, show: showHostelFee },
+  ].filter((item) => item.show);
 
-  const getMenuItems = (): MenuItem[] => {
-    const items: MenuItem[] = [
-      { href: "/dashboard", label: "Apply For Courses", icon: FaHome }
-    ];
-
-    if (showFeePayment) {
-      items.push({ href: "/fee-payment", label: "Fee Payment", icon: FaCreditCard });
-    }
-
-    items.push({ href: "/change-password", label: "Change Password", icon: FaLock });
-
-    return items;
-  };
-
-  /* =======================
-     Render Navigation Links
-  ======================= */
-  const renderNavLinks = () => {
-    return getMenuItems().map((item) => {
-      const Icon = item.icon;
-      const isActive = pathname === item.href;
-
-      return (
-        <Link
-          key={item.href}
-          href={item.href}
-          onClick={() => isMobile && toggle()}
-          className={`
-            flex items-center gap-3 px-4 py-3 rounded-lg text-sm transition-all
-            ${isActive
-              ? "bg-white text-blue-700 shadow font-semibold"
-              : "text-blue-100 hover:bg-blue-800/50 hover:text-white"
-            }
-          `}
-        >
-          <Icon size={18} />
-          {item.label}
-        </Link>
-      );
-    });
-  };
+  const isFeeSectionActive =
+    pathname === "/fee-payment" || pathname === "/additional-payment";
 
   return (
     <>
@@ -261,8 +247,90 @@ export function Sidebar() {
 
         {/* MENU */}
         <nav className="p-4 space-y-2">
-          {renderNavLinks()}
-          
+          {/* Apply For Courses */}
+          <Link
+            href="/dashboard"
+            onClick={() => isMobile && toggle()}
+            className={`
+              flex items-center gap-3 px-4 py-3 rounded-lg text-sm transition-all
+              ${pathname === "/dashboard"
+                ? "bg-white text-blue-700 shadow font-semibold"
+                : "text-blue-100 hover:bg-blue-800/50 hover:text-white"
+              }
+            `}
+          >
+            <FaHome size={18} />
+            Apply For Courses
+          </Link>
+
+          {/* Fee Payment (expandable: Tuition Fee + Hostel Fee, condition-based) */}
+          {feeSubItems.length > 0 && (
+            <div>
+              <button
+                type="button"
+                onClick={() => setFeeMenuOpen((prev) => !prev)}
+                className={`
+                  w-full flex items-center justify-between gap-3 px-4 py-3 rounded-lg text-sm transition-all
+                  ${isFeeSectionActive
+                    ? "bg-white text-blue-700 shadow font-semibold"
+                    : "text-blue-100 hover:bg-blue-800/50 hover:text-white"
+                  }
+                `}
+              >
+                <span className="flex items-center gap-3">
+                  <FaCreditCard size={18} />
+                  Fee Payment
+                </span>
+                <FaChevronDown
+                  size={12}
+                  className={`transition-transform duration-200 ${feeMenuOpen ? "rotate-180" : ""}`}
+                />
+              </button>
+
+              {feeMenuOpen && (
+                <div className="mt-1 ml-4 pl-3 border-l border-blue-700/50 space-y-1">
+                  {feeSubItems.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = pathname === item.href;
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => isMobile && toggle()}
+                        className={`
+                          flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all
+                          ${isActive
+                            ? "bg-white text-blue-700 shadow font-semibold"
+                            : "text-blue-100 hover:bg-blue-800/50 hover:text-white"
+                          }
+                        `}
+                      >
+                        <Icon size={14} />
+                        {item.label}
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Change Password */}
+          <Link
+            href="/change-password"
+            onClick={() => isMobile && toggle()}
+            className={`
+              flex items-center gap-3 px-4 py-3 rounded-lg text-sm transition-all
+              ${pathname === "/change-password"
+                ? "bg-white text-blue-700 shadow font-semibold"
+                : "text-blue-100 hover:bg-blue-800/50 hover:text-white"
+              }
+            `}
+          >
+            <FaLock size={18} />
+            Change Password
+          </Link>
+
           {/* LOGOUT BUTTON */}
           <button
             onClick={handleLogout}
