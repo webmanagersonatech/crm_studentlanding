@@ -729,21 +729,7 @@ export default function FeePaymentClient() {
                                         <Icons.Graduation />
                                         Year {year.year}
                                     </h2>
-                                    <div className="mt-1 flex flex-wrap items-center gap-2 text-xs sm:text-sm text-gray-500">
-                                        <span>
-                                            Tuition: ₹{(
-                                                year.concessionPercentage > 0
-                                                    ? year.tuitionFee - year.tuitionConcession
-                                                    : year.tuitionFee
-                                            ).toLocaleString()}
-                                        </span>
-                                        <span className="hidden xs:inline">•</span>
-                                        <span>Other Fee: ₹{year.otherFee.toLocaleString()}</span>
-                                        <span className="hidden xs:inline">•</span>
-                                        <span className="font-medium text-gray-700">
-                                            Total: ₹{year.payableAmount.toLocaleString()}
-                                        </span>
-                                    </div>
+
                                 </div>
                                 <div className="text-right">
                                     {year.concessionPercentage > 0 && (
@@ -784,7 +770,11 @@ export default function FeePaymentClient() {
                                         let subLabel = '';
                                         if (selectedPaymentMethod === 'full_payment') {
                                             label = 'Full Payment';
-                                            subLabel = 'One-time payment';
+                                            subLabel = `Due: ${new Date(option.dueDate).toLocaleDateString('en-IN', {
+                                                day: '2-digit',
+                                                month: 'short',
+                                                year: 'numeric'
+                                            })}`;
                                         } else if (selectedPaymentMethod === 'installment') {
                                             label = `Installment ${option.number} of ${year.paymentOptions.length}`;
                                             subLabel = `Due: ${new Date(option.dueDate).toLocaleDateString('en-IN', {

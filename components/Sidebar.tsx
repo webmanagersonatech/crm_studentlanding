@@ -58,7 +58,7 @@ export function Sidebar() {
 
         if (response.success && response.data) {
           const studentData = response.data.student;
-   
+
           const formattedName = formatStudentName(
             studentData.firstname,
             studentData.lastname,
@@ -188,7 +188,7 @@ export function Sidebar() {
       {/* MOBILE OVERLAY */}
       {open && isMobile && (
         <div
-          className="fixed inset-0 bg-black/40 z-40 md:hidden"
+          className="fixed inset-0 bg-black/40 z-40 md:hidden cursor-pointer"
           onClick={toggle}
         />
       )}
@@ -239,7 +239,7 @@ export function Sidebar() {
           {/* Close (mobile) */}
           <button
             onClick={toggle}
-            className="md:hidden p-1 rounded-lg hover:bg-blue-700/50 flex-shrink-0"
+            className="md:hidden p-1 rounded-lg hover:bg-blue-700/50 flex-shrink-0 cursor-pointer"
           >
             <FaTimes size={18} />
           </button>
@@ -252,7 +252,7 @@ export function Sidebar() {
             href="/dashboard"
             onClick={() => isMobile && toggle()}
             className={`
-              flex items-center gap-3 px-4 py-3 rounded-lg text-sm transition-all
+              flex items-center gap-3 px-4 py-3 rounded-lg text-sm transition-all cursor-pointer
               ${pathname === "/dashboard"
                 ? "bg-white text-blue-700 shadow font-semibold"
                 : "text-blue-100 hover:bg-blue-800/50 hover:text-white"
@@ -270,7 +270,7 @@ export function Sidebar() {
                 type="button"
                 onClick={() => setFeeMenuOpen((prev) => !prev)}
                 className={`
-                  w-full flex items-center justify-between gap-3 px-4 py-3 rounded-lg text-sm transition-all
+                  w-full flex items-center justify-between gap-3 px-4 py-3 rounded-lg text-sm transition-all cursor-pointer
                   ${isFeeSectionActive
                     ? "bg-white text-blue-700 shadow font-semibold"
                     : "text-blue-100 hover:bg-blue-800/50 hover:text-white"
@@ -298,7 +298,7 @@ export function Sidebar() {
                         href={item.href}
                         onClick={() => isMobile && toggle()}
                         className={`
-                          flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all
+                          flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all cursor-pointer
                           ${isActive
                             ? "bg-white text-blue-700 shadow font-semibold"
                             : "text-blue-100 hover:bg-blue-800/50 hover:text-white"
@@ -320,7 +320,7 @@ export function Sidebar() {
             href="/change-password"
             onClick={() => isMobile && toggle()}
             className={`
-              flex items-center gap-3 px-4 py-3 rounded-lg text-sm transition-all
+              flex items-center gap-3 px-4 py-3 rounded-lg text-sm transition-all cursor-pointer
               ${pathname === "/change-password"
                 ? "bg-white text-blue-700 shadow font-semibold"
                 : "text-blue-100 hover:bg-blue-800/50 hover:text-white"
@@ -336,7 +336,7 @@ export function Sidebar() {
             onClick={handleLogout}
             className="
               w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm
-              text-blue-100 hover:bg-red-600/80 hover:text-white transition
+              text-blue-100 hover:bg-red-600/80 hover:text-white transition cursor-pointer
             "
           >
             <FaSignOutAlt size={18} />
@@ -347,7 +347,7 @@ export function Sidebar() {
         {/* FOOTER */}
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-blue-700/50 text-center">
           <p className="text-xs text-blue-300">
-            © {new Date().getFullYear()} Sona Group of Institutions
+            © {new Date().getFullYear()} Hika®
           </p>
         </div>
       </aside>

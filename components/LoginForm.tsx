@@ -20,7 +20,7 @@ export default function LoginForm({ instituteId }: Props) {
     const isApplicationOpen = institutdata?.isApplicationOpen ?? true;
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-    
+
         setLoading(true);
         setMsg("");
 
@@ -55,7 +55,7 @@ export default function LoginForm({ instituteId }: Props) {
 
 
     return (
-        <AuthShell title="Student Management Portal"  subtitle="Online Application & Payment Portal"  logo={institutdata?.logo || null} size="sm">
+        <AuthShell title="Student Management Portal"  logo={institutdata?.logo || null} size="sm">
             {!isApplicationOpen && (
                 <div className="mb-4 p-3 rounded-xl bg-red-100 text-red-700 text-center font-semibold">
                     🚫 Applications are currently closed.
@@ -66,6 +66,7 @@ export default function LoginForm({ instituteId }: Props) {
                 {/* Email */}
                 <input
                     name="username"
+
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     placeholder="Username"
@@ -101,7 +102,7 @@ export default function LoginForm({ instituteId }: Props) {
                 <button
                     type="submit"
                     disabled={loading}
-                    className="w-full h-12 bg-indigo-600 text-white rounded-xl font-semibold disabled:opacity-50"
+                    className="w-full h-12 bg-indigo-600 text-white rounded-xl font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     {loading ? "Signing in..." : "Sign In"}
                 </button>

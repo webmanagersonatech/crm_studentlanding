@@ -38,9 +38,10 @@ export function AuthShell({
           />
         )}
 
-        <h2 className="text-center text-white text-2xl font-bold ">
+        <h2 className="text-center text-white text-2xl mb-6 font-bold ">
           {title}
         </h2>
+
         {subtitle && (
           <p className="text-center text-white/80 text-sm mb-6">
             ({subtitle})
