@@ -92,6 +92,7 @@ interface Installment {
     paymentOptionId: string;
     name?: string;
     type?: string;
+
     paymentAmount?: number; // Actual amount paid
 }
 
@@ -129,6 +130,7 @@ interface FeeData {
     paymentMethod: string;
     initialPaymentType?: string;
     initallpaymentype: string;
+    unpaidYears?: number[];
     feeConcession: FeeConcession;
     years: YearData[];
 }
@@ -152,6 +154,7 @@ export default function FeePaymentClient() {
     const [loading, setLoading] = useState(true);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [processingInstallment, setProcessingInstallment] = useState<ProcessingInstallment | null>(null);
+    const [selectedUnpaidYear, setSelectedUnpaidYear] = useState<number | null>(null);
     const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'full_payment' | 'installment'>('full_payment');
     const [popup, setPopup] = useState<PopupState>({
         isOpen: false,
@@ -166,7 +169,10 @@ export default function FeePaymentClient() {
             try {
                 setLoading(true);
                 setErrorMessage(null);
-                const res = await getFeeConfiguration(selectedPaymentMethod);
+                const res = await getFeeConfiguration(
+                    selectedPaymentMethod,
+                    selectedUnpaidYear
+                );
 
                 if (res.success && res.data) {
                     setFeeData(res.data);
@@ -194,7 +200,7 @@ export default function FeePaymentClient() {
         };
 
         fetchFeeDetails();
-    }, [selectedPaymentMethod]);
+    }, [selectedPaymentMethod, selectedUnpaidYear]);
 
     const initialPaymentType = feeData?.initialPaymentType || null;
 
@@ -717,7 +723,42 @@ export default function FeePaymentClient() {
                         </div>
                     </div>
                 )}
+                {/* Previous Unpaid Years */}
+                {feeData.unpaidYears && feeData.unpaidYears.length > 0 && (
+                    <div className="mb-6">
+                        <div className="bg-white rounded-xl shadow-sm border border-orange-200 p-4 sm:p-5">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                                <div>
+                                    <h3 className="text-base sm:text-lg font-semibold text-gray-800">
+                                        Previous Year Pending Fees
+                                    </h3>
 
+                                    <p className="text-xs sm:text-sm text-gray-500 mt-1">
+                                        You have pending fees from the following academic years.
+                                    </p>
+                                </div>
+
+                                <div className="flex flex-wrap gap-2">
+                                    {feeData.unpaidYears.map((year) => (
+                                        <button
+                                            key={year}
+                                            type="button"
+                                            onClick={() => {
+                                                setSelectedUnpaidYear(year);
+                                            }}
+                                            className={`px-4 py-2 rounded-lg text-sm font-semibold border transition-all ${selectedUnpaidYear === year
+                                                ? "bg-orange-600 text-white border-orange-600 shadow-md"
+                                                : "bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100"
+                                                }`}
+                                        >
+                                            Year {year}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
                 {/* Fee Structure */}
                 {feeData.years?.map((year: YearData, index: number) => (
                     <div key={index} className="mb-6">

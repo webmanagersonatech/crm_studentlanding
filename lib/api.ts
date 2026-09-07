@@ -177,7 +177,7 @@ export const createStudentPayment = async (
   try {
     const res = await axios.post(
       `${API_BASE}/payments/razorpay/create`,
-      { applicationId }, // ✅ only send applicationId
+      { applicationId },
       { withCredentials: true }
     );
 
@@ -283,20 +283,27 @@ export const loginStudent = async (username: string, password: string) => {
     return { success: false, message: err.response?.data?.message || "Login failed" };
   }
 };
-export const getFeeConfiguration = async (paymentMethod?: string): Promise<FeeConfigurationResponse> => {
+export const getFeeConfiguration = async (
+  paymentMethod?: string,
+  chooseUnpaidYear?: number | null
+): Promise<FeeConfigurationResponse> => {
   try {
-    // Build the URL with query parameter if paymentMethod is provided
-    let url = `${API_BASE}/fee-configuration/student`;
+    const params = new URLSearchParams();
+
     if (paymentMethod) {
-      url += `?paymentmethod=${paymentMethod}`;
+      params.append("paymentmethod", paymentMethod);
     }
 
-    const res = await axios.get(
-      url,
-      {
-        withCredentials: true,
-      }
-    );
+    if (chooseUnpaidYear) {
+      params.append("chooseunpaidyear", String(chooseUnpaidYear));
+    }
+
+    const url = `${API_BASE}/fee-configuration/student${params.toString() ? `?${params.toString()}` : ""
+      }`;
+
+    const res = await axios.get(url, {
+      withCredentials: true,
+    });
 
     return {
       success: true,
