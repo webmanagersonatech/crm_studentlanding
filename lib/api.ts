@@ -137,8 +137,49 @@ export type AdditionalFeeConfigurationResponse = {
   };
 };
 
+export type TuitionTransaction = {
+  _id: string;
+  studentId: string;
+  courseName: string;
+  paymentType: string;
+  installmentNumber: number;
+  paymentId:string;
+  year: string;
+  paymentOptionName: string;
+  totalAmount: number;
+  orderId: string;
+  gateway: string;
+  status: string;
+  createdAt: string;
+};
 
+export type TuitionTransactionsResponse = {
+  success: boolean;
+  message?: string;
+  data?: TuitionTransaction[];
+};
 
+export const getAllPaidTuitionTransactions = async (): Promise<TuitionTransactionsResponse> => {
+  try {
+    const res = await axios.get(
+      `${API_BASE}/tuition-fee/transactions`,
+      {
+        withCredentials: true,
+      }
+    );
+
+    return {
+      success: true,
+      data: res.data.data,
+      message: res.data.message,
+    };
+  } catch (err: any) {
+    return {
+      success: false,
+      message: err.response?.data?.message || "Failed to fetch transactions",
+    };
+  }
+};
 export const getAdditionalFeeConfigurationByStudent = async (): Promise<AdditionalFeeConfigurationResponse> => {
   try {
     const res = await axios.get(
