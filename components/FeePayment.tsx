@@ -813,7 +813,7 @@ export default function FeePaymentClient() {
                                         <div className="mt-4 pt-4 border-t border-gray-200">
 
                                             <h3 className="text-sm font-semibold text-gray-700 mb-3">
-                                                Given Amount
+                                                Paid Amount
                                             </h3>
 
                                             <div className="space-y-2">
@@ -839,7 +839,7 @@ export default function FeePaymentClient() {
                                             {feeData.givenAmount !== undefined && (
                                                 <div className="flex justify-between mt-3 pt-3 border-t border-gray-200">
                                                     <span className="font-semibold text-gray-700">
-                                                        Total Given Amount
+                                                        Total Paid Amount
                                                     </span>
 
                                                     <span className="font-bold text-green-600">
@@ -977,7 +977,9 @@ export default function FeePaymentClient() {
                                                                     <p className="text-xs text-green-500 font-medium">
                                                                         Paid
                                                                     </p>
+                                                                   
                                                                 </>
+                                                               
                                                             ) : (
                                                                 <>
 
