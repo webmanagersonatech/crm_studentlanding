@@ -1,9 +1,7 @@
 
 
 import { Menu } from "lucide-react";
-import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
-import axios from "axios";
+
 // import { API_BASE } from "@/lib/api";
 
 type Props = {
@@ -11,33 +9,16 @@ type Props = {
 };
 
 export function Navbar({ toggle }: Props) {
-  const searchParams = useSearchParams();
-  const instituteId = searchParams.get("instituteId");
+
+
 
   /* =======================
      State
-  ======================= */
-  const [instituteName, setInstituteName] = useState("Student Portal");
-  const [studentName, setStudentName] = useState("Student");
-
+ 
   /* =======================
      Load student (from login API data)
   ======================= */
-  useEffect(() => {
-    const stored = localStorage.getItem("student");
 
-    if (stored) {
-      try {
-        const student = JSON.parse(stored);
-        setStudentName(
-          `${student.firstname || ""} ${student.lastname || ""}`.trim() ||
-            "Student"
-        );
-      } catch {
-        setStudentName("Student");
-      }
-    }
-  }, []);
 
   /* =======================
      Load institute name (settings API)

@@ -121,7 +121,7 @@ export default function TuitionFeeReceipt() {
   };
 
   const handleBack = () => {
-    router.push('/fee-payment');
+    router.back();
   };
 
   if (loading) {

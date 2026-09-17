@@ -75,7 +75,10 @@ const Icons = {
         </svg>
     ),
 };
-
+interface GivenAmountEntry {
+    amount: number;
+    description: string;
+}
 interface Installment {
     number: number;
     originalAmount: number;
@@ -89,6 +92,7 @@ interface Installment {
     paid: boolean;
     paidDate: string | null;
     paymentId: string | null;
+
     paymentOptionId: string;
     name?: string;
     type?: string;
@@ -130,6 +134,8 @@ interface FeeData {
     paymentMethod: string;
     initialPaymentType?: string;
     initallpaymentype: string;
+    givenAmount?: number;
+    givenAmountEntries?: GivenAmountEntry[];
     unpaidYears?: number[];
     feeConcession: FeeConcession;
     years: YearData[];
@@ -516,6 +522,7 @@ export default function FeePaymentClient() {
         }
     };
 
+
     const handlePopupAutoClose = () => {
         const shouldRefresh = popup.shouldRefresh;
         setPopup(prev => ({ ...prev, isOpen: false }));
@@ -785,17 +792,68 @@ export default function FeePaymentClient() {
 
                                 </div>
                             </div>
-                            {year.FeeDescription && (
+                            {(year.FeeDescription || (feeData.givenAmountEntries?.length ?? 0) > 0) && (
                                 <div className="mt-4 rounded-lg bg-gray-50 border border-gray-200 p-4">
-                                    <h3 className="text-sm font-semibold text-gray-700 mb-2">
-                                        Fee Description
-                                    </h3>
 
-                                    <div className="text-sm text-gray-600 whitespace-pre-line leading-6">
-                                        {year.FeeDescription}
-                                    </div>
+                                    {/* Fee Description */}
+                                    {year.FeeDescription && (
+                                        <>
+                                            <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                                                Fee Description
+                                            </h3>
+
+                                            <div className="text-sm text-gray-600 whitespace-pre-line leading-6">
+                                                {year.FeeDescription}
+                                            </div>
+                                        </>
+                                    )}
+
+                                    {/* Given Amount */}
+                                    {(feeData.givenAmountEntries?.length ?? 0) > 0 && (
+                                        <div className="mt-4 pt-4 border-t border-gray-200">
+
+                                            <h3 className="text-sm font-semibold text-gray-700 mb-3">
+                                                Given Amount
+                                            </h3>
+
+                                            <div className="space-y-2">
+                                                {feeData.givenAmountEntries?.flatMap(
+                                                    (record: any) => record.entries
+                                                ).map((entry, index) => (
+                                                    <div
+                                                        key={index}
+                                                        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-sm"
+                                                    >
+                                                        <span className="text-gray-600">
+                                                            {entry.description}
+                                                        </span>
+
+                                                        <span className="font-semibold text-green-600">
+                                                            ₹{entry.amount.toLocaleString("en-IN")}
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                            </div>
+
+                                            {/* Total */}
+                                            {feeData.givenAmount !== undefined && (
+                                                <div className="flex justify-between mt-3 pt-3 border-t border-gray-200">
+                                                    <span className="font-semibold text-gray-700">
+                                                        Total Given Amount
+                                                    </span>
+
+                                                    <span className="font-bold text-green-600">
+                                                        ₹{feeData.givenAmount.toLocaleString("en-IN")}
+                                                    </span>
+                                                </div>
+                                            )}
+
+                                        </div>
+                                    )}
+
                                 </div>
                             )}
+
                         </div>
 
                         {/* Payment Options */}
@@ -915,9 +973,7 @@ export default function FeePaymentClient() {
                                                         <div className="text-right">
                                                             {isPaid ? (
                                                                 <>
-                                                                    <p className="text-lg sm:text-xl font-bold text-green-600">
-                                                                        ₹{displayAmount.toLocaleString()}
-                                                                    </p>
+                                                                    
                                                                     <p className="text-xs text-green-500 font-medium">
                                                                         Paid
                                                                     </p>
