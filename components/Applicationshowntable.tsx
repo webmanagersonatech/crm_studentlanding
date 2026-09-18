@@ -13,7 +13,6 @@ export default function DashboardClient() {
   const router = useRouter();
   const hidePaymentButtons =
     application?.instituteId === "INS-P2VTCZ5T" ||
-    application?.instituteId === "INS-0VVEACMY" ||
     application?.instituteId === "INS-HY0CZ0CO";
 
 
