@@ -18,7 +18,7 @@ export default function DashboardClient() {
 
 
   const showQRPopup =
-    application?.instituteId === "INS-0VVEACMY"
+    application?.instituteId === "INS-0VVEACMYsss"
 
   useEffect(() => {
     const fetchApplication = async () => {
