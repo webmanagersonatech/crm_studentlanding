@@ -816,23 +816,37 @@ export default function FeePaymentClient() {
                                                 Paid Amount
                                             </h3>
 
-                                            <div className="space-y-2">
-                                                {feeData.givenAmountEntries?.flatMap(
-                                                    (record: any) => record.entries
-                                                ).map((entry, index) => (
-                                                    <div
-                                                        key={index}
-                                                        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-sm"
-                                                    >
-                                                        <span className="text-gray-600">
-                                                            {entry.description}
-                                                        </span>
+                                            <div className="space-y-3">
+                                                {feeData.givenAmountEntries
+                                                    ?.flatMap((record: any) => record.entries)
+                                                    .map((entry, index) => (
+                                                        <div
+                                                            key={index}
+                                                            className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-sm border-b border-gray-100 pb-2 last:border-0"
+                                                        >
+                                                            {/* Date + Description */}
+                                                            <div className="flex flex-col">
+                                                                <span className="text-xs font-medium text-gray-500">
+                                                                    {new Date(entry.date).toLocaleDateString("en-IN", {
+                                                                        day: "2-digit",
+                                                                        month: "short",
+                                                                        year: "numeric",
+                                                                    })}
+                                                                </span>
 
-                                                        <span className="font-semibold text-green-600">
-                                                            ₹{entry.amount.toLocaleString("en-IN")}
-                                                        </span>
-                                                    </div>
-                                                ))}
+                                                                {entry.description && (
+                                                                    <span className="text-gray-600">
+                                                                        {entry.description}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+
+                                                            {/* Amount */}
+                                                            <span className="font-semibold text-green-600">
+                                                                ₹{entry.amount.toLocaleString("en-IN")}
+                                                            </span>
+                                                        </div>
+                                                    ))}
                                             </div>
 
                                             {/* Total */}
@@ -973,13 +987,13 @@ export default function FeePaymentClient() {
                                                         <div className="text-right">
                                                             {isPaid ? (
                                                                 <>
-                                                                    
+
                                                                     <p className="text-xs text-green-500 font-medium">
                                                                         Paid
                                                                     </p>
-                                                                   
+
                                                                 </>
-                                                               
+
                                                             ) : (
                                                                 <>
 
