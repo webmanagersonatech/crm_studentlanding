@@ -1,54 +1,36 @@
-
+"use client";
 
 import { Menu } from "lucide-react";
-
-// import { API_BASE } from "@/lib/api";
+import { usePathname } from "next/navigation";
 
 type Props = {
   toggle: () => void;
 };
 
 export function Navbar({ toggle }: Props) {
+  const pathname = usePathname();
 
+  const getPageTitle = () => {
+    switch (pathname) {
 
+      case "/dashboard":
+        return "Dashboard";
 
-  /* =======================
-     State
- 
-  /* =======================
-     Load student (from login API data)
-  ======================= */
+      case "/fee-payment":
+        return "Fee Payment Details";
 
+      case "/transaction-receipt":
+        return "Transaction Receipt";
 
-  /* =======================
-     Load institute name (settings API)
-  ======================= */
-  // useEffect(() => {
-  //   if (!instituteId) return;
+      case "/additional-payment":
+        return "Hostel Fee Details";
 
-  //   const controller = new AbortController();
-
-  //   axios
-  //     .get(`${API_BASE}/settings/student/${instituteId}`, {
-  //       signal: controller.signal,
-  //     })
-  //     .then((res) => {
-  //       if (res.data?.success === true) {
-  //         setInstituteName(res.data.data?.instituteName || "Student Portal");
-  //       }
-  //     })
-  //     .catch((err) => {
-  //       if (axios.isCancel(err)) return;
-  //       console.error("Navbar settings error", err);
-  //     });
-
-  //   return () => controller.abort();
-  // }, [instituteId]);
-
-  /* =======================
-     Helpers
-  ======================= */
-
+      default:
+        return "Student Portal";
+      case "/change-password":
+        return "Change Password";
+    }
+  };
 
   return (
     <header className="sticky top-0 z-30 h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 md:px-6">
@@ -61,6 +43,11 @@ export function Navbar({ toggle }: Props) {
         >
           <Menu size={24} className="text-gray-700" />
         </button>
+
+        {/* PAGE TITLE */}
+        <h1 className="text-lg md:text-xl font-semibold text-gray-800">
+          {getPageTitle()}
+        </h1>
       </div>
     </header>
   );

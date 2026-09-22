@@ -119,6 +119,8 @@ export function Sidebar() {
         setLoading(true);
         const response = (await getStudentwithtoken()) as ApiResponse;
 
+
+
         if (!isMounted) return;
 
         if (response?.success && response?.data?.student) {
@@ -293,9 +295,7 @@ export function Sidebar() {
 
           {/* TITLES */}
           <div className="flex-1 min-w-0">
-            <p className="text-white font-semibold text-sm leading-tight truncate">
-              {instituteName}
-            </p>
+          
             <div className="mt-0.5">
               {loading ? (
                 <p className="text-blue-200 text-xs animate-pulse">Loading...</p>

@@ -136,7 +136,7 @@ export default function AdditionalFeePayment() {
                 isOpen: true,
                 type: 'success',
                 title: 'Payment Successful!',
-                message: 'Your additional fee payment has been completed successfully.',
+                message: 'Your  fee payment has been completed successfully.',
                 shouldRefresh: true,
                 onButtonClick: () => {
                     setPopup(prev => ({ ...prev, isOpen: false }));
@@ -519,7 +519,7 @@ export default function AdditionalFeePayment() {
             <AppShell>
                 <Toaster position="top-right" />
                 <div className="max-w-4xl mx-auto px-4 py-8">
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-8 text-center">
+                    <div className="bg-red-50 border border-red-200 p-8 text-center">
                         <div className="flex justify-center mb-4">
                             <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
                                 <Icons.Alert />
@@ -527,7 +527,7 @@ export default function AdditionalFeePayment() {
                         </div>
                         <h3 className="text-lg font-semibold text-gray-900 mb-2">Unable to Load Fee Details</h3>
                         <p className="text-gray-700 mb-4">{errorMessage}</p>
-                        <button onClick={fetchAdditionalFeeData} className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                        <button onClick={fetchAdditionalFeeData} className="px-6 py-2 bg-red-600 text-white hover:bg-red-700 transition-colors">
                             Try Again
                         </button>
                     </div>
@@ -579,15 +579,12 @@ export default function AdditionalFeePayment() {
                 autoCloseDelay={3000}
             />
 
-            <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
+            <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
                 {/* Header */}
-                <div className="mb-6">
-                    <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl border border-purple-100 p-6">
+                <div className="">
+                    <div className="bg-gradient-to-r from-purple-50 to-indigo-50  border border-purple-100 p-6">
                         <div className="flex items-center justify-between mb-4">
-                            <h1 className="text-xl sm:text-2xl font-bold text-gray-800 flex items-center gap-2">
-                                <Icons.Building />
-                                Additional Fee Payment
-                            </h1>
+                         
                             <span className={`px-3 py-1 rounded-full text-xs font-medium ${isOverdue ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
                                 {isOverdue ? 'Overdue' : 'Active'}
                             </span>
@@ -625,7 +622,7 @@ export default function AdditionalFeePayment() {
                 </div>
 
                 {/* Fee Details */}
-                <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                <div className="bg-white  border border-gray-200 overflow-hidden">
                     <div className="p-6 border-b border-gray-200 bg-gray-50">
                         <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
                             <Icons.Building />
@@ -716,28 +713,29 @@ export default function AdditionalFeePayment() {
                                 </div>
 
                                 {/* Pay Button */}
-                                <button
-                                    // onClick={() => handlePayNow(selectedRoom)}
-                                    disabled={processing}
-                                    className={`w-full mt-6 py-3 rounded-xl text-white font-semibold text-base transition-all duration-200 ${processing
-                                        ? 'bg-gray-400 cursor-not-allowed'
-                                        : isOverdue
-                                            ? 'bg-red-600 hover:bg-red-700 shadow-md hover:shadow-lg'
-                                            : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-md hover:shadow-lg'
-                                        }`}
-                                >
-                                    {processing ? (
-                                        <div className="flex items-center justify-center gap-2">
-                                            <Icons.Spinner />
-                                            Processing...
-                                        </div>
-                                    ) : (
-                                        <div className="flex items-center justify-center gap-2">
-                                            <Icons.CreditCard />
-                                            Pay {formatCurrency(selectedRoom.amount)}
-                                        </div>
-                                    )}
-                                </button>
+                           <button
+  // onClick={() => handlePayNow(selectedRoom)}
+  disabled={processing}
+  className={`w-fit mt-6 px-6 py-3 rounded-xl text-white font-semibold text-base transition-all duration-200 ${
+    processing
+      ? "bg-gray-400 cursor-not-allowed"
+      : isOverdue
+        ? "bg-red-600 hover:bg-red-700 shadow-md hover:shadow-lg"
+        : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-md hover:shadow-lg"
+  }`}
+>
+  {processing ? (
+    <div className="flex items-center justify-center gap-2">
+      <Icons.Spinner />
+      Processing...
+    </div>
+  ) : (
+    <div className="flex items-center justify-center gap-2">
+      <Icons.CreditCard />
+      Pay {formatCurrency(selectedRoom.amount)}
+    </div>
+  )}
+</button>
 
                                 <p className="text-xs text-gray-500 text-center mt-3">
                                     By clicking Pay, you agree to the terms and conditions
