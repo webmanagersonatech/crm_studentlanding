@@ -28,6 +28,7 @@ interface StudentData {
   instituteName?: string;
   shownturtionfeepayment?: boolean;
   showhostelfeepayment?: boolean;
+  dontshowtutionfee?: boolean; // API flag to hide tuition fee links
   name?: string;
   logo?: string;
 }
@@ -98,9 +99,13 @@ export function Sidebar() {
       if (userData.logo) setLogo(userData.logo);
       if (userData.instituteName) setInstituteName(userData.instituteName);
       
-      if (userData.shownturtionfeepayment !== undefined) {
+      // dontshowtutionfee = true -> force hide tuition fee links
+      if (userData.dontshowtutionfee === true) {
+        setShowTuitionFee(false);
+      } else if (userData.shownturtionfeepayment !== undefined) {
         setShowTuitionFee(userData.shownturtionfeepayment);
       }
+
       if (userData.showhostelfeepayment !== undefined) {
         setShowHostelFee(userData.showhostelfeepayment);
       }
@@ -118,8 +123,6 @@ export function Sidebar() {
       try {
         setLoading(true);
         const response = (await getStudentwithtoken()) as ApiResponse;
-
-
 
         if (!isMounted) return;
 
@@ -145,7 +148,10 @@ export function Sidebar() {
             setInstituteName(studentData.instituteName);
           }
 
-          if (studentData.shownturtionfeepayment !== undefined) {
+          // dontshowtutionfee = true -> force hide tuition fee links
+          if (studentData.dontshowtutionfee === true) {
+            setShowTuitionFee(false);
+          } else if (studentData.shownturtionfeepayment !== undefined) {
             setShowTuitionFee(studentData.shownturtionfeepayment);
           }
 
@@ -192,7 +198,7 @@ export function Sidebar() {
     return () => {
       isMounted = false;
     };
-  }, [formatStudentName, parseLocalStorageData]); // Add dependencies
+  }, [formatStudentName, parseLocalStorageData]);
 
   // ========================
   // Auto-open Fee submenu if currently on a fee route
@@ -295,7 +301,6 @@ export function Sidebar() {
 
           {/* TITLES */}
           <div className="flex-1 min-w-0">
-          
             <div className="mt-0.5">
               {loading ? (
                 <p className="text-blue-200 text-xs animate-pulse">Loading...</p>
