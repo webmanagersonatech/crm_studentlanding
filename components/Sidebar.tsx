@@ -269,7 +269,7 @@ export function Sidebar() {
       <aside
         className={`
           fixed md:relative z-50 top-0 left-0 h-screen w-64
-          bg-gradient-to-b from-[#003B73] to-[#0057A0] text-white shadow-xl
+          bg-gradient-to-b from-[#003B73] to-[#0057A0] text-white
           transform transition-transform duration-300
           ${open ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
         `}
@@ -277,9 +277,9 @@ export function Sidebar() {
         aria-label="Main navigation"
       >
         {/* HEADER */}
-        <div className="flex items-center gap-3 p-5 border-b border-blue-700/50">
+        <div className="flex items-center gap-3 p-4 border-b border-white/10">
           {/* LOGO */}
-          <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow overflow-hidden flex-shrink-0">
+          <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
             {logo ? (
               <img 
                 src={logo} 
@@ -287,25 +287,25 @@ export function Sidebar() {
                 className="w-full h-full object-contain"
               />
             ) : (
-              <MdDashboard size={24} className="text-[#003B73]" />
+              <MdDashboard size={20} className="text-[#003B73]" />
             )}
           </div>
 
           {/* TITLES */}
           <div className="flex-1 min-w-0">
-            <p className="text-white font-bold text-sm leading-tight truncate">
+            <p className="text-white font-semibold text-sm leading-tight truncate">
               {instituteName}
             </p>
-            <div className="mt-1">
+            <div className="mt-0.5">
               {loading ? (
                 <p className="text-blue-200 text-xs animate-pulse">Loading...</p>
               ) : (
                 <>
-                  <p className="text-blue-200 text-xs truncate font-medium">
+                  <p className="text-blue-200 text-xs truncate">
                     {studentName}
                   </p>
                   {studentEmail && (
-                    <p className="text-blue-300 text-[10px] truncate opacity-75">
+                    <p className="text-blue-300/70 text-[10px] truncate">
                       {studentEmail}
                     </p>
                   )}
@@ -317,29 +317,29 @@ export function Sidebar() {
           {/* Close (mobile) */}
           <button
             onClick={toggle}
-            className="md:hidden p-1 rounded-lg hover:bg-blue-700/50 flex-shrink-0 cursor-pointer"
+            className="md:hidden p-1.5 rounded-md hover:bg-white/10 flex-shrink-0 cursor-pointer"
             aria-label="Close sidebar"
           >
-            <FaTimes size={18} />
+            <FaTimes size={16} />
           </button>
         </div>
 
         {/* MENU */}
-        <nav className="p-4 space-y-2" aria-label="Sidebar menu">
+        <nav className="p-3 space-y-1" aria-label="Sidebar menu">
           {/* Apply For Courses */}
           <Link
             href="/dashboard"
             onClick={() => isMobile && toggle()}
             className={`
-              flex items-center gap-3 px-4 py-3 rounded-lg text-sm transition-all cursor-pointer
+              flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors cursor-pointer
               ${pathname === "/dashboard"
-                ? "bg-white text-blue-700 shadow font-semibold"
-                : "text-blue-100 hover:bg-blue-800/50 hover:text-white"
+                ? "text-white font-semibold"
+                : "text-blue-100 hover:bg-white/10 hover:text-white"
               }
             `}
             aria-current={pathname === "/dashboard" ? "page" : undefined}
           >
-            <FaHome size={18} aria-hidden="true" />
+            <FaHome size={16} aria-hidden="true" />
             Apply For Courses
           </Link>
 
@@ -350,21 +350,21 @@ export function Sidebar() {
                 type="button"
                 onClick={() => setFeeMenuOpen((prev) => !prev)}
                 className={`
-                  w-full flex items-center justify-between gap-3 px-4 py-3 rounded-lg text-sm transition-all cursor-pointer
+                  w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-md text-sm transition-colors cursor-pointer
                   ${isFeeSectionActive
-                    ? "bg-white text-blue-700 shadow font-semibold"
-                    : "text-blue-100 hover:bg-blue-800/50 hover:text-white"
+                    ? "text-white font-semibold"
+                    : "text-blue-100 hover:bg-white/10 hover:text-white"
                   }
                 `}
                 aria-expanded={feeMenuOpen}
                 aria-controls="fee-submenu"
               >
                 <span className="flex items-center gap-3">
-                  <FaCreditCard size={18} aria-hidden="true" />
+                  <FaCreditCard size={16} aria-hidden="true" />
                   Fee Payment
                 </span>
                 <FaChevronDown
-                  size={12}
+                  size={10}
                   className={`transition-transform duration-200 ${feeMenuOpen ? "rotate-180" : ""}`}
                   aria-hidden="true"
                 />
@@ -373,7 +373,7 @@ export function Sidebar() {
               {feeMenuOpen && (
                 <div 
                   id="fee-submenu"
-                  className="mt-1 ml-4 pl-3 border-l border-blue-700/50 space-y-1"
+                  className="mt-1 ml-3 pl-3 border-l border-white/15 space-y-1"
                   role="menu"
                 >
                   {feeSubItems.map((item) => {
@@ -385,16 +385,16 @@ export function Sidebar() {
                         href={item.href}
                         onClick={() => isMobile && toggle()}
                         className={`
-                          flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all cursor-pointer
+                          flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors cursor-pointer
                           ${isActive
-                            ? "bg-white text-blue-700 shadow font-semibold"
-                            : "text-blue-100 hover:bg-blue-800/50 hover:text-white"
+                            ? "text-white font-semibold"
+                            : "text-blue-100 hover:bg-white/10 hover:text-white"
                           }
                         `}
                         role="menuitem"
                         aria-current={isActive ? "page" : undefined}
                       >
-                        <Icon size={14} aria-hidden="true" />
+                        <Icon size={13} aria-hidden="true" />
                         {item.label}
                       </Link>
                     );
@@ -409,15 +409,15 @@ export function Sidebar() {
             href="/change-password"
             onClick={() => isMobile && toggle()}
             className={`
-              flex items-center gap-3 px-4 py-3 rounded-lg text-sm transition-all cursor-pointer
+              flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors cursor-pointer
               ${pathname === "/change-password"
-                ? "bg-white text-blue-700 shadow font-semibold"
-                : "text-blue-100 hover:bg-blue-800/50 hover:text-white"
+                ? "text-white font-semibold"
+                : "text-blue-100 hover:bg-white/10 hover:text-white"
               }
             `}
             aria-current={pathname === "/change-password" ? "page" : undefined}
           >
-            <FaLock size={18} aria-hidden="true" />
+            <FaLock size={16} aria-hidden="true" />
             Change Password
           </Link>
 
@@ -425,19 +425,19 @@ export function Sidebar() {
           <button
             onClick={handleLogout}
             className="
-              w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm
-              text-blue-100 hover:bg-red-600/80 hover:text-white transition cursor-pointer
+              w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm
+              text-blue-100 hover:bg-red-500/80 hover:text-white transition-colors cursor-pointer
             "
             aria-label="Logout"
           >
-            <FaSignOutAlt size={18} aria-hidden="true" />
+            <FaSignOutAlt size={16} aria-hidden="true" />
             Logout
           </button>
         </nav>
 
         {/* FOOTER */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-blue-700/50 text-center">
-          <p className="text-xs text-blue-300">
+        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-white/10 text-center">
+          <p className="text-xs text-blue-300/70">
             &copy; {new Date().getFullYear()} Hika&reg;
           </p>
         </div>

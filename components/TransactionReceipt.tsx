@@ -107,11 +107,11 @@ const TransactionReceipts = () => {
             <AppShell>
                 <div className="min-h-screen bg-gray-50 p-6">
                     <div className="mx-auto max-w-7xl">
-                        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+                        <div className="bg-red-50 border border-red-200 p-6 text-center">
                             <p className="text-red-600 font-medium">{error}</p>
                             <button
                                 onClick={() => window.location.reload()}
-                                className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                                className="mt-4 px-4 py-2 bg-blue-600 text-white hover:bg-blue-700"
                             >
                                 Try Again
                             </button>
@@ -136,7 +136,7 @@ const TransactionReceipts = () => {
                                 View your fee payment transactions and receipts.
                             </p>
                         </div>
-                        <div className="bg-white rounded-lg shadow-sm p-12 text-center">
+                        <div className="bg-white shadow-sm p-12 text-center">
                             <h3 className="text-xl font-semibold text-gray-800 mb-2">
                                 No Transactions Found
                             </h3>
@@ -170,21 +170,21 @@ const TransactionReceipts = () => {
 
                     {/* Summary Cards */}
                     <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
-                        <div className="rounded-lg bg-white p-5 shadow-sm border border-gray-100">
+                        <div className="bg-white p-5 shadow-sm border border-gray-100">
                             <p className="text-sm text-gray-500">Total Transactions</p>
                             <h2 className="mt-2 text-2xl font-bold text-gray-800">
                                 {transactions.length}
                             </h2>
                         </div>
 
-                        <div className="rounded-lg bg-white p-5 shadow-sm border border-gray-100">
+                        <div className="bg-white p-5 shadow-sm border border-gray-100">
                             <p className="text-sm text-gray-500">Total Paid Amount</p>
                             <h2 className="mt-2 text-2xl font-bold text-green-600">
                                 {formatAmount(totalAmount)}
                             </h2>
                         </div>
 
-                        <div className="rounded-lg bg-white p-5 shadow-sm border border-gray-100">
+                        <div className="bg-white p-5 shadow-sm border border-gray-100">
                             <p className="text-sm text-gray-500">Successful Payments</p>
                             <h2 className="mt-2 text-2xl font-bold text-blue-600">
                                 {totalPaid}
@@ -193,7 +193,7 @@ const TransactionReceipts = () => {
                     </div>
 
                     {/* Transaction Table */}
-                    <div className="overflow-hidden rounded-lg bg-white shadow-sm border border-gray-200">
+                    <div className="overflow-hidden bg-white shadow-sm border border-gray-200">
                         <div className="overflow-x-auto">
                             <table className="min-w-full divide-y divide-gray-200">
                                 <thead className="bg-gray-50">

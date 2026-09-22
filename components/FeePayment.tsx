@@ -554,7 +554,7 @@ export default function FeePaymentClient() {
         return (
             <AppShell>
                 <Toaster position="top-right" />
-                <div className="max-w-4xl mx-auto px-4 py-8">
+                <div className="max-w-5xl mx-auto px-4 py-8">
                     <div className="bg-red-50 border border-red-200 rounded-lg p-8 text-center">
                         <div className="flex justify-center mb-4">
                             <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
@@ -595,132 +595,127 @@ export default function FeePaymentClient() {
     }
 
     // Main Render
-    return (
-        <AppShell>
-            <Toaster position="top-right" />
+return (
+    <AppShell>
+        <Toaster position="top-right" />
 
-            <Popup
-                isOpen={popup.isOpen}
-                onClose={closePopup}
-                onAutoClose={handlePopupAutoClose}
-                type={popup.type}
-                title={popup.title}
-                message={popup.message}
-                buttonText={popup.type === 'success' ? 'Continue' : 'Try Again'}
-                onButtonClick={popup.onButtonClick || closePopup}
-                autoCloseDelay={3000}
-            />
+        <Popup
+            isOpen={popup.isOpen}
+            onClose={closePopup}
+            onAutoClose={handlePopupAutoClose}
+            type={popup.type}
+            title={popup.title}
+            message={popup.message}
+            buttonText={popup.type === 'success' ? 'Continue' : 'Try Again'}
+            onButtonClick={popup.onButtonClick || closePopup}
+            autoCloseDelay={3000}
+        />
 
-            <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
-                {/* Payment Method Toggle */}
-                <div className="mb-6 sm:mb-8">
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                            <div className="flex flex-col xs:flex-row xs:items-center gap-2 xs:gap-4 w-full sm:w-auto">
-                                <label className="text-sm font-semibold text-gray-700 whitespace-nowrap">
-                                    Payment Plan:
-                                </label>
-                                <div className="flex rounded-lg overflow-hidden border-2 border-gray-200 w-full xs:w-auto">
-                                    <button
-                                        onClick={() => handlePaymentMethodToggle("full_payment")}
-                                        disabled={isFullPaymentDisabled}
-                                        className={`flex-1 xs:flex-none px-4 sm:px-6 py-2 text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2
-    ${selectedPaymentMethod === "full_payment"
-                                                ? "bg-blue-600 text-white shadow-md"
-                                                : "bg-white text-gray-700 hover:bg-gray-50"
-                                            }
-    ${isFullPaymentDisabled
-                                                ? "opacity-50 cursor-not-allowed bg-gray-100 hover:bg-gray-100"
-                                                : ""
-                                            }`}
-                                    >
-                                        <Icons.Payment />
-                                        Full Payment
-                                    </button>
-                                    <button
-                                        onClick={() => handlePaymentMethodToggle("installment")}
-                                        disabled={isInstallmentDisabled}
-                                        className={`flex-1 xs:flex-none px-4 sm:px-6 py-2 text-sm font-medium transition-all duration-200 border-l-2 border-gray-200 flex items-center justify-center gap-2
-    ${selectedPaymentMethod === "installment"
-                                                ? "bg-blue-600 text-white shadow-md"
-                                                : "bg-white text-gray-700 hover:bg-gray-50"
-                                            }
-    ${isInstallmentDisabled
-                                                ? "opacity-50 cursor-not-allowed bg-gray-100 hover:bg-gray-100"
-                                                : ""
-                                            }`}
-                                    >
-                                        <Icons.Calendar />
-                                        Installments
-                                    </button>
-                                </div>
-                            </div>
-                            <div className="text-xs sm:text-sm text-gray-500 text-center sm:text-right">
-                                {selectedPaymentMethod === 'full_payment'
-                                    ? 'Pay the full amount at once and save on processing fees'
-                                    : 'Split your payment into 2 easy installments'}
-                            </div>
+        <div className="min-h-screen bg-white">
+            <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-8">
+
+                {/* ===== Header ===== */}
+                <div className="mb-8 pb-6 border-b border-slate-200">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">
+                        Fee Payment Details
+                    </h1>
+                    <p className="text-sm text-slate-500 mt-1">
+                        Review and complete your payment
+                    </p>
+                </div>
+
+                {/* ===== Payment Method Toggle ===== */}
+                <div className="mb-8">
+                    <label className="text-sm font-semibold text-slate-700 mb-2 block">
+                        Payment Plan
+                    </label>
+                    <div className="flex border border-slate-200 rounded-md overflow-hidden">
+                        <button
+                            onClick={() => handlePaymentMethodToggle("full_payment")}
+                            disabled={isFullPaymentDisabled}
+                            className={`flex-1 px-4 py-2.5 text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2
+                                ${selectedPaymentMethod === "full_payment"
+                                    ? "bg-blue-600 text-white"
+                                    : "bg-white text-slate-700 hover:bg-slate-50"
+                                }
+                                ${isFullPaymentDisabled
+                                    ? "opacity-50 cursor-not-allowed bg-slate-50 hover:bg-slate-50"
+                                    : ""
+                                }`}
+                        >
+                            <Icons.Payment />
+                            Full Payment
+                        </button>
+                        <button
+                            onClick={() => handlePaymentMethodToggle("installment")}
+                            disabled={isInstallmentDisabled}
+                            className={`flex-1 px-4 py-2.5 text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 border-l border-slate-200
+                                ${selectedPaymentMethod === "installment"
+                                    ? "bg-blue-600 text-white"
+                                    : "bg-white text-slate-700 hover:bg-slate-50"
+                                }
+                                ${isInstallmentDisabled
+                                    ? "opacity-50 cursor-not-allowed bg-slate-50 hover:bg-slate-50"
+                                    : ""
+                                }`}
+                        >
+                            <Icons.Calendar />
+                            Installments
+                        </button>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-2">
+                        {selectedPaymentMethod === 'full_payment'
+                            ? 'Pay the full amount at once and save on processing fees'
+                            : 'Split your payment into 2 easy installments'}
+                    </p>
+                </div>
+
+                {/* ===== Student Info ===== */}
+                <div className="mb-8 grid grid-cols-1 sm:grid-cols-3 gap-4 pb-6 border-b border-slate-200">
+                    <div className="flex items-start gap-3">
+                        <div className="flex-shrink-0 mt-0.5">
+                            <Icons.IdCard />
+                        </div>
+                        <div className="min-w-0">
+                            <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">Student ID</p>
+                            <p className="text-sm font-semibold text-slate-800 truncate">{feeData.studentId}</p>
+                        </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                        <div className="flex-shrink-0 mt-0.5">
+                            <Icons.User />
+                        </div>
+                        <div className="min-w-0">
+                            <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">Student Name</p>
+                            <p className="text-sm font-semibold text-slate-800 truncate">{feeData.studentName}</p>
+                        </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                        <div className="flex-shrink-0 mt-0.5">
+                            <Icons.Graduation />
+                        </div>
+                        <div className="min-w-0">
+                            <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">Course</p>
+                            <p className="text-sm font-semibold text-slate-800 truncate">{feeData.courseName}</p>
                         </div>
                     </div>
                 </div>
 
-                {/* Student Info Card */}
-                <div className="mb-6">
-                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100 p-6">
-                        <div className="flex items-center justify-between mb-4">
-                            <h1 className="text-xl sm:text-2xl font-bold text-gray-800">
-                                Fee Payment Details
-                            </h1>
-
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            <div className="flex items-start gap-3">
-                                <div className="flex-shrink-0 mt-0.5">
-                                    <Icons.IdCard />
-                                </div>
-                                <div>
-                                    <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">Student ID</p>
-                                    <p className="text-base font-semibold text-gray-800 mt-1">{feeData.studentId}</p>
-                                </div>
-                            </div>
-                            <div className="flex items-start gap-3">
-                                <div className="flex-shrink-0 mt-0.5">
-                                    <Icons.User />
-                                </div>
-                                <div>
-                                    <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">Student Name</p>
-                                    <p className="text-base font-semibold text-gray-800 mt-1">{feeData.studentName}</p>
-                                </div>
-                            </div>
-                            <div className="flex items-start gap-3">
-                                <div className="flex-shrink-0 mt-0.5">
-                                    <Icons.Graduation />
-                                </div>
-                                <div>
-                                    <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">Course</p>
-                                    <p className="text-base font-semibold text-gray-800 mt-1">{feeData.courseName}</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Fee Concession Details */}
+                {/* ===== Fee Concession ===== */}
                 {feeData.feeConcession && feeData.feeConcession.concessionPercentage > 0 && (
-                    <div className="mb-6 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-4 sm:p-5">
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-                            <div className="flex-shrink-0 bg-green-100 rounded-full p-2">
+                    <div className="mb-8 pb-6 border-b border-slate-200">
+                        <div className="flex items-start gap-3">
+                            <div className="flex-shrink-0 mt-0.5">
                                 <Icons.Discount />
                             </div>
-                            <div className="flex-1">
-                                <p className="text-sm sm:text-base font-semibold text-green-800">
+                            <div className="flex-1 min-w-0">
+                                <p className="text-sm font-semibold text-emerald-700">
                                     Fee Concession Applied
                                 </p>
-
                                 {feeData.feeConcession.matchedReferrals && feeData.feeConcession.matchedReferrals.length > 0 && (
-                                    <div className="mt-2 flex flex-wrap gap-2">
+                                    <div className="mt-2 flex flex-wrap gap-1.5">
                                         {feeData.feeConcession.matchedReferrals.map((referral, idx) => (
-                                            <span key={idx} className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                                            <span key={idx} className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-100 text-emerald-700">
                                                 {referral.name}
                                             </span>
                                         ))}
@@ -730,150 +725,137 @@ export default function FeePaymentClient() {
                         </div>
                     </div>
                 )}
-                {/* Previous Unpaid Years */}
+
+                {/* ===== Previous Unpaid Years ===== */}
                 {feeData.unpaidYears && feeData.unpaidYears.length > 0 && (
-                    <div className="mb-6">
-                        <div className="bg-white rounded-xl shadow-sm border border-orange-200 p-4 sm:p-5">
-                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                                <div>
-                                    <h3 className="text-base sm:text-lg font-semibold text-gray-800">
-                                        Previous Year Pending Fees
-                                    </h3>
-
-                                    <p className="text-xs sm:text-sm text-gray-500 mt-1">
-                                        You have pending fees from the following academic years.
-                                    </p>
-                                </div>
-
-                                <div className="flex flex-wrap gap-2">
-                                    {feeData.unpaidYears.map((year) => (
-                                        <button
-                                            key={year}
-                                            type="button"
-                                            onClick={() => {
-                                                setSelectedUnpaidYear(year);
-                                            }}
-                                            className={`px-4 py-2 rounded-lg text-sm font-semibold border transition-all ${selectedUnpaidYear === year
-                                                ? "bg-orange-600 text-white border-orange-600 shadow-md"
-                                                : "bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100"
-                                                }`}
-                                        >
-                                            Year {year}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
+                    <div className="mb-8 pb-6 border-b border-slate-200">
+                        <h3 className="text-sm font-semibold text-slate-800">
+                            Previous Year Pending Fees
+                        </h3>
+                        <p className="text-xs text-slate-500 mt-0.5 mb-3">
+                            You have pending fees from the following academic years.
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                            {feeData.unpaidYears.map((year) => (
+                                <button
+                                    key={year}
+                                    type="button"
+                                    onClick={() => {
+                                        setSelectedUnpaidYear(year);
+                                    }}
+                                    className={`px-3.5 py-1.5 rounded-md text-xs font-semibold border transition-all ${selectedUnpaidYear === year
+                                        ? "bg-orange-600 text-white border-orange-600"
+                                        : "bg-white text-orange-700 border-orange-200 hover:bg-orange-50"
+                                        }`}
+                                >
+                                    Year {year}
+                                </button>
+                            ))}
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setSelectedUnpaidYear(null);
+                                }}
+                                className={`px-3.5 py-1.5 rounded-md text-xs font-semibold border transition-all ${selectedUnpaidYear === null
+                                    ? "bg-green-600 text-white border-green-600"
+                                    : "bg-white text-green-700 border-green-200 hover:bg-green-50"
+                                    }`}
+                            >
+                                Current Year
+                            </button>
                         </div>
                     </div>
                 )}
-                {/* Fee Structure */}
+
+                {/* ===== Fee Structure ===== */}
                 {feeData.years?.map((year: YearData, index: number) => (
-                    <div key={index} className="mb-6">
+                    <div key={index} className="mb-10">
+
                         {/* Year Header */}
-                        <div className="bg-white rounded-t-xl border border-gray-200 border-b-0 p-4 sm:p-6">
-                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                                <div>
-                                    <h2 className="text-lg sm:text-xl font-bold text-gray-800 flex items-center gap-2">
-                                        <Icons.Graduation />
-                                        Year {year.year}
-                                    </h2>
-
-                                </div>
-                                <div className="text-right">
-                                    {year.concessionPercentage > 0 && (
-                                        <div className="text-sm text-green-600 font-medium flex items-center justify-end gap-1">
-
-                                            -₹{(year.concessionAmount).toLocaleString()}
-                                        </div>
-                                    )}
-                                    <div className="text-base sm:text-lg font-bold text-blue-600">
-                                        Payable: ₹{year.payableAmount.toLocaleString()}
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-3 border-b border-slate-200">
+                            <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                                <Icons.Graduation />
+                                Year {year.year}
+                            </h2>
+                            <div className="text-left sm:text-right">
+                                {year.concessionPercentage > 0 && (
+                                    <div className="text-xs text-green-600 font-medium">
+                                        -₹{(year.concessionAmount).toLocaleString()}
                                     </div>
-
+                                )}
+                                <div className="text-sm sm:text-base font-bold text-blue-600">
+                                    Payable: ₹{year.payableAmount.toLocaleString()}
                                 </div>
                             </div>
-                            {(year.FeeDescription || (feeData.givenAmountEntries?.length ?? 0) > 0) && (
-                                <div className="mt-4 rounded-lg bg-gray-50 border border-gray-200 p-4">
-
-                                    {/* Fee Description */}
-                                    {year.FeeDescription && (
-                                        <>
-                                            <h3 className="text-sm font-semibold text-gray-700 mb-2">
-                                                Fee Description
-                                            </h3>
-
-                                            <div className="text-sm text-gray-600 whitespace-pre-line leading-6">
-                                                {year.FeeDescription}
-                                            </div>
-                                        </>
-                                    )}
-
-                                    {/* Given Amount */}
-                                    {(feeData.givenAmountEntries?.length ?? 0) > 0 && (
-                                        <div className="mt-4 pt-4 border-t border-gray-200">
-
-                                            <h3 className="text-sm font-semibold text-gray-700 mb-3">
-                                                Paid Amount
-                                            </h3>
-
-                                            <div className="space-y-3">
-                                                {feeData.givenAmountEntries
-                                                    ?.flatMap((record: any) => record.entries)
-                                                    .map((entry, index) => (
-                                                        <div
-                                                            key={index}
-                                                            className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-sm border-b border-gray-100 pb-2 last:border-0"
-                                                        >
-                                                            {/* Date + Description */}
-                                                            <div className="flex flex-col">
-                                                                <span className="text-xs font-medium text-gray-500">
-                                                                    {new Date(entry.date).toLocaleDateString("en-IN", {
-                                                                        day: "2-digit",
-                                                                        month: "short",
-                                                                        year: "numeric",
-                                                                    })}
-                                                                </span>
-
-                                                                {entry.description && (
-                                                                    <span className="text-gray-600">
-                                                                        {entry.description}
-                                                                    </span>
-                                                                )}
-                                                            </div>
-
-                                                            {/* Amount */}
-                                                            <span className="font-semibold text-green-600">
-                                                                ₹{entry.amount.toLocaleString("en-IN")}
-                                                            </span>
-                                                        </div>
-                                                    ))}
-                                            </div>
-
-                                            {/* Total */}
-                                            {feeData.givenAmount !== undefined && (
-                                                <div className="flex justify-between mt-3 pt-3 border-t border-gray-200">
-                                                    <span className="font-semibold text-gray-700">
-                                                        Total Paid Amount
-                                                    </span>
-
-                                                    <span className="font-bold text-green-600">
-                                                        ₹{feeData.givenAmount.toLocaleString("en-IN")}
-                                                    </span>
-                                                </div>
-                                            )}
-
-                                        </div>
-                                    )}
-
-                                </div>
-                            )}
-
                         </div>
 
+                        {/* Fee Description / Paid Amount */}
+                        {(year.FeeDescription || (feeData.givenAmountEntries?.length ?? 0) > 0) && (
+                            <div className="py-4 border-b border-slate-100">
+                                {year.FeeDescription && (
+                                    <>
+                                        <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                                            Fee Description
+                                        </h3>
+                                        <div className="text-sm text-slate-600 whitespace-pre-line leading-6">
+                                            {year.FeeDescription}
+                                        </div>
+                                    </>
+                                )}
+
+                                {(feeData.givenAmountEntries?.length ?? 0) > 0 && (
+                                    <div className="mt-4 pt-4 border-t border-slate-100">
+                                        <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
+                                            Paid Amount
+                                        </h3>
+                                        <div className="space-y-2.5">
+                                            {feeData.givenAmountEntries
+                                                ?.flatMap((record: any) => record.entries)
+                                                .map((entry, index) => (
+                                                    <div
+                                                        key={index}
+                                                        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-sm border-b border-slate-50 pb-2 last:border-0"
+                                                    >
+                                                        <div className="flex flex-col">
+                                                            <span className="text-[11px] font-medium text-slate-400">
+                                                                {new Date(entry.date).toLocaleDateString("en-IN", {
+                                                                    day: "2-digit",
+                                                                    month: "short",
+                                                                    year: "numeric",
+                                                                })}
+                                                            </span>
+                                                            {entry.description && (
+                                                                <span className="text-slate-600 text-xs">
+                                                                    {entry.description}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <span className="font-semibold text-green-600 text-sm">
+                                                            ₹{entry.amount.toLocaleString("en-IN")}
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                        </div>
+
+                                        {feeData.givenAmount !== undefined && (
+                                            <div className="flex justify-between mt-3 pt-3 border-t border-slate-100">
+                                                <span className="font-semibold text-slate-700 text-sm">
+                                                    Total Paid Amount
+                                                </span>
+                                                <span className="font-bold text-green-600 text-sm">
+                                                    ₹{feeData.givenAmount.toLocaleString("en-IN")}
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
                         {/* Payment Options */}
-                        <div className="bg-gray-50 rounded-b-xl border border-gray-200 border-t-0 p-4 sm:p-6">
+                        <div className="pt-4 space-y-3">
                             {year.paymentOptions && year.paymentOptions.length > 0 ? (
-                                <div className="space-y-3">
+                                <>
                                     {year.paymentOptions.map((option: Installment, idx: number) => {
                                         const isPastDue = isDueDatePassed(option.dueDate);
                                         const isPaid = option.paid;
@@ -897,7 +879,6 @@ export default function FeePaymentClient() {
                                             })}`;
                                         }
 
-                                        // Determine the amount to display
                                         const displayAmount = isPaid
                                             ? (option.paymentAmount || option.payableAmount)
                                             : option.payableAmount;
@@ -905,75 +886,73 @@ export default function FeePaymentClient() {
                                         return (
                                             <div
                                                 key={idx}
-                                                className={`rounded-xl border-2 p-4 sm:p-5 transition-all duration-200 ${isPaid
-                                                    ? 'bg-green-50 border-green-300'
+                                                className={`border-l-2 pl-4 py-3 ${isPaid
+                                                    ? 'border-green-400'
                                                     : isPastDue
-                                                        ? 'bg-red-50 border-red-300'
-                                                        : 'bg-white border-gray-200 hover:border-blue-300 hover:shadow-md'
+                                                        ? 'border-red-400'
+                                                        : 'border-slate-200'
                                                     }`}
                                             >
-                                                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                                                    {/* Left - Details */}
+                                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                                                    {/* Left */}
                                                     <div className="flex-1 min-w-0">
                                                         <div className="flex flex-wrap items-center gap-2">
-                                                            <h3 className="text-base sm:text-lg font-semibold text-gray-800">
+                                                            <h3 className="text-sm font-semibold text-slate-800">
                                                                 {label}
                                                             </h3>
                                                             {isPaid && (
-                                                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-200 text-green-800">
+                                                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-green-100 text-green-700">
                                                                     <Icons.Check />
                                                                     Paid
                                                                 </span>
                                                             )}
                                                             {!isPaid && isPastDue && (
-                                                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-200 text-red-800">
+                                                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-red-100 text-red-700">
                                                                     <Icons.Alert />
                                                                     Overdue
                                                                 </span>
                                                             )}
                                                             {isProcessing && (
-                                                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-200 text-blue-800">
+                                                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-blue-100 text-blue-700">
                                                                     <Icons.Spinner />
                                                                     Processing...
                                                                 </span>
                                                             )}
                                                         </div>
 
-                                                        <p className="text-xs sm:text-sm text-gray-500 mt-1">
+                                                        <p className="text-xs text-slate-500 mt-0.5">
                                                             {subLabel}
                                                         </p>
 
-                                                        {/* Fee Breakdown - Only show for unpaid items */}
                                                         {!isPaid && (
-                                                            <div className="mt-2 flex flex-wrap items-center gap-3 text-xs sm:text-sm">
+                                                            <div className="mt-1.5 flex flex-wrap items-center gap-3 text-xs">
                                                                 <div className="flex items-center gap-1">
-                                                                    <span className="text-gray-500">Tuition:</span>
-                                                                    <span className="font-medium">
-                                                                        ₹{(
-                                                                            option.tuitionConcession > 0
-                                                                                ? option.tuitionFee - option.tuitionConcession
-                                                                                : option.tuitionFee
+                                                                    <span className="text-slate-400">Tuition:</span>
+                                                                    <span className="font-medium text-slate-700">
+                                                                        ₹{(option.tuitionConcession > 0
+                                                                            ? option.tuitionFee - option.tuitionConcession
+                                                                            : option.tuitionFee
                                                                         ).toLocaleString()}
                                                                     </span>
                                                                 </div>
                                                                 <div className="flex items-center gap-1">
-                                                                    <span className="text-gray-500">Other:</span>
-                                                                    <span className="font-medium">₹{option.otherFee.toLocaleString()}</span>
+                                                                    <span className="text-slate-400">Other:</span>
+                                                                    <span className="font-medium text-slate-700">
+                                                                        ₹{option.otherFee.toLocaleString()}
+                                                                    </span>
                                                                 </div>
-
                                                             </div>
                                                         )}
 
-                                                        {/* Paid Details - Only show for paid items */}
                                                         {isPaid && (
-                                                            <div className="mt-2 flex flex-col gap-0.5">
+                                                            <div className="mt-1.5 flex flex-col gap-0.5">
                                                                 {option.paidDate && (
-                                                                    <p className="text-xs text-green-600">
+                                                                    <p className="text-[11px] text-green-600">
                                                                         Paid on: {formatDate(option.paidDate)}
                                                                     </p>
                                                                 )}
                                                                 {option.paymentId && (
-                                                                    <p className="text-xs text-gray-400 truncate">
+                                                                    <p className="text-[11px] text-slate-400 truncate">
                                                                         Payment ID: {option.paymentId}
                                                                     </p>
                                                                 )}
@@ -981,34 +960,24 @@ export default function FeePaymentClient() {
                                                         )}
                                                     </div>
 
-                                                    {/* Right - Amount & Actions */}
-                                                    <div className="flex items-center gap-3 sm:gap-4">
-                                                        {/* Amount Display */}
+                                                    {/* Right */}
+                                                    <div className="flex items-center gap-3 flex-shrink-0">
                                                         <div className="text-right">
                                                             {isPaid ? (
-                                                                <>
-
-                                                                    <p className="text-xs text-green-500 font-medium">
-                                                                        Paid
-                                                                    </p>
-
-                                                                </>
-
+                                                                <p className="text-[11px] text-green-500 font-medium">
+                                                                    Paid
+                                                                </p>
                                                             ) : (
-                                                                <>
-
-                                                                    <p className="text-lg sm:text-xl font-bold text-gray-800">
-                                                                        ₹{displayAmount.toLocaleString()}
-                                                                    </p>
-                                                                </>
+                                                                <p className="text-base sm:text-lg font-bold text-slate-800">
+                                                                    ₹{displayAmount.toLocaleString()}
+                                                                </p>
                                                             )}
                                                         </div>
 
-                                                        {/* Action Button */}
                                                         {isPaid ? (
                                                             <button
                                                                 onClick={() => handleViewReceipt(option.paymentId!)}
-                                                                className="px-4 py-2 rounded-lg text-sm font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 transition-all whitespace-nowrap flex items-center gap-2"
+                                                                className="px-3 py-2 rounded-md text-xs font-medium text-blue-700 border border-blue-200 hover:bg-blue-50 transition-all whitespace-nowrap flex items-center gap-1.5"
                                                             >
                                                                 <Icons.Receipt />
                                                                 Receipt
@@ -1021,9 +990,9 @@ export default function FeePaymentClient() {
                                                                     option.paymentOptionId
                                                                 )}
                                                                 disabled={isProcessing}
-                                                                className={`px-5 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${isPastDue
-                                                                    ? 'bg-red-600 hover:bg-red-700 text-white shadow-md'
-                                                                    : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md hover:shadow-lg'
+                                                                className={`px-4 py-2 rounded-md text-xs font-medium transition-all duration-200 whitespace-nowrap flex items-center gap-1.5 ${isPastDue
+                                                                    ? 'bg-red-600 hover:bg-red-700 text-white'
+                                                                    : 'bg-blue-600 hover:bg-blue-700 text-white'
                                                                     } ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}
                                                             >
                                                                 {isProcessing ? (
@@ -1044,9 +1013,9 @@ export default function FeePaymentClient() {
                                             </div>
                                         );
                                     })}
-                                </div>
+                                </>
                             ) : (
-                                <div className="text-center py-8 text-gray-500">
+                                <div className="text-center py-6 text-slate-500 text-sm">
                                     No payment options available for this year.
                                 </div>
                             )}
@@ -1054,6 +1023,7 @@ export default function FeePaymentClient() {
                     </div>
                 ))}
             </div>
-        </AppShell>
-    );
+        </div>
+    </AppShell>
+);
 }
