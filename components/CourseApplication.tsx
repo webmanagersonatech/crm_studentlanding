@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useRef } from "react"
 import { useRouter } from "next/navigation";
 import Select from "react-select"
@@ -643,25 +642,72 @@ export default function CourseApplication() {
     return true
   }
 
+  // Same visibility rule the form uses when it renders a field
+  const isFieldVisible = (field: any) =>
+    !field?.showWhen || formData[field.showWhen.field] === field.showWhen.value;
+
+  // Shows the ACTUAL validation error in a toast and scrolls to that field
+  const showValidationToast = (errors: { fieldName: string; message: string }[]) => {
+    if (!errors.length) return;
+
+    const first = errors[0];
+    const text = first.message.toLowerCase().includes(first.fieldName.toLowerCase())
+      ? first.message
+      : `${first.fieldName}: ${first.message}`;
+    const more = errors.length > 1 ? ` (+${errors.length - 1} more)` : "";
+
+    toast.error(`${text}${more}`, { id: "validation-error" });
+
+    setTimeout(() => {
+      const el = document.querySelector(
+        `[name="${CSS.escape(first.fieldName)}"]`
+      ) as HTMLElement | null;
+      el?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 50);
+  };
+
   const validateSection = (sections?: any[]) => {
     if (!Array.isArray(sections)) return true
 
     let isValid = true;
     const newErrors: Record<string, string> = {};
+    const errorList: { fieldName: string; message: string }[] = [];
 
-    for (const section of sections) {
-      for (const field of section.fields || []) {
-        const value = formData[field.fieldName];
-        const error = validateField(field, value);
+    try {
+      for (const section of sections) {
+        for (const field of section?.fields || []) {
+          // Empty slot in the config - nothing to validate
+          if (!field) continue;
 
-        if (error) {
-          newErrors[field.fieldName] = error;
-          isValid = false;
+          // Hidden fields (showWhen not met) can't be filled by the user,
+          // so they must not block the submit
+          if (!isFieldVisible(field)) continue;
+
+          const value = formData[field.fieldName];
+          const error = validateField(field, value);
+
+          if (error) {
+            newErrors[field.fieldName] = error;
+            errorList.push({ fieldName: field.fieldName, message: error });
+            isValid = false;
+          }
         }
       }
+    } catch (err: any) {
+      // Validation itself crashed - show the real reason instead of failing silently
+      console.error("Validation crashed:", err);
+      toast.error(`Validation error: ${err?.message || "Unknown error"}`, {
+        id: "validation-error",
+      });
+      return false;
     }
 
     setFieldErrors(prev => ({ ...prev, ...newErrors }));
+
+    if (!isValid) {
+      showValidationToast(errorList);
+    }
+
     return isValid;
   }
 
@@ -1944,13 +1990,14 @@ export default function CourseApplication() {
 
         router.push("/dashboard")
       } else {
-        toast.error(res?.message || "Submission failed")
+        toast.error(res?.message || res?.error || "Submission failed")
       }
 
 
 
     } catch (err: any) {
-      toast.error(err?.message || "Submission failed")
+      console.error("Submit error:", err)
+      toast.error(err?.response?.data?.message || err?.message || "Submission failed")
     } finally {
       setLoading(false)
     }
@@ -2001,7 +2048,10 @@ export default function CourseApplication() {
 
       return true;
     } catch (err: any) {
-      toast.error(err?.message || "Failed to save personal details");
+      console.error("Save personal details error:", err);
+      toast.error(
+        err?.response?.data?.message || err?.message || "Failed to save personal details"
+      );
       return false;
     } finally {
       setLoading(false);
@@ -2012,7 +2062,21 @@ export default function CourseApplication() {
 
   return (
     <div className="w-full px-3 sm:px-6 lg:px-0 flex justify-center overflow-x-hidden ">
-      <form onSubmit={handleSubmit} className="w-full max-w-5xl bg-white rounded-2xl  border border-gray-100 
+      <form
+        onSubmit={handleSubmit}
+        onInvalidCapture={(e) => {
+          // Browser's own validation (minLength / type etc.) blocked the submit:
+          // show its message in a toast too, only for the first invalid field
+          const form = e.currentTarget as HTMLFormElement;
+          const target = e.target as HTMLInputElement;
+          if (target !== form.querySelector(":invalid")) return;
+
+          toast.error(
+            `${target.name || "Field"}: ${target.validationMessage || "Invalid value"}`,
+            { id: "validation-error" }
+          );
+        }}
+        className="w-full max-w-5xl bg-white rounded-2xl  border border-gray-100
   p-4 sm:p-6 md:p-8 space-y-8 overflow-hidden">
         <Toaster position="top-right" />
 
