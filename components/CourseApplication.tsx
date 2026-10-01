@@ -1,4 +1,6 @@
-import { useEffect, useState, useRef } from "react"
+"use client"
+
+import { useEffect, useMemo, useState, useRef } from "react"
 import { useRouter } from "next/navigation";
 import Select from "react-select"
 import toast, { Toaster } from "react-hot-toast"
@@ -15,6 +17,21 @@ interface OptionType {
 
 type Tab = "personal" | "education"
 type Step = "program" | "personal" | "education"
+
+type LocationKeys = { country: string; state: string; city: string }
+
+// Address field groups (current + permanent). Names must match the form config exactly.
+const LOCATION_GROUPS: LocationKeys[] = [
+  { country: "Country", state: "State", city: "City" },
+  { country: "Permanent  Country", state: "Permanent  State", city: "Permanent City" },
+]
+
+// Fields that keep their own `required` value even when they have `showWhen`
+const EXCLUDE_FROM_AUTO_REQUIRED = ["Class 12 Backlogs", "Diploma Backlogs"]
+
+const DEFAULT_COUNTRY_CODE = "IN";
+// const BASE_URL = "http://localhost:4000/uploads/"
+const BASE_URL = "https://hikabackend.sonastar.com/uploads/";
 
 export default function CourseApplication() {
 
@@ -38,50 +55,32 @@ export default function CourseApplication() {
   const [sameAddress, setSameAddress] = useState(false);
   const [selectedTests, setSelectedTests] = useState<string[]>([]);
   const [testFields, setTestFields] = useState<Record<string, any[]>>({});
-  useEffect(() => {
-    if (!formConfig) return;
 
-    // 🎯 EXCLUDE LIST - Idhula irukka fields required maari aagadhu
-    const EXCLUDE_FROM_AUTO_REQUIRED = [
-      "Class 12 Backlogs","Diploma Backlogs"
-    ];
-
-    const updateRequiredFields = (details: any[]) => {
-      return details.map((section: any) => ({
-        ...section,
-        fields: section.fields.map((field: any) => {
-          // ✅ Exclude list la irundha - skip pannu
-          if (EXCLUDE_FROM_AUTO_REQUIRED.includes(field.fieldName)) {
-            return field;  // Original required ah maintain pannu
-          }
-
-          if (!field.showWhen) return field;
-
-          const conditionMet =
-            formData[field.showWhen.field] === formData[field.showWhen.value];
-
-          return {
-            ...field,
-            required: conditionMet,
-          };
-        }),
-      }));
-    };
-
-    setFormConfig((prev: any) => ({
-      ...prev,
-      personalDetails: updateRequiredFields(prev.personalDetails || []),
-      educationDetails: updateRequiredFields(prev.educationDetails || []),
-    }));
-  }, [formData]);
-
-  // const BASE_URL = "http://localhost:4000/uploads/"
-  const BASE_URL = "https://hikabackend.sonastar.com/uploads/";
   const inputClass =
     "border border-gray-300 w-full p-2 rounded bg-white focus:outline-none focus:ring-2 focus:ring-[#003B73]"
 
-  // Auto-generate sibling fields
-  const DEFAULT_COUNTRY_CODE = "IN";
+  const countryOptions = useMemo(
+    () =>
+      Country.getAllCountries().map(c => ({
+        value: c.isoCode,
+        label: c.name,
+      })),
+    []
+  );
+
+  const selectStyles = (hasError: boolean) => ({
+    control: (base: any) => ({
+      ...base,
+      borderColor: hasError ? "#ef4444" : base.borderColor,
+      "&:hover": {
+        borderColor: hasError ? "#ef4444" : base.borderColor,
+      },
+    }),
+  });
+
+  /* =========================================================
+     HELPERS
+  ========================================================= */
 
   const hasPersonalField = (name: string) =>
     formConfig?.personalDetails?.some((section: any) =>
@@ -89,6 +88,11 @@ export default function CourseApplication() {
         (f: any) => f.fieldName.toLowerCase() === name.toLowerCase()
       )
     );
+
+  // ✅ A field with showWhen is visible only when its condition is met
+  const isFieldVisible = (field: any) =>
+    !field.showWhen || formData[field.showWhen.field] === field.showWhen.value;
+
   const isValidDOB = (dob: string) => {
     if (!dob) return false
 
@@ -109,23 +113,88 @@ export default function CourseApplication() {
 
     return age >= minAge
   }
+
+  // Sum the given subject fields into a target field (auto-calculated totals)
+  const syncTotal = (target: string, subjectKeys: string[]) => {
+    let total = 0;
+    let hasAnyValue = false;
+
+    subjectKeys.forEach(subject => {
+      const value = parseFloat(formData[subject] || "0");
+      if (!isNaN(value) && value > 0) {
+        total += value;
+        hasAnyValue = true;
+      }
+    });
+
+    if (hasAnyValue) {
+      total = Math.round(total * 100) / 100;
+      const currentTotal = parseFloat(formData[target] || "0");
+
+      if (Math.abs(total - currentTotal) > 0.01) {
+        setFormData(prev => ({ ...prev, [target]: total.toString() }));
+        setFieldErrors(prev => ({ ...prev, [target]: "" }));
+      }
+    } else if (formData[target] && formData[target] !== "") {
+      setFormData(prev => ({ ...prev, [target]: "" }));
+    }
+  };
+
+  /* =========================================================
+     EFFECTS
+  ========================================================= */
+
+  // ✅ FIX 1: showWhen fields become required ONLY when their condition is met
+  // (old code compared formData[a] === formData[b] which made hidden fields required)
+  useEffect(() => {
+    if (!formConfig) return;
+
+    const updateRequiredFields = (details: any[], flag: { changed: boolean }) =>
+      details.map((section: any) => ({
+        ...section,
+        fields: section.fields.map((field: any) => {
+          if (EXCLUDE_FROM_AUTO_REQUIRED.includes(field.fieldName)) return field;
+          if (!field.showWhen) return field;
+
+          const conditionMet =
+            formData[field.showWhen.field] === field.showWhen.value;
+
+          if (field.required === conditionMet) return field;
+
+          flag.changed = true;
+          return { ...field, required: conditionMet };
+        }),
+      }));
+
+    setFormConfig((prev: any) => {
+      if (!prev) return prev;
+      const flag = { changed: false };
+      const personalDetails = updateRequiredFields(prev.personalDetails || [], flag);
+      const educationDetails = updateRequiredFields(prev.educationDetails || [], flag);
+
+      // nothing changed -> keep same reference (no extra re-render)
+      if (!flag.changed) return prev;
+
+      return { ...prev, personalDetails, educationDetails };
+    });
+  }, [formData]);
+
+  // English Language Proficiency - dynamic fields per selected test
   useEffect(() => {
     if (!formConfig?.educationDetails) return;
 
-    // Find the English Language Proficiency section
     const proficiencySection = formConfig.educationDetails.find(
       (section: any) => section.sectionName === "English Language Proficiency"
     );
 
     if (!proficiencySection) return;
 
-    // Get the selected tests from formData
     const selectedTestValue = formData["English Proficiency Test"];
     let tests: string[] = [];
 
     if (Array.isArray(selectedTestValue)) {
       tests = selectedTestValue;
-    } else if (typeof selectedTestValue === 'string' && selectedTestValue) {
+    } else if (typeof selectedTestValue === "string" && selectedTestValue) {
       tests = [selectedTestValue];
     }
 
@@ -143,16 +212,6 @@ export default function CourseApplication() {
       { fieldName: "Score Report ID", label: "Score Report ID", type: "alphanumeric", required: false }
     ];
 
-    // Store original fields to restore when tests change
-    const originalFields = proficiencySection.originalFields || proficiencySection.fields.filter(
-      (f: any) => f.fieldName !== "English Proficiency Test" && !f.isDynamic
-    );
-
-    if (!proficiencySection.originalFields) {
-      proficiencySection.originalFields = [...originalFields];
-    }
-
-    // Generate dynamic fields for each selected test
     const newTestFields: Record<string, any[]> = {};
     const allDynamicFields: any[] = [];
 
@@ -171,25 +230,42 @@ export default function CourseApplication() {
 
     setTestFields(newTestFields);
 
-    // Update the section fields - keep selection field + dynamic fields
-    proficiencySection.fields = [
-      proficiencySection.fields.find((f: any) => f.fieldName === "English Proficiency Test"),
-      ...allDynamicFields
-    ];
+    // Immutable update: keep the selection field + dynamic fields
+    setFormConfig((prev: any) => {
+      if (!prev?.educationDetails) return prev;
 
-    setFormConfig({ ...formConfig });
+      const idx = prev.educationDetails.findIndex(
+        (s: any) => s.sectionName === "English Language Proficiency"
+      );
+      if (idx < 0) return prev;
+
+      const section = prev.educationDetails[idx];
+      const selectionField = section.fields.find(
+        (f: any) => f.fieldName === "English Proficiency Test"
+      );
+
+      const newFields = [selectionField, ...allDynamicFields].filter(Boolean);
+
+      // no change -> don't trigger another render
+      const sameFields =
+        newFields.length === section.fields.length &&
+        newFields.every((f: any, i: number) => f.fieldName === section.fields[i].fieldName);
+      if (sameFields) return prev;
+
+      const educationDetails = [...prev.educationDetails];
+      educationDetails[idx] = { ...section, fields: newFields };
+      return { ...prev, educationDetails };
+    });
 
     // Clean up form data for tests that were deselected
-    const currentTestFields = Object.keys(testFields);
-    const removedTests = currentTestFields.filter(test => !tests.includes(test));
+    const removedTests = Object.keys(testFields).filter(test => !tests.includes(test));
 
     if (removedTests.length > 0) {
       setFormData(prev => {
         const newData = { ...prev };
         removedTests.forEach(test => {
           baseFields.forEach(field => {
-            const fieldKey = `${field.fieldName} (${test})`;
-            delete newData[fieldKey];
+            delete newData[`${field.fieldName} (${test})`];
           });
         });
         return newData;
@@ -198,249 +274,46 @@ export default function CourseApplication() {
 
   }, [formData["English Proficiency Test"], formConfig?.educationDetails]);
 
-  const validateField = (field: any, value: any): string => {
-    if (field.required && (!value || value.toString().trim() === "")) {
-      return `${field.fieldName} is required`;
-    }
-
-    if (value && value.toString().trim() !== "") {
-      if (field.type === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-        return "Invalid email format";
-      }
-
-      if (field.fieldName === "Date of Birth" && field.type === "date") {
-        if (!isValidDOB(value)) {
-          return `You must be at least ${minApplicantAge ?? 16} years old`;
-        }
-      }
-
-      if (field.type === "number" || field.type === "decimal") {
-        const strValue = value.toString();
-
-        // Zero start validation
-        if (strValue.length > 0 && strValue.startsWith("0")) {
-          return `${field.fieldName} cannot start with zero`;
-        }
-
-        const numericValue = Number(value);
-
-        if (
-          field.minValue !== undefined &&
-          numericValue < field.minValue
-        ) {
-          return `${field.fieldName} must be at least ${field.minValue}`;
-        }
-
-        if (
-          field.maxValue !== undefined &&
-          numericValue > field.maxValue
-        ) {
-          return `${field.fieldName} cannot exceed ${field.maxValue}`;
-        }
-      }
-
-      // MIN LENGTH VALIDATION
-      if (field.minLength && value.toString().length < field.minLength) {
-        return `${field.fieldName} must be at least ${field.minLength} characters`;
-      }
-
-      // MAX LENGTH VALIDATION
-      if (field.maxLength && value.toString().length > field.maxLength) {
-        return `${field.fieldName} cannot exceed ${field.maxLength} characters`;
-      }
-    }
-
-    return "";
-  };
-  const handleBlur = (
-    e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) => {
-    const { name, value } = e.target;
-
-    // Find the field configuration
-    let fieldConfig = null;
-    ['personal', 'education'].forEach(tab => {
-      formConfig?.[`${tab}Details`]?.forEach((section: any) => {
-        const found = section.fields.find((f: any) => f.fieldName === name);
-        if (found) fieldConfig = found;
-      });
-    });
-
-    if (fieldConfig) {
-      const error = validateField(fieldConfig, value);
-      setFieldErrors(prev => ({
-        ...prev,
-        [name]: error
-      }));
-    }
-  }
-  const countryOptions = Country.getAllCountries().map(c => ({
-    value: c.isoCode,
-    label: c.name,
-  }));
-
-
-
+  // Sibling fields - repeat base fields for each sibling
   useEffect(() => {
-    const count = Number(formData["Sibling Count"]) || 0
     if (!formConfig) return
 
-    const siblingSection = formConfig.personalDetails.find(
-      (s: any) => s.sectionName === "Sibling Details"
-    )
-    if (!siblingSection) return
+    const count = Number(formData["Sibling Count"]) || 0
 
-    const baseFields = siblingSection.fields.filter(
-      (f: any) => !f.isCustom && f.fieldName !== "Sibling Count"
-    )
-
-    siblingSection.fields = siblingSection.fields.filter(
-      (f: any) => !f.isCustom
-    )
-
-    for (let i = 2; i <= count; i++) {
-      baseFields.forEach((field: any) => {
-        siblingSection.fields.push({
-          ...field,
-          fieldName: `${field.fieldName} ${i}`,
-          label: `${field.label} ${i}`,
-          isCustom: true,
-        })
-      })
-    }
-
-    setFormConfig({ ...formConfig })
-  }, [formData["Sibling Count"]])
-
-  const renderSignatureField = (field: any) => {
-    const existingSignature = formData[field.fieldName];
-    const currentSignatureData = signaturesData[field.fieldName] || "";
-
-    return (
-      <div className="space-y-2">
-        <div className="border rounded p-2 bg-white">
-          <SignatureCanvas
-            ref={(ref) => {
-              if (!ref) return;
-
-              // Only update if ref changed
-              setSignatures(prev => {
-                if (prev[field.fieldName] === ref) return prev;
-                return { ...prev, [field.fieldName]: ref };
-              });
-
-              // Load existing signature if available and not already loaded
-              if (existingSignature && !signaturesData[field.fieldName] && !signaturesLoaded.current[field.fieldName]) {
-                signaturesLoaded.current[field.fieldName] = true;
-
-                setTimeout(() => {
-                  const img = new Image();
-                  img.onload = () => {
-                    ref.clear();
-                    ref.fromDataURL(existingSignature);
-                    setSignaturesData(prev => ({
-                      ...prev,
-                      [field.fieldName]: existingSignature
-                    }));
-                  };
-                  img.src = existingSignature;
-                }, 100);
-              }
-            }}
-            canvasProps={{
-              className: "signature-canvas w-full h-32 border rounded",
-              style: { border: "1px solid #ccc" }
-            }}
-            backgroundColor="rgb(255,255,255)"
-            onEnd={() => {
-              const currentSig = signatures[field.fieldName];
-              if (currentSig) {
-                const dataUrl = currentSig.toDataURL();
-                setSignaturesData(prev => ({
-                  ...prev,
-                  [field.fieldName]: dataUrl
-                }));
-                setFormData(prev => ({
-                  ...prev,
-                  [field.fieldName]: dataUrl
-                }));
-                setFieldErrors(prev => ({ ...prev, [field.fieldName]: '' }));
-              }
-            }}
-          />
-        </div>
-        {/* Clear and Download buttons */}
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => {
-              const currentSig = signatures[field.fieldName];
-              if (currentSig) {
-                currentSig.clear();
-                setSignaturesData(prev => ({
-                  ...prev,
-                  [field.fieldName]: ""
-                }));
-                setFormData(prev => ({
-                  ...prev,
-                  [field.fieldName]: ""
-                }));
-                // Reset loaded flag if cleared
-                signaturesLoaded.current[field.fieldName] = false;
-              }
-            }}
-            className="px-3 py-1 text-sm bg-gray-500 text-white rounded hover:bg-gray-600"
-          >
-            Clear
-          </button>
-          {currentSignatureData && (
-            <button
-              type="button"
-              onClick={() => {
-                const dataUrl = currentSignatureData;
-                const link = document.createElement('a');
-                link.download = `${field.fieldName}.png`;
-                link.href = dataUrl;
-                link.click();
-              }}
-              className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
-            >
-              Download
-            </button>
-          )}
-        </div>
-        {currentSignatureData && (
-          <div className="mt-2">
-            <p className="text-xs text-gray-500">Preview:</p>
-            <img src={currentSignatureData} alt={`${field.fieldName} preview`} className="h-16 border rounded mt-1" />
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  const removeField = (tab: Tab, sectionName: string, fieldName: string) => {
     setFormConfig((prev: any) => {
-      const sections = prev?.[`${tab}Details`] || []
+      if (!prev?.personalDetails) return prev
 
-      const updatedSections = sections.map((section: any) => {
-        if (section.sectionName !== sectionName) return section
+      const idx = prev.personalDetails.findIndex(
+        (s: any) => s.sectionName === "Sibling Details"
+      )
+      if (idx < 0) return prev
 
-        return {
-          ...section,
-          fields: section.fields.filter((f: any) => f.fieldName !== fieldName),
-        }
-      })
+      const section = prev.personalDetails[idx]
 
-      return {
-        ...prev,
-        [`${tab}Details`]: updatedSections,
+      const baseFields = section.fields.filter(
+        (f: any) => !f.isCustom && f.fieldName !== "Sibling Count"
+      )
+      const keptFields = section.fields.filter((f: any) => !f.isCustom)
+
+      const extraFields: any[] = []
+      for (let i = 2; i <= count; i++) {
+        baseFields.forEach((field: any) => {
+          extraFields.push({
+            ...field,
+            fieldName: `${field.fieldName} ${i}`,
+            label: `${field.label} ${i}`,
+            isCustom: true,
+          })
+        })
       }
+
+      const personalDetails = [...prev.personalDetails]
+      personalDetails[idx] = { ...section, fields: [...keptFields, ...extraFields] }
+      return { ...prev, personalDetails }
     })
-  }
+  }, [formData["Sibling Count"], !!formConfig])
 
-  // Fetch logged-in student and form config
-
+  // Fetch logged-in student, form config and existing application
   const fetchStudentAndApplication = async () => {
     try {
       const res = await getLoggedInStudent();
@@ -455,8 +328,7 @@ export default function CourseApplication() {
       setAcademicYear(finalAcademicYear)
       setStudent(student);
 
-      setMinApplicantAge(settings.applicantAge ?? 16)
-
+      setMinApplicantAge(settings?.applicantAge ?? 16)
 
       // Set basic student info
       setSelectedInstitute(student?.instituteId || "");
@@ -485,7 +357,7 @@ export default function CourseApplication() {
       }
       setFormConfig(formManager);
 
-      // ✅ Fetch existing application if applicationId exists
+      // Fetch existing application if applicationId exists
       if (student.applicationId) {
         const appRes = await getStudentApplicationById(student.applicationId);
 
@@ -495,38 +367,22 @@ export default function CourseApplication() {
           const appData = appRes.data;
 
           const source: "online" | "offline" | "lead" = appData.applicationSource || "online";
-
           setApplicationSource(source);
 
           const newFormData: Record<string, any> = {};
-          const newFiles: Record<string, File | string> = {};
 
-          // Map personalDetails
-          appData.personalDetails?.forEach((section: any) => {
-            Object.entries(section.fields).forEach(([key, value]) => {
-              newFormData[key] = value;
-
-              // If the field is a file, keep string for preview
-              if (typeof value === "string" && value.match(/\.(jpg|jpeg|png|webp|pdf)$/i)) {
-                newFiles[key] = value;
-              }
-            });
-          });
-
-          // Map educationDetails
-          appData.educationDetails?.forEach((section: any) => {
-            Object.entries(section.fields).forEach(([key, value]) => {
-              newFormData[key] = value;
-
-              if (typeof value === "string" && value.match(/\.(jpg|jpeg|png|webp|pdf)$/i)) {
-                newFiles[key] = value;
-              }
-            });
-          });
+          // Map personalDetails + educationDetails
+          [...(appData.personalDetails || []), ...(appData.educationDetails || [])].forEach(
+            (section: any) => {
+              Object.entries(section.fields).forEach(([key, value]) => {
+                newFormData[key] = value;
+              });
+            }
+          );
 
           setFormData((prev) => ({ ...prev, ...newFormData }));
 
-          // seet program
+          // set program
           setProgramId(appData.programId || "");
           setAcademicYear(finalAcademicYear)
         }
@@ -537,13 +393,11 @@ export default function CourseApplication() {
     }
   };
 
-
   useEffect(() => {
     fetchStudentAndApplication();
   }, []);
 
-  // Add this useEffect after your other useEffects (around line 200-250)
-
+  // Cutoff (12th) auto calculation
   useEffect(() => {
     if (!formConfig?.educationDetails) return;
 
@@ -556,72 +410,40 @@ export default function CourseApplication() {
     const hasBiologyField = cutoffSection.fields.some(
       (field: any) => field.fieldName === "Subject3(Biology)"
     );
-
     const hasMathsField = cutoffSection.fields.some(
       (field: any) => field.fieldName === "Subject3(Mathematics)"
     );
-
-    const isMedicalInstitute = hasBiologyField;
-    const isEngineeringInstitute = hasMathsField;
 
     let physics = parseFloat(formData["Subject1(Physics)"] || "0");
     let chemistry = parseFloat(formData["Subject2(Chemistry)"] || "0");
     let thirdSubject = 0;
 
-    // Validate numbers
     if (isNaN(physics)) physics = 0;
     if (isNaN(chemistry)) chemistry = 0;
 
-    let cutoff = 0;
-
-    if (isMedicalInstitute) {
-      // 🩺 Medical cutoff
+    if (hasBiologyField) {
       thirdSubject = parseFloat(formData["Subject3(Biology)"] || "0");
-      if (isNaN(thirdSubject)) thirdSubject = 0;
-      cutoff = (physics / 2) + (chemistry / 2) + thirdSubject;
-
-    } else if (isEngineeringInstitute) {
-      // ⚙️ Engineering cutoff
+    } else if (hasMathsField) {
       thirdSubject = parseFloat(formData["Subject3(Mathematics)"] || "0");
-      if (isNaN(thirdSubject)) thirdSubject = 0;
-      cutoff = (physics / 2) + (chemistry / 2) + thirdSubject;
-
     } else {
-      // fallback (optional)
       thirdSubject = parseFloat(
         formData["Subject3(Biology)"] || formData["Subject3(Mathematics)"] || "0"
       );
-      if (isNaN(thirdSubject)) thirdSubject = 0;
-      cutoff = (physics / 2) + (chemistry / 2) + thirdSubject;
     }
+    if (isNaN(thirdSubject)) thirdSubject = 0;
 
-    // Only calculate if at least one subject has a value
+    const cutoff = (physics / 2) + (chemistry / 2) + thirdSubject;
+
     if (physics > 0 || chemistry > 0 || thirdSubject > 0) {
       const roundedCutoff = Math.round(cutoff * 100) / 100;
-
       const currentCutoff = parseFloat(formData["Cutoff"] || "0");
 
-      // Only update if value changed significantly
       if (Math.abs(roundedCutoff - currentCutoff) > 0.01) {
-        setFormData(prev => ({
-          ...prev,
-          "Cutoff": roundedCutoff.toString()
-        }));
-
-        // Clear any error for this field
-        setFieldErrors(prev => ({
-          ...prev,
-          "Cutoff": ''
-        }));
+        setFormData(prev => ({ ...prev, "Cutoff": roundedCutoff.toString() }));
+        setFieldErrors(prev => ({ ...prev, "Cutoff": "" }));
       }
-    } else {
-      // Clear cutoff if no marks entered
-      if (formData["Cutoff"] && formData["Cutoff"] !== "") {
-        setFormData(prev => ({
-          ...prev,
-          "Cutoff": ""
-        }));
-      }
+    } else if (formData["Cutoff"] && formData["Cutoff"] !== "") {
+      setFormData(prev => ({ ...prev, "Cutoff": "" }));
     }
 
   }, [
@@ -632,955 +454,7 @@ export default function CourseApplication() {
     formConfig
   ]);
 
-
-
-  const validateProgram = () => {
-    if (!programId) {
-      toast.error("Please select a program")
-      return false
-    }
-    return true
-  }
-
-  // Same visibility rule the form uses when it renders a field
-  const isFieldVisible = (field: any) =>
-    !field?.showWhen || formData[field.showWhen.field] === field.showWhen.value;
-
-  // Shows the ACTUAL validation error in a toast and scrolls to that field
-  const showValidationToast = (errors: { fieldName: string; message: string }[]) => {
-    if (!errors.length) return;
-
-    const first = errors[0];
-    const text = first.message.toLowerCase().includes(first.fieldName.toLowerCase())
-      ? first.message
-      : `${first.fieldName}: ${first.message}`;
-    const more = errors.length > 1 ? ` (+${errors.length - 1} more)` : "";
-
-    toast.error(`${text}${more}`, { id: "validation-error" });
-
-    setTimeout(() => {
-      const el = document.querySelector(
-        `[name="${CSS.escape(first.fieldName)}"]`
-      ) as HTMLElement | null;
-      el?.scrollIntoView({ behavior: "smooth", block: "center" });
-    }, 50);
-  };
-
-  const validateSection = (sections?: any[]) => {
-    if (!Array.isArray(sections)) return true
-
-    let isValid = true;
-    const newErrors: Record<string, string> = {};
-    const errorList: { fieldName: string; message: string }[] = [];
-
-    try {
-      for (const section of sections) {
-        for (const field of section?.fields || []) {
-          // Empty slot in the config - nothing to validate
-          if (!field) continue;
-
-          // Hidden fields (showWhen not met) can't be filled by the user,
-          // so they must not block the submit
-          if (!isFieldVisible(field)) continue;
-
-          const value = formData[field.fieldName];
-          const error = validateField(field, value);
-
-          if (error) {
-            newErrors[field.fieldName] = error;
-            errorList.push({ fieldName: field.fieldName, message: error });
-            isValid = false;
-          }
-        }
-      }
-    } catch (err: any) {
-      // Validation itself crashed - show the real reason instead of failing silently
-      console.error("Validation crashed:", err);
-      toast.error(`Validation error: ${err?.message || "Unknown error"}`, {
-        id: "validation-error",
-      });
-      return false;
-    }
-
-    setFieldErrors(prev => ({ ...prev, ...newErrors }));
-
-    if (!isValid) {
-      showValidationToast(errorList);
-    }
-
-    return isValid;
-  }
-
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) => {
-    const { name, value, type, checked } = e.target as HTMLInputElement
-    const newValue = type === "checkbox" ? checked : value
-
-    setFormData(p => ({ ...p, [name]: newValue }))
-
-    // Clear error when user starts typing
-    setFieldErrors(prev => ({
-      ...prev,
-      [name]: ''
-    }));
-  }
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    const fieldName = e.target.name;
-
-    if (!file) return;
-
-    const MAX_SIZE = 2 * 1024 * 1024; // 2MB
-
-    const allowedTypes = [
-      "image/jpeg",
-      "image/png",
-      "image/webp",
-      "application/pdf",
-      "application/msword",
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-    ];
-
-    // ❌ File size validation
-    if (file.size > MAX_SIZE) {
-      toast.error("File must be less than 2MB");
-      e.target.value = "";
-      return;
-    }
-
-    // ❌ File type validation
-    if (!allowedTypes.includes(file.type)) {
-      toast.error("Only Images, PDF, DOC, DOCX allowed");
-      e.target.value = "";
-      return;
-    }
-
-    // ✅ Save file
-    setFiles((prev) => ({
-      ...prev,
-      [fieldName]: file
-    }));
-
-    setFormData((prev) => ({
-      ...prev,
-      [fieldName]: file.name
-    }));
-
-    // Clear error
-    setFieldErrors(prev => ({
-      ...prev,
-      [fieldName]: ""
-    }));
-  };
-
-  const renderField = (field: any) => {
-    const value = formData[field.fieldName] ?? (field.type === "checkbox" ? [] : "");
-    const error = fieldErrors[field.fieldName];
-    const hasError = !!error;
-
-    if (field.fieldName === "Cutoff") {
-      return (
-        <div>
-          <input
-            type="text"
-            name={field.fieldName}
-            value={value || ""}
-            readOnly
-            disabled
-            className={`${inputClass} bg-gray-100 cursor-not-allowed ${hasError ? 'border-red-500' : ''}`}
-          />
-          {hasError && <p className="text-red-500 text-xs mt-1">{error}</p>}
-          <p className="text-xs text-gray-500 mt-1">This field is auto-calculated based on subject marks</p>
-        </div>
-      );
-    }
-    /* =========================
-       COUNTRY
-    ========================= */
-    if (field.fieldName === "Country") {
-      return (
-        <div>
-          <Select
-            options={countryOptions}
-            value={countryOptions.find(o => o.label === formData.Country) || null}
-            onChange={(val) => {
-              setFormData(p => ({
-                ...p,
-                Country: val?.label || "",
-                State: "",
-                City: "",
-              }));
-              setFieldErrors(prev => ({ ...prev, Country: '' }));
-            }}
-            onBlur={() => {
-              const error = validateField(field, formData.Country);
-              setFieldErrors(prev => ({ ...prev, Country: error }));
-            }}
-            placeholder="Select Country"
-            styles={{
-              control: (base) => ({
-                ...base,
-                borderColor: hasError ? '#ef4444' : base.borderColor,
-                '&:hover': {
-                  borderColor: hasError ? '#ef4444' : base.borderColor,
-                }
-              })
-            }}
-          />
-          {hasError && <p className="text-red-500 text-xs mt-1">{error}</p>}
-        </div>
-      );
-    }
-
-    /* =========================
-       STATE
-    ========================= */
-    if (field.fieldName === "State") {
-      let options: any[] = [];
-
-      if (hasPersonalField("Country") && formData.Country) {
-        const countryCode = Country.getAllCountries()
-          .find(c => c.name === formData.Country)?.isoCode;
-
-        options = countryCode
-          ? State.getStatesOfCountry(countryCode).map(s => ({
-            value: s.isoCode,
-            label: s.name,
-          }))
-          : [];
-      } else {
-        options = State.getStatesOfCountry(DEFAULT_COUNTRY_CODE).map(s => ({
-          value: s.isoCode,
-          label: s.name,
-        }));
-      }
-
-      return (
-        <div>
-          <Select
-            options={options}
-            value={options.find(o => o.label === formData.State) || null}
-            onChange={(val) => {
-              setFormData(p => ({ ...p, State: val?.label || "", City: "" }));
-              setFieldErrors(prev => ({ ...prev, State: '' }));
-            }}
-            onBlur={() => {
-              const error = validateField(field, formData.State);
-              setFieldErrors(prev => ({ ...prev, State: error }));
-            }}
-            isDisabled={hasPersonalField("Country") && !formData.Country}
-            placeholder="Select State"
-            styles={{
-              control: (base) => ({
-                ...base,
-                borderColor: hasError ? '#ef4444' : base.borderColor,
-                '&:hover': {
-                  borderColor: hasError ? '#ef4444' : base.borderColor,
-                }
-              })
-            }}
-          />
-          {hasError && <p className="text-red-500 text-xs mt-1">{error}</p>}
-        </div>
-      );
-    }
-
-    /* =========================
-       CITY
-    ========================= */
-    if (field.fieldName === "City") {
-      let options: any[] = [];
-
-      const countryCode =
-        Country.getAllCountries().find(c => c.name === formData.Country)
-          ?.isoCode || DEFAULT_COUNTRY_CODE;
-
-      const stateCode =
-        State.getStatesOfCountry(countryCode)
-          .find(s => s.name === formData.State)?.isoCode;
-
-      if (stateCode) {
-        options = City.getCitiesOfState(countryCode, stateCode).map(c => ({
-          value: c.name,
-          label: c.name,
-        }));
-      }
-
-      return (
-        <div>
-          <Select
-            options={options}
-            value={options.find(o => o.label === formData.City) || null}
-            onChange={(val) => {
-              setFormData(p => ({ ...p, City: val?.label || "" }));
-              setFieldErrors(prev => ({ ...prev, City: '' }));
-            }}
-            onBlur={() => {
-              const error = validateField(field, formData.City);
-              setFieldErrors(prev => ({ ...prev, City: error }));
-            }}
-            isDisabled={!formData.State}
-            placeholder="Select City"
-            styles={{
-              control: (base) => ({
-                ...base,
-                borderColor: hasError ? '#ef4444' : base.borderColor,
-                '&:hover': {
-                  borderColor: hasError ? '#ef4444' : base.borderColor,
-                }
-              })
-            }}
-          />
-          {hasError && <p className="text-red-500 text-xs mt-1">{error}</p>}
-        </div>
-      );
-    }
-    /* =========================
-   PERMANENT COUNTRY
-========================= */
-    if (field.fieldName === "Permanent  Country") {
-      return (
-        <div>
-          <Select
-            options={countryOptions}
-            value={countryOptions.find(o => o.label === formData["Permanent  Country"]) || null}
-            onChange={(val) => {
-              setFormData(p => ({
-                ...p,
-                "Permanent  Country": val?.label || "",
-                "Permanent  State": "",
-                "Permanent City": "",
-              }));
-              setFieldErrors(prev => ({ ...prev, "Permanent  Country": '' }));
-            }}
-            onBlur={() => {
-              const error = validateField(field, formData["Permanent  Country"]);
-              setFieldErrors(prev => ({ ...prev, "Permanent  Country": error }));
-            }}
-            placeholder="Select Country"
-            styles={{
-              control: (base) => ({
-                ...base,
-                borderColor: hasError ? '#ef4444' : base.borderColor,
-                '&:hover': {
-                  borderColor: hasError ? '#ef4444' : base.borderColor,
-                }
-              })
-            }}
-          />
-          {hasError && <p className="text-red-500 text-xs mt-1">{error}</p>}
-        </div>
-      );
-    }
-
-    /* =========================
-       PERMANENT STATE
-    ========================= */
-    if (field.fieldName === "Permanent  State") {
-      let options: any[] = [];
-
-      if (hasPersonalField("Permanent  Country") && formData["Permanent  Country"]) {
-        const countryCode = Country.getAllCountries()
-          .find(c => c.name === formData["Permanent  Country"])?.isoCode;
-
-        options = countryCode
-          ? State.getStatesOfCountry(countryCode).map(s => ({
-            value: s.isoCode,
-            label: s.name,
-          }))
-          : [];
-      } else {
-        options = State.getStatesOfCountry(DEFAULT_COUNTRY_CODE).map(s => ({
-          value: s.isoCode,
-          label: s.name,
-        }));
-      }
-
-      return (
-        <div>
-          <Select
-            options={options}
-            value={options.find(o => o.label === formData["Permanent  State"]) || null}
-            onChange={(val) => {
-              setFormData(p => ({
-                ...p,
-                "Permanent  State": val?.label || "",
-                "Permanent City": ""
-              }));
-              setFieldErrors(prev => ({ ...prev, "Permanent  State": '' }));
-            }}
-            onBlur={() => {
-              const error = validateField(field, formData["Permanent  State"]);
-              setFieldErrors(prev => ({ ...prev, "Permanent  State": error }));
-            }}
-            isDisabled={hasPersonalField("Permanent  Country") && !formData["Permanent  Country"]}
-            placeholder="Select State"
-            styles={{
-              control: (base) => ({
-                ...base,
-                borderColor: hasError ? '#ef4444' : base.borderColor,
-                '&:hover': {
-                  borderColor: hasError ? '#ef4444' : base.borderColor,
-                }
-              })
-            }}
-          />
-          {hasError && <p className="text-red-500 text-xs mt-1">{error}</p>}
-        </div>
-      );
-    }
-
-    /* =========================
-       PERMANENT CITY
-    ========================= */
-    if (field.fieldName === "Permanent City") {
-      let options: any[] = [];
-
-      const countryCode =
-        Country.getAllCountries().find(c => c.name === formData["Permanent  Country"])
-          ?.isoCode || DEFAULT_COUNTRY_CODE;
-
-      const stateCode =
-        State.getStatesOfCountry(countryCode)
-          .find(s => s.name === formData["Permanent  State"])?.isoCode;
-
-      if (stateCode) {
-        options = City.getCitiesOfState(countryCode, stateCode).map(c => ({
-          value: c.name,
-          label: c.name,
-        }));
-      }
-
-      return (
-        <div>
-          <Select
-            options={options}
-            value={options.find(o => o.label === formData["Permanent City"]) || null}
-            onChange={(val) => {
-              setFormData(p => ({ ...p, "Permanent City": val?.label || "" }));
-              setFieldErrors(prev => ({ ...prev, "Permanent City": '' }));
-            }}
-            onBlur={() => {
-              const error = validateField(field, formData["Permanent City"]);
-              setFieldErrors(prev => ({ ...prev, "Permanent City": error }));
-            }}
-            isDisabled={!formData["Permanent  State"]}
-            placeholder="Select City"
-            styles={{
-              control: (base) => ({
-                ...base,
-                borderColor: hasError ? '#ef4444' : base.borderColor,
-                '&:hover': {
-                  borderColor: hasError ? '#ef4444' : base.borderColor,
-                }
-              })
-            }}
-          />
-          {hasError && <p className="text-red-500 text-xs mt-1">{error}</p>}
-        </div>
-      );
-    }
-
-    /* =========================
-       TYPE BASED RENDERING
-    ========================= */
-    const renderInput = () => {
-      switch (field.type) {
-        /* TEXTAREA */
-        case "textarea":
-          return (
-            <textarea
-              name={field.fieldName}
-              value={value}
-              onChange={handleChange}
-              onBlur={handleBlur}
-
-              className={`${inputClass} ${hasError ? 'border-red-500' : ''}`}
-              minLength={field.minLength}
-              maxLength={field.maxLength ?? 500}
-            />
-          );
-        case "signature":
-          return renderSignatureField(field);
-        /* SELECT */
-        case "select":
-          return (
-            <select
-              name={field.fieldName}
-              value={value}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              className={`${inputClass} ${hasError ? 'border-red-500' : ''}`}
-            >
-              <option value="">Select</option>
-              {field.options?.map((o: string) => (
-                <option key={o} value={o}>
-                  {o}
-                </option>
-              ))}
-            </select>
-          );
-
-        /* RADIO */
-        case "radiobutton":
-          return (
-            <div className="space-y-1">
-              {field.options?.map((o: string) => (
-                <label key={o} className="flex items-center gap-2 text-sm">
-                  <input
-                    type="radio"
-                    name={field.fieldName}
-                    value={o}
-                    checked={value === o}
-                    onChange={() => {
-                      setFormData(p => ({
-                        ...p,
-                        [field.fieldName]: o,
-                      }));
-                      setFieldErrors(prev => ({ ...prev, [field.fieldName]: '' }));
-                    }}
-                    onBlur={() => {
-                      const error = validateField(field, value);
-                      setFieldErrors(prev => ({ ...prev, [field.fieldName]: error }));
-                    }}
-                  />
-                  {o}
-                </label>
-              ))}
-            </div>
-          );
-
-        /* CHECKBOX */
-        case "checkbox":
-          // Special handling for English Proficiency Test checkbox
-          if (field.fieldName === "English Proficiency Test") {
-            return (
-              <div className="space-y-2">
-                {field.options?.map((o: string) => (
-                  <label key={o} className="flex items-center gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={(value || []).includes(o)}
-                      onChange={(e) => {
-                        let updated = e.target.checked
-                          ? [...(value || []), o]
-                          : (value || []).filter((v: string) => v !== o);
-
-                        // Remove "Not yet taken" if any other test is selected
-                        if (e.target.checked && o !== "Not yet taken" && updated.includes("Not yet taken")) {
-                          updated = updated.filter((v: string) => v !== "Not yet taken");
-                        }
-
-                        // If "Not yet taken" is selected, clear other selections
-                        if (e.target.checked && o === "Not yet taken") {
-                          updated = ["Not yet taken"];
-                        }
-
-                        setFormData(p => ({
-                          ...p,
-                          [field.fieldName]: updated,
-                        }));
-
-                        // Clear errors for dynamic fields when selection changes
-                        if (selectedTests.length > 0) {
-                          const allDynamicFieldNames = Object.values(testFields).flat().map(f => f.fieldName);
-                          setFieldErrors(prev => {
-                            const newErrors = { ...prev };
-                            allDynamicFieldNames.forEach(fieldName => {
-                              delete newErrors[fieldName];
-                            });
-                            return newErrors;
-                          });
-                        }
-
-                        setFieldErrors(prev => ({ ...prev, [field.fieldName]: '' }));
-                      }}
-                      onBlur={() => {
-                        const error = validateField(field, value);
-                        setFieldErrors(prev => ({ ...prev, [field.fieldName]: error }));
-                      }}
-                    />
-                    {o}
-                  </label>
-                ))}
-                {hasError && <p className="text-red-500 text-xs mt-1">{error}</p>}
-              </div>
-            );
-          }
-
-          // Default checkbox rendering
-          return (
-            <div className="space-y-1">
-              {field.options?.map((o: string) => (
-                <label key={o} className="flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={(value || []).includes(o)}
-                    onChange={(e) => {
-                      const updated = e.target.checked
-                        ? [...value, o]
-                        : value.filter((v: string) => v !== o);
-
-                      setFormData(p => ({
-                        ...p,
-                        [field.fieldName]: updated,
-                      }));
-                      setFieldErrors(prev => ({ ...prev, [field.fieldName]: '' }));
-                    }}
-                    onBlur={() => {
-                      const error = validateField(field, value);
-                      setFieldErrors(prev => ({ ...prev, [field.fieldName]: error }));
-                    }}
-                  />
-                  {o}
-                </label>
-              ))}
-            </div>
-          );
-
-
-        /* DECLARATION */
-        case "declaration":
-          return (
-            <div>
-              <textarea
-                ref={(el) => {
-                  if (el) {
-                    el.style.height = 'auto';
-                    el.style.height = el.scrollHeight + 'px';
-                  }
-                }}
-                name={field.fieldName}
-                value={field.declarationText || "No declaration text provided"}
-                readOnly
-                disabled
-                className={`${inputClass} bg-gray-100 cursor-not-allowed ${hasError ? 'border-red-500' : ''}`}
-                style={{ overflow: 'hidden', resize: 'none' }}
-                rows={1}
-              />
-            </div>
-          );
-        /* NUMBER */
-        case "number":
-          return (
-            <input
-              type="text"
-              name={field.fieldName}
-              value={value}
-              disabled={field.fieldName === "Contact Number"}
-              className={`${inputClass} ${field.fieldName === "Contact Number"
-                ? "bg-gray-100 cursor-not-allowed"
-                : ""
-                } ${hasError ? 'border-red-500' : ''}`}
-              inputMode="numeric"
-              maxLength={field.maxLength ?? 15}
-              onChange={(e) => {
-                const numericValue = e.target.value.replace(/\D/g, "");
-
-                // Don't allow 0 as first value
-                if (numericValue === "0") return;
-
-                const num = Number(numericValue);
-
-                // Max value restriction while typing
-                if (
-                  numericValue &&
-                  field.maxValue !== undefined &&
-                  num > field.maxValue
-                ) {
-                  return;
-                }
-
-                setFormData((p) => ({
-                  ...p,
-                  [field.fieldName]: numericValue,
-                }));
-
-                setFieldErrors((prev) => ({
-                  ...prev,
-                  [field.fieldName]: "",
-                }));
-              }}
-              onBlur={(e) => {
-                const val = e.target.value;
-
-                // Check if starts with zero
-                if (val.length > 0 && val.startsWith('0')) {
-                  setFieldErrors(prev => ({
-                    ...prev,
-                    [field.fieldName]: `${field.fieldName} cannot start with zero`
-                  }));
-                }
-                // Check min length if specified
-                else if (field.minLength && val.length < field.minLength) {
-                  setFieldErrors(prev => ({
-                    ...prev,
-                    [field.fieldName]: `${field.fieldName} must be at least ${field.minLength} digits`
-                  }));
-                }
-                // Check max length if specified
-                else if (field.maxLength && val.length > field.maxLength) {
-                  setFieldErrors(prev => ({
-                    ...prev,
-                    [field.fieldName]: `${field.fieldName} cannot exceed ${field.maxLength} digits`
-                  }));
-                }
-                // Run the main validation
-                else {
-                  handleBlur(e);
-                }
-              }}
-            />
-          );
-
-        case "decimal":
-          return (
-            <input
-              type="text"
-              name={field.fieldName}
-              value={value}
-              className={`${inputClass} ${hasError ? 'border-red-500' : ''}`}
-              inputMode="decimal"
-              onChange={(e) => {
-                let val = e.target.value;
-
-                // Allow only number and dot
-                val = val.replace(/[^0-9.]/g, "");
-
-                // Only one decimal point
-                const parts = val.split(".");
-                if (parts.length > 2) {
-                  val = parts[0] + "." + parts[1];
-                }
-
-                // Don't allow 0
-                if (val === "0") return;
-
-                const num = Number(val);
-
-                // Max value restriction while typing
-                if (
-                  val &&
-                  !isNaN(num) &&
-                  field.maxValue !== undefined &&
-                  num > field.maxValue
-                ) {
-                  return;
-                }
-
-                setFormData((p) => ({
-                  ...p,
-                  [field.fieldName]: val,
-                }));
-
-                setFieldErrors((prev) => ({
-                  ...prev,
-                  [field.fieldName]: "",
-                }));
-              }}
-              onBlur={handleBlur}
-            />
-          );
-        /* TEXT ONLY */
-        case "text":
-          return (
-            <input
-              type="text"
-              name={field.fieldName}
-              value={value}
-              className={`${inputClass} ${hasError ? 'border-red-500' : ''}`}
-              minLength={field.minLength} // Add this
-              maxLength={field.maxLength ?? 100}
-              onChange={(e) => {
-                const textValue = e.target.value.replace(/[^a-zA-Z\s]/g, "");
-                setFormData(p => ({ ...p, [field.fieldName]: textValue }));
-                setFieldErrors(prev => ({ ...prev, [field.fieldName]: '' }));
-              }}
-              onBlur={handleBlur}
-            />
-          );
-        /* ALPHANUMERIC */
-        case "alphanumeric":
-          return (
-            <input
-              type="text"
-              name={field.fieldName}
-              value={value}
-              className={`${inputClass} ${hasError ? 'border-red-500' : ''}`}
-              minLength={field.minLength}
-              maxLength={field.maxLength ?? 100}
-              onChange={(e) => {
-                const alphanumericValue = e.target.value.replace(/[^a-zA-Z0-9\s]/g, "");
-                setFormData(p => ({ ...p, [field.fieldName]: alphanumericValue }));
-                setFieldErrors(prev => ({ ...prev, [field.fieldName]: '' }));
-              }}
-              onBlur={handleBlur}
-            />
-          );
-
-        /* ANY */
-        case "any":
-          return (
-            <input
-              type="text"
-              name={field.fieldName}
-              value={value}
-              className={`${inputClass} ${hasError ? 'border-red-500' : ''}`}
-              minLength={field.minLength}
-              maxLength={field.maxLength ?? 300}
-              onChange={(e) => {
-                setFormData(p => ({ ...p, [field.fieldName]: e.target.value }));
-                setFieldErrors(prev => ({ ...prev, [field.fieldName]: '' }));
-              }}
-              onBlur={handleBlur}
-            />
-          );
-
-        /* FILE */
-        case "file":
-          const isImage = (filename: string) => {
-            const ext = filename?.split('.').pop()?.toLowerCase();
-            return ['jpg', 'jpeg', 'png', 'webp'].includes(ext || '');
-          };
-
-          const isPDF = (filename: string) => {
-            const ext = filename?.split('.').pop()?.toLowerCase();
-            return ext === 'pdf';
-          };
-
-          const isDocument = (filename: string) => {
-            const ext = filename?.split('.').pop()?.toLowerCase();
-            return ['doc', 'docx'].includes(ext || '');
-          };
-
-          const getFileIcon = (filename: string) => {
-            if (isPDF(filename)) return '📄';
-            if (isDocument(filename)) return '📝';
-            return '📎';
-          };
-
-          const currentFile = files[field.fieldName]?.name || formData[field.fieldName];
-
-          return (
-            <div>
-              <input
-                type="file"
-                name={field.fieldName}
-                onChange={handleFileChange}
-                onBlur={() => {
-                  const error = validateField(field, files[field.fieldName]?.name || formData[field.fieldName]);
-                  setFieldErrors(prev => ({ ...prev, [field.fieldName]: error }));
-                }}
-                className={`${inputClass} ${hasError ? 'border-red-500' : ''}`}
-                accept=".jpg,.jpeg,.png,.webp,.pdf,.doc,.docx"
-              />
-
-              {/* Preview for newly uploaded files */}
-              {files[field.fieldName] && (
-                <div className="mt-2 p-2 border rounded bg-gray-50">
-                  {isImage(files[field.fieldName].name) ? (
-                    <img
-                      src={URL.createObjectURL(files[field.fieldName])}
-                      alt="Preview"
-                      className="max-h-20 rounded border"
-                      onLoad={() => URL.revokeObjectURL(URL.createObjectURL(files[field.fieldName]))}
-                    />
-                  ) : (
-                    <div className="flex items-center gap-2 text-sm">
-                      <span className="text-2xl">{getFileIcon(files[field.fieldName].name)}</span>
-                      <span className="text-gray-600 truncate max-w-[200px]">
-                        {files[field.fieldName].name}
-                      </span>
-                      <span className="text-xs text-gray-500">
-                        ({(files[field.fieldName].size / 1024).toFixed(2)} KB)
-                      </span>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Existing file from server */}
-              {formData[field.fieldName] && !files[field.fieldName] && (
-                <div className="mt-2 p-2 border rounded bg-gray-50">
-                  {isImage(formData[field.fieldName]) ? (
-                    <img
-                      src={`${BASE_URL}${formData[field.fieldName]}`}
-                      alt="Current file"
-                      className="max-h-20 rounded border"
-                    />
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <span className="text-2xl">{getFileIcon(formData[field.fieldName])}</span>
-                      <a
-                        href={`${BASE_URL}${formData[field.fieldName]}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 text-sm hover:underline truncate max-w-[200px]"
-                      >
-                        {formData[field.fieldName]}
-                      </a>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          );
-
-        default:
-          return (
-            <input
-              type={field.type}
-              name={field.fieldName}
-              value={value}
-              disabled={
-                field.fieldName === "Email Address" ||
-                field.fieldName === "Contact Number"
-              }
-              onChange={(e) => {
-                setFormData(p => ({ ...p, [field.fieldName]: e.target.value }));
-                setFieldErrors(prev => ({ ...prev, [field.fieldName]: '' }));
-              }}
-              onBlur={handleBlur}
-              className={`${inputClass} ${field.fieldName === "Email Address" ||
-                field.fieldName === "Contact Number"
-                ? "bg-gray-100 cursor-not-allowed"
-                : ""
-                } ${hasError ? 'border-red-500' : ''}`}
-              maxLength={field.maxLength || undefined}
-            />
-          );
-      }
-    };
-
-    return (
-      <div>
-        {renderInput()}
-        {hasError && <p className="text-red-500 text-xs mt-1">{error}</p>}
-      </div>
-    );
-  };
-
-  const handleNext = async () => {
-    if (activeStep === "program") {
-      if (!validateProgram()) return;
-      setActiveStep("personal");
-      return;
-    }
-
-    if (activeStep === "personal") {
-      if (!validateSection(formConfig?.personalDetails)) return;
-      setFieldErrors({}); // Clear errors when moving to next step
-
-      if (!student?.applicationId) {
-        const success = await savePersonalDetails();
-        if (!success) return;
-      }
-
-      setActiveStep("education");
-    }
-  };
+  // Same as current address
   useEffect(() => {
     if (sameAddress) {
       setFormData((prev) => ({
@@ -1601,67 +475,22 @@ export default function CourseApplication() {
     formData["Address"],
   ]);
 
-
-
-  // Add this after your existing useEffects (around line 250-300)
-
   // Auto-calculate 10th Standard Total Marks
   useEffect(() => {
     if (!formConfig?.educationDetails) return;
 
-    // Check if 10th standard section exists
     const tenthSection = formConfig.educationDetails.find(
       (section: any) => section.sectionName === "10th Standard  – Marks Details"
     );
-
     if (!tenthSection) return;
 
-    // Get all subject marks for 10th
-    const subjects = [
+    syncTotal("10th Standard Total Marks", [
       "10th Standard First Language Marks",
       "10th Standard English Marks",
       "10th Standard Mathematics Marks",
       "10th Standard Science Marks",
-      "10th Standard Social Science Marks"
-    ];
-
-    let total = 0;
-    let hasAnyValue = false;
-
-    subjects.forEach(subject => {
-      const value = parseFloat(formData[subject] || "0");
-      if (!isNaN(value) && value > 0) {
-        total += value;
-        hasAnyValue = true;
-      }
-    });
-
-    // Only calculate if at least one subject has a value
-    if (hasAnyValue) {
-      const currentTotal = parseFloat(formData["10th Standard Total Marks"] || "0");
-
-      // Only update if value changed significantly
-      if (Math.abs(total - currentTotal) > 0.01) {
-        setFormData(prev => ({
-          ...prev,
-          "10th Standard Total Marks": total.toString()
-        }));
-
-        // Clear any error for this field
-        setFieldErrors(prev => ({
-          ...prev,
-          "10th Standard Total Marks": ''
-        }));
-      }
-    } else {
-      // Clear total if no marks entered
-      if (formData["10th Standard Total Marks"] && formData["10th Standard Total Marks"] !== "") {
-        setFormData(prev => ({
-          ...prev,
-          "10th Standard Total Marks": ""
-        }));
-      }
-    }
+      "10th Standard Social Science Marks",
+    ]);
   }, [
     formData["10th Standard First Language Marks"],
     formData["10th Standard English Marks"],
@@ -1675,75 +504,20 @@ export default function CourseApplication() {
   useEffect(() => {
     if (!formConfig?.educationDetails) return;
 
-    // Check if 11th marks section exists
     const eleventhMarksSection = formConfig.educationDetails.find(
       (section: any) => section.sectionName === "11th Standard(HSC) – Marks Details"
     );
-
     if (!eleventhMarksSection) return;
 
-    // Get all subject marks for 11th (excluding optional subjects that might be empty)
-    const subjects = [
+    syncTotal("11th Obtained Total Mark", [
       "11th Language Mark",
       "11th English Mark",
       "11th Mathematics Mark",
       "11th Physics Mark",
-      "11th Chemistry Mark"
-    ];
-
-    // Optional subjects (only add if they have values)
-    const optionalSubjects = [
+      "11th Chemistry Mark",
       "11th Biology Mark",
-      "11th Computer Science Mark"
-    ];
-
-    let total = 0;
-    let hasAnyValue = false;
-
-    // Add required subjects
-    subjects.forEach(subject => {
-      const value = parseFloat(formData[subject] || "0");
-      if (!isNaN(value) && value > 0) {
-        total += value;
-        hasAnyValue = true;
-      }
-    });
-
-    // Add optional subjects only if they have values
-    optionalSubjects.forEach(subject => {
-      const value = parseFloat(formData[subject] || "0");
-      if (!isNaN(value) && value > 0) {
-        total += value;
-        hasAnyValue = true;
-      }
-    });
-
-    // Only calculate if at least one subject has a value
-    if (hasAnyValue) {
-      const currentTotal = parseFloat(formData["11th Obtained Total Mark"] || "0");
-
-      // Only update if value changed significantly
-      if (Math.abs(total - currentTotal) > 0.01) {
-        setFormData(prev => ({
-          ...prev,
-          "11th Obtained Total Mark": total.toString()
-        }));
-
-        // Clear any error for this field
-        setFieldErrors(prev => ({
-          ...prev,
-          "11th Obtained Total Mark": ''
-        }));
-      }
-    } else {
-      // Clear total if no marks entered
-      if (formData["11th Obtained Total Mark"] && formData["11th Obtained Total Mark"] !== "") {
-        setFormData(prev => ({
-          ...prev,
-          "11th Obtained Total Mark": ""
-        }));
-      }
-    }
+      "11th Computer Science Mark",
+    ]);
   }, [
     formData["11th Language Mark"],
     formData["11th English Mark"],
@@ -1759,88 +533,28 @@ export default function CourseApplication() {
   useEffect(() => {
     if (!formConfig?.educationDetails) return;
 
-    // Check if 12th marks section exists
     const twelfthMarksSection = formConfig.educationDetails.find(
       (section: any) => section.sectionName === "12th Standard  – Marks Details"
     );
-
     if (!twelfthMarksSection) return;
 
-    // Check if result is declared before calculating
-    const resultStatus = formData["12th Result Status"];
-    if (resultStatus !== "Declared") {
-      // Clear total if result not declared
+    // Only calculate when result is declared
+    if (formData["12th Result Status"] !== "Declared") {
       if (formData["12th Obtained Total Mark"] && formData["12th Obtained Total Mark"] !== "") {
-        setFormData(prev => ({
-          ...prev,
-          "12th Obtained Total Mark": ""
-        }));
+        setFormData(prev => ({ ...prev, "12th Obtained Total Mark": "" }));
       }
       return;
     }
 
-    // Get all subject marks for 12th
-    const subjects = [
+    syncTotal("12th Obtained Total Mark", [
       "12th Language Mark",
       "12th English Mark",
       "12th Mathematics Mark",
       "12th Physics Mark",
-      "12th Chemistry Mark"
-    ];
-
-    // Optional subjects (only add if they have values)
-    const optionalSubjects = [
+      "12th Chemistry Mark",
       "12th Biology Mark",
-      "12th Computer Science Mark"
-    ];
-
-    let total = 0;
-    let hasAnyValue = false;
-
-    // Add required subjects
-    subjects.forEach(subject => {
-      const value = parseFloat(formData[subject] || "0");
-      if (!isNaN(value) && value > 0) {
-        total += value;
-        hasAnyValue = true;
-      }
-    });
-
-    // Add optional subjects only if they have values
-    optionalSubjects.forEach(subject => {
-      const value = parseFloat(formData[subject] || "0");
-      if (!isNaN(value) && value > 0) {
-        total += value;
-        hasAnyValue = true;
-      }
-    });
-
-    // Only calculate if at least one subject has a value
-    if (hasAnyValue) {
-      const currentTotal = parseFloat(formData["12th Obtained Total Mark"] || "0");
-
-      // Only update if value changed significantly
-      if (Math.abs(total - currentTotal) > 0.01) {
-        setFormData(prev => ({
-          ...prev,
-          "12th Obtained Total Mark": total.toString()
-        }));
-
-        // Clear any error for this field
-        setFieldErrors(prev => ({
-          ...prev,
-          "12th Obtained Total Mark": ''
-        }));
-      }
-    } else {
-      // Clear total if no marks entered
-      if (formData["12th Obtained Total Mark"] && formData["12th Obtained Total Mark"] !== "") {
-        setFormData(prev => ({
-          ...prev,
-          "12th Obtained Total Mark": ""
-        }));
-      }
-    }
+      "12th Computer Science Mark",
+    ]);
   }, [
     formData["12th Result Status"],
     formData["12th Language Mark"],
@@ -1853,14 +567,12 @@ export default function CourseApplication() {
     formConfig
   ]);
 
+  // Age from Date of Birth
   useEffect(() => {
     const dob = formData["Date of Birth"];
 
     if (!dob) {
-      setFormData((prev) => ({
-        ...prev,
-        Age: "",
-      }));
+      setFormData((prev) => (prev["Age"] ? { ...prev, Age: "" } : prev));
       return;
     }
 
@@ -1868,7 +580,6 @@ export default function CourseApplication() {
     const today = new Date();
 
     let age = today.getFullYear() - birthDate.getFullYear();
-
     const monthDiff = today.getMonth() - birthDate.getMonth();
 
     if (
@@ -1883,6 +594,8 @@ export default function CourseApplication() {
       Age: age.toString(),
     }));
   }, [formData["Date of Birth"]]);
+
+  // Restore step after page reload
   useEffect(() => {
     const savedStep = localStorage.getItem("courseApplicationStep") as Step | null
 
@@ -1892,6 +605,7 @@ export default function CourseApplication() {
     }
   }, [])
 
+  // Emergency contact auto-fill
   useEffect(() => {
     const relationship =
       formData["Relationship with Emergency Contact Person"];
@@ -1901,30 +615,24 @@ export default function CourseApplication() {
     if (relationship === "Father") {
       setFormData((prev) => ({
         ...prev,
-        "Emergency Contact Name":
-          prev["Father Name"] || "",
-        "Emergency Contact Person Primary Contact Number":
-          prev["Father Contact No"] || "",
+        "Emergency Contact Name": prev["Father Name"] || "",
+        "Emergency Contact Person Primary Contact Number": prev["Father Contact No"] || "",
       }));
     }
 
     if (relationship === "Mother") {
       setFormData((prev) => ({
         ...prev,
-        "Emergency Contact Name":
-          prev["Mother Name"] || "",
-        "Emergency Contact Person Primary Contact Number":
-          prev["Mother Contact No"] || "",
+        "Emergency Contact Name": prev["Mother Name"] || "",
+        "Emergency Contact Person Primary Contact Number": prev["Mother Contact No"] || "",
       }));
     }
 
     if (relationship === "Guardian") {
       setFormData((prev) => ({
         ...prev,
-        "Emergency Contact Name":
-          prev["Guardian Name"] || "",
-        "Emergency Contact Person Primary Contact Number":
-          prev["Guardian Contact No"] || "",
+        "Emergency Contact Name": prev["Guardian Name"] || "",
+        "Emergency Contact Person Primary Contact Number": prev["Guardian Contact No"] || "",
       }));
     }
   }, [
@@ -1937,16 +645,216 @@ export default function CourseApplication() {
     formData["Guardian Contact No"],
   ]);
 
-  const handlePrev = () => {
-    if (activeStep === "education") {
-      setFieldErrors({}); // Clear errors when moving back
-      setActiveStep("personal")
+  /* =========================================================
+     VALIDATION
+  ========================================================= */
+
+  const validateField = (field: any, value: any): string => {
+    // ✅ FIX 2: declaration is read-only text, never has a value in formData
+    if (field.type === "declaration") return "";
+
+    if (field.required && (!value || value.toString().trim() === "")) {
+      return `${field.fieldName} is required`;
     }
-    else if (activeStep === "personal") {
-      setFieldErrors({}); // Clear errors when moving back
-      setActiveStep("program")
+
+    if (value && value.toString().trim() !== "") {
+      if (field.type === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+        return "Invalid email format";
+      }
+
+      if (field.fieldName === "Date of Birth" && field.type === "date") {
+        if (!isValidDOB(value)) {
+          return `You must be at least ${minApplicantAge ?? 16} years old`;
+        }
+      }
+
+      if (field.type === "number" || field.type === "decimal") {
+        const strValue = value.toString();
+
+        // Zero start validation (decimals like 0.5 are allowed)
+        const startsWithZero =
+          field.type === "decimal" ? /^0\d/.test(strValue) : strValue.startsWith("0");
+
+        if (strValue.length > 0 && startsWithZero) {
+          return `${field.fieldName} cannot start with zero`;
+        }
+
+        const numericValue = Number(value);
+
+        if (field.minValue !== undefined && numericValue < field.minValue) {
+          return `${field.fieldName} must be at least ${field.minValue}`;
+        }
+
+        if (field.maxValue !== undefined && numericValue > field.maxValue) {
+          return `${field.fieldName} cannot exceed ${field.maxValue}`;
+        }
+      }
+
+      // MIN LENGTH VALIDATION
+      if (field.minLength && value.toString().length < field.minLength) {
+        return `${field.fieldName} must be at least ${field.minLength} characters`;
+      }
+
+      // MAX LENGTH VALIDATION
+      if (field.maxLength && value.toString().length > field.maxLength) {
+        return `${field.fieldName} cannot exceed ${field.maxLength} characters`;
+      }
+    }
+
+    return "";
+  };
+
+  const handleBlur = (
+    e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
+    const { name, value } = e.target;
+
+    // Find the field configuration
+    let fieldConfig: any = null;
+    ["personal", "education"].forEach(tab => {
+      formConfig?.[`${tab}Details`]?.forEach((section: any) => {
+        const found = section.fields.find((f: any) => f.fieldName === name);
+        if (found) fieldConfig = found;
+      });
+    });
+
+    if (fieldConfig) {
+      const error = validateField(fieldConfig, value);
+      setFieldErrors(prev => ({
+        ...prev,
+        [name]: error
+      }));
     }
   }
+
+  const validateProgram = () => {
+    if (!programId) {
+      toast.error("Please select a program")
+      return false
+    }
+    return true
+  }
+
+  // ✅ FIX 3 + 4: skips hidden fields, shows the real errors in a toast,
+  // and scrolls to the first invalid field
+  const validateSection = (sections?: any[]) => {
+    if (!Array.isArray(sections)) return true;
+
+    const newErrors: Record<string, string> = {};
+
+    for (const section of sections) {
+      for (const field of section.fields || []) {
+        if (!isFieldVisible(field)) continue; // hidden fields can't block submit
+
+        const error = validateField(field, formData[field.fieldName]);
+        if (error) newErrors[field.fieldName] = error;
+      }
+    }
+
+    const errorList = Object.entries(newErrors);
+
+    if (errorList.length > 0) {
+      setFieldErrors(prev => ({ ...prev, ...newErrors }));
+
+      toast.error(
+        () => (
+          <div className="text-sm">
+            <p className="font-semibold mb-1">
+              Please fix {errorList.length} field{errorList.length > 1 ? "s" : ""}:
+            </p>
+            <ul className="list-disc ml-4 space-y-0.5">
+              {errorList.slice(0, 5).map(([name, msg]) => (
+                <li key={name}>{msg}</li>
+              ))}
+            </ul>
+            {errorList.length > 5 && (
+              <p className="mt-1 text-xs">+{errorList.length - 5} more</p>
+            )}
+          </div>
+        ),
+        { id: "validation-error", duration: 6000 }
+      );
+
+      const firstName = errorList[0][0];
+      setTimeout(() => {
+        document
+          .querySelector(`[data-field="${CSS.escape(firstName)}"]`)
+          ?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 100);
+
+      return false;
+    }
+
+    return true;
+  }
+
+  /* =========================================================
+     HANDLERS
+  ========================================================= */
+
+  const removeField = (tab: Tab, sectionName: string, fieldName: string) => {
+    setFormConfig((prev: any) => {
+      const sections = prev?.[`${tab}Details`] || []
+
+      const updatedSections = sections.map((section: any) => {
+        if (section.sectionName !== sectionName) return section
+
+        return {
+          ...section,
+          fields: section.fields.filter((f: any) => f.fieldName !== fieldName),
+        }
+      })
+
+      return {
+        ...prev,
+        [`${tab}Details`]: updatedSections,
+      }
+    })
+  }
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
+    const { name, value, type, checked } = e.target as HTMLInputElement
+    const newValue = type === "checkbox" ? checked : value
+
+    setFormData(p => ({ ...p, [name]: newValue }))
+    setFieldErrors(prev => ({ ...prev, [name]: "" }));
+  }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    const fieldName = e.target.name;
+
+    if (!file) return;
+
+    const MAX_SIZE = 2 * 1024 * 1024; // 2MB
+
+    const allowedTypes = [
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    ];
+
+    if (file.size > MAX_SIZE) {
+      toast.error("File must be less than 2MB");
+      e.target.value = "";
+      return;
+    }
+
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("Only Images, PDF, DOC, DOCX allowed");
+      e.target.value = "";
+      return;
+    }
+
+    setFiles((prev) => ({ ...prev, [fieldName]: file }));
+    setFormData((prev) => ({ ...prev, [fieldName]: file.name }));
+    setFieldErrors(prev => ({ ...prev, [fieldName]: "" }));
+  };
 
   const mapSectionData = (sections?: any[]) => {
     if (!Array.isArray(sections)) return []
@@ -1954,53 +862,14 @@ export default function CourseApplication() {
       const sectionObj: any = { sectionName: section.sectionName, fields: {} }
       section.fields.forEach((field: any) => {
         sectionObj.fields[field.fieldName] =
-          field.type === "file" ? files[field.fieldName]?.name || formData[field.fieldName] || "" : field.type === "declaration"
-            ? field.declarationText || ""
-            : field.type === "signature" ? formData[field.fieldName] || "" : formData[field.fieldName] || ""
+          field.type === "file"
+            ? files[field.fieldName]?.name || formData[field.fieldName] || ""
+            : field.type === "declaration"
+              ? field.declarationText || ""
+              : formData[field.fieldName] || ""
       })
       return sectionObj
     })
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!selectedInstitute) {
-      toast.error("Institute is required")
-      return
-    }
-    if (!validateProgram()) return
-    if (!validateSection(formConfig?.educationDetails)) return
-
-    try {
-      setLoading(true)
-      const fd = new FormData()
-      fd.append("instituteId", selectedInstitute)
-      fd.append("programId", programId)
-      fd.append("academicYear", academicYear)
-      fd.append("applicationSource", applicationSource);
-
-      fd.append("personalDetails", JSON.stringify(mapSectionData(formConfig?.personalDetails)))
-      fd.append("educationDetails", JSON.stringify(mapSectionData(formConfig?.educationDetails)))
-      Object.entries(files).forEach(([key, file]) => fd.append(key, file))
-
-      const res = await createApplication(fd, true)
-
-      if (res?.success) {
-        toast.success("Application Updated successfully")
-
-        router.push("/dashboard")
-      } else {
-        toast.error(res?.message || res?.error || "Submission failed")
-      }
-
-
-
-    } catch (err: any) {
-      console.error("Submit error:", err)
-      toast.error(err?.response?.data?.message || err?.message || "Submission failed")
-    } finally {
-      setLoading(false)
-    }
   }
 
   const savePersonalDetails = async () => {
@@ -2048,36 +917,737 @@ export default function CourseApplication() {
 
       return true;
     } catch (err: any) {
-      console.error("Save personal details error:", err);
-      toast.error(
-        err?.response?.data?.message || err?.message || "Failed to save personal details"
-      );
+      toast.error(err?.message || "Failed to save personal details");
       return false;
     } finally {
       setLoading(false);
     }
   };
 
+  const handleNext = async () => {
+    if (activeStep === "program") {
+      if (!validateProgram()) return;
+      setActiveStep("personal");
+      return;
+    }
+
+    if (activeStep === "personal") {
+      if (!validateSection(formConfig?.personalDetails)) return;
+      setFieldErrors({}); // Clear errors when moving to next step
+
+      if (!student?.applicationId) {
+        const success = await savePersonalDetails();
+        if (!success) return;
+      }
+
+      setActiveStep("education");
+    }
+  };
+
+  const handlePrev = () => {
+    setFieldErrors({}); // Clear errors when moving back
+    if (activeStep === "education") {
+      setActiveStep("personal")
+    } else if (activeStep === "personal") {
+      setActiveStep("program")
+    }
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    // Pressing Enter on an earlier step should go to the next step, not submit
+    if (activeStep !== "education") {
+      await handleNext()
+      return
+    }
+
+    if (!selectedInstitute) {
+      toast.error("Institute is required")
+      return
+    }
+    if (!validateProgram()) return
+    if (!validateSection(formConfig?.educationDetails)) return
+
+    try {
+      setLoading(true)
+      const fd = new FormData()
+      fd.append("instituteId", selectedInstitute)
+      fd.append("programId", programId)
+      fd.append("academicYear", academicYear)
+      fd.append("applicationSource", applicationSource);
+
+      fd.append("personalDetails", JSON.stringify(mapSectionData(formConfig?.personalDetails)))
+      fd.append("educationDetails", JSON.stringify(mapSectionData(formConfig?.educationDetails)))
+      Object.entries(files).forEach(([key, file]) => fd.append(key, file))
+
+      const res = await createApplication(fd, true)
+
+      if (res?.success) {
+        toast.success("Application Updated successfully")
+        router.push("/dashboard")
+      } else {
+        toast.error(res?.message || "Submission failed")
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "Submission failed")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  /* =========================================================
+     RENDER HELPERS
+  ========================================================= */
+
+  const renderSignatureField = (field: any) => {
+    const existingSignature = formData[field.fieldName];
+    const currentSignatureData = signaturesData[field.fieldName] || "";
+
+    return (
+      <div className="space-y-2">
+        <div className="border rounded p-2 bg-white">
+          <SignatureCanvas
+            ref={(ref) => {
+              if (!ref) return;
+
+              // Only update if ref changed
+              setSignatures(prev => {
+                if (prev[field.fieldName] === ref) return prev;
+                return { ...prev, [field.fieldName]: ref };
+              });
+
+              // Load existing signature if available and not already loaded
+              if (existingSignature && !signaturesData[field.fieldName] && !signaturesLoaded.current[field.fieldName]) {
+                signaturesLoaded.current[field.fieldName] = true;
+
+                setTimeout(() => {
+                  const img = new Image();
+                  img.onload = () => {
+                    ref.clear();
+                    ref.fromDataURL(existingSignature);
+                    setSignaturesData(prev => ({
+                      ...prev,
+                      [field.fieldName]: existingSignature
+                    }));
+                  };
+                  img.src = existingSignature;
+                }, 100);
+              }
+            }}
+            canvasProps={{
+              className: "signature-canvas w-full h-32 border rounded",
+              style: { border: "1px solid #ccc" }
+            }}
+            backgroundColor="rgb(255,255,255)"
+            onEnd={() => {
+              const currentSig = signatures[field.fieldName];
+              if (currentSig) {
+                const dataUrl = currentSig.toDataURL();
+                setSignaturesData(prev => ({ ...prev, [field.fieldName]: dataUrl }));
+                setFormData(prev => ({ ...prev, [field.fieldName]: dataUrl }));
+                setFieldErrors(prev => ({ ...prev, [field.fieldName]: "" }));
+              }
+            }}
+          />
+        </div>
+        {/* Clear and Download buttons */}
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              const currentSig = signatures[field.fieldName];
+              if (currentSig) {
+                currentSig.clear();
+                setSignaturesData(prev => ({ ...prev, [field.fieldName]: "" }));
+                setFormData(prev => ({ ...prev, [field.fieldName]: "" }));
+                // Reset loaded flag if cleared
+                signaturesLoaded.current[field.fieldName] = false;
+              }
+            }}
+            className="px-3 py-1 text-sm bg-gray-500 text-white rounded hover:bg-gray-600"
+          >
+            Clear
+          </button>
+          {currentSignatureData && (
+            <button
+              type="button"
+              onClick={() => {
+                const link = document.createElement("a");
+                link.download = `${field.fieldName}.png`;
+                link.href = currentSignatureData;
+                link.click();
+              }}
+              className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
+            >
+              Download
+            </button>
+          )}
+        </div>
+        {currentSignatureData && (
+          <div className="mt-2">
+            <p className="text-xs text-gray-500">Preview:</p>
+            <img src={currentSignatureData} alt={`${field.fieldName} preview`} className="h-16 border rounded mt-1" />
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // Country / State / City selects (for both current and permanent address)
+  const renderLocationSelect = (
+    field: any,
+    g: LocationKeys,
+    hasError: boolean,
+    error?: string
+  ) => {
+    const name = field.fieldName;
+    const countryName = formData[g.country];
+    const countryCode = Country.getAllCountries().find(c => c.name === countryName)?.isoCode;
+
+    let options: any[] = [];
+    let isDisabled = false;
+    let placeholder = "";
+    let onChange: (val: any) => void = () => { };
+
+    if (name === g.country) {
+      options = countryOptions;
+      placeholder = "Select Country";
+      onChange = (val) =>
+        setFormData(p => ({
+          ...p,
+          [g.country]: val?.label || "",
+          [g.state]: "",
+          [g.city]: "",
+        }));
+    } else if (name === g.state) {
+      const hasCountryField = hasPersonalField(g.country);
+      const code = hasCountryField && countryName ? countryCode : DEFAULT_COUNTRY_CODE;
+
+      options = code
+        ? State.getStatesOfCountry(code).map(s => ({ value: s.isoCode, label: s.name }))
+        : [];
+      isDisabled = hasCountryField && !countryName;
+      placeholder = "Select State";
+      onChange = (val) =>
+        setFormData(p => ({ ...p, [g.state]: val?.label || "", [g.city]: "" }));
+    } else {
+      const code = countryCode || DEFAULT_COUNTRY_CODE;
+      const stateCode = State.getStatesOfCountry(code)
+        .find(s => s.name === formData[g.state])?.isoCode;
+
+      if (stateCode) {
+        options = City.getCitiesOfState(code, stateCode).map(c => ({
+          value: c.name,
+          label: c.name,
+        }));
+      }
+      isDisabled = !formData[g.state];
+      placeholder = "Select City";
+      onChange = (val) =>
+        setFormData(p => ({ ...p, [g.city]: val?.label || "" }));
+    }
+
+    return (
+      <div>
+        <Select
+          options={options}
+          value={options.find(o => o.label === formData[name]) || null}
+          onChange={(val) => {
+            onChange(val);
+            setFieldErrors(prev => ({ ...prev, [name]: "" }));
+          }}
+          onBlur={() => {
+            const err = validateField(field, formData[name]);
+            setFieldErrors(prev => ({ ...prev, [name]: err }));
+          }}
+          isDisabled={isDisabled}
+          placeholder={placeholder}
+          styles={selectStyles(hasError)}
+        />
+        {hasError && <p className="text-red-500 text-xs mt-1">{error}</p>}
+      </div>
+    );
+  };
+
+  const renderField = (field: any) => {
+    const value = formData[field.fieldName] ?? (field.type === "checkbox" ? [] : "");
+    const error = fieldErrors[field.fieldName];
+    const hasError = !!error;
+
+    if (field.fieldName === "Cutoff") {
+      return (
+        <div>
+          <input
+            type="text"
+            name={field.fieldName}
+            value={value || ""}
+            readOnly
+            disabled
+            className={`${inputClass} bg-gray-100 cursor-not-allowed ${hasError ? 'border-red-500' : ''}`}
+          />
+          {hasError && <p className="text-red-500 text-xs mt-1">{error}</p>}
+          <p className="text-xs text-gray-500 mt-1">This field is auto-calculated based on subject marks</p>
+        </div>
+      );
+    }
+
+    /* COUNTRY / STATE / CITY (current + permanent) */
+    const locationGroup = LOCATION_GROUPS.find(g =>
+      [g.country, g.state, g.city].includes(field.fieldName)
+    );
+    if (locationGroup) {
+      return renderLocationSelect(field, locationGroup, hasError, error);
+    }
+
+    /* =========================
+       TYPE BASED RENDERING
+    ========================= */
+    const renderInput = () => {
+      switch (field.type) {
+        /* TEXTAREA */
+        case "textarea":
+          return (
+            <textarea
+              name={field.fieldName}
+              value={value}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              className={`${inputClass} ${hasError ? 'border-red-500' : ''}`}
+              minLength={field.minLength}
+              maxLength={field.maxLength ?? 500}
+            />
+          );
+
+        case "signature":
+          return renderSignatureField(field);
+
+        /* SELECT */
+        case "select":
+          return (
+            <select
+              name={field.fieldName}
+              value={value}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              className={`${inputClass} ${hasError ? 'border-red-500' : ''}`}
+            >
+              <option value="">Select</option>
+              {field.options?.map((o: string) => (
+                <option key={o} value={o}>
+                  {o}
+                </option>
+              ))}
+            </select>
+          );
+
+        /* RADIO */
+        case "radiobutton":
+          return (
+            <div className="space-y-1">
+              {field.options?.map((o: string) => (
+                <label key={o} className="flex items-center gap-2 text-sm">
+                  <input
+                    type="radio"
+                    name={field.fieldName}
+                    value={o}
+                    checked={value === o}
+                    onChange={() => {
+                      setFormData(p => ({ ...p, [field.fieldName]: o }));
+                      setFieldErrors(prev => ({ ...prev, [field.fieldName]: "" }));
+                    }}
+                    onBlur={() => {
+                      const err = validateField(field, value);
+                      setFieldErrors(prev => ({ ...prev, [field.fieldName]: err }));
+                    }}
+                  />
+                  {o}
+                </label>
+              ))}
+            </div>
+          );
+
+        /* CHECKBOX */
+        case "checkbox":
+          // Special handling for English Proficiency Test checkbox
+          if (field.fieldName === "English Proficiency Test") {
+            return (
+              <div className="space-y-2">
+                {field.options?.map((o: string) => (
+                  <label key={o} className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={(value || []).includes(o)}
+                      onChange={(e) => {
+                        let updated = e.target.checked
+                          ? [...(value || []), o]
+                          : (value || []).filter((v: string) => v !== o);
+
+                        // Remove "Not yet taken" if any other test is selected
+                        if (e.target.checked && o !== "Not yet taken" && updated.includes("Not yet taken")) {
+                          updated = updated.filter((v: string) => v !== "Not yet taken");
+                        }
+
+                        // If "Not yet taken" is selected, clear other selections
+                        if (e.target.checked && o === "Not yet taken") {
+                          updated = ["Not yet taken"];
+                        }
+
+                        setFormData(p => ({ ...p, [field.fieldName]: updated }));
+
+                        // Clear errors for dynamic fields when selection changes
+                        const allDynamicFieldNames = Object.values(testFields).flat().map(f => f.fieldName);
+                        setFieldErrors(prev => {
+                          const newErrors = { ...prev };
+                          allDynamicFieldNames.forEach(name => {
+                            delete newErrors[name];
+                          });
+                          newErrors[field.fieldName] = "";
+                          return newErrors;
+                        });
+                      }}
+                      onBlur={() => {
+                        const err = validateField(field, value);
+                        setFieldErrors(prev => ({ ...prev, [field.fieldName]: err }));
+                      }}
+                    />
+                    {o}
+                  </label>
+                ))}
+                {hasError && <p className="text-red-500 text-xs mt-1">{error}</p>}
+              </div>
+            );
+          }
+
+          // Default checkbox rendering
+          return (
+            <div className="space-y-1">
+              {field.options?.map((o: string) => (
+                <label key={o} className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={(value || []).includes(o)}
+                    onChange={(e) => {
+                      const updated = e.target.checked
+                        ? [...value, o]
+                        : value.filter((v: string) => v !== o);
+
+                      setFormData(p => ({ ...p, [field.fieldName]: updated }));
+                      setFieldErrors(prev => ({ ...prev, [field.fieldName]: "" }));
+                    }}
+                    onBlur={() => {
+                      const err = validateField(field, value);
+                      setFieldErrors(prev => ({ ...prev, [field.fieldName]: err }));
+                    }}
+                  />
+                  {o}
+                </label>
+              ))}
+            </div>
+          );
+
+        /* DECLARATION */
+        case "declaration":
+          return (
+            <div>
+              <textarea
+                ref={(el) => {
+                  if (el) {
+                    el.style.height = "auto";
+                    el.style.height = el.scrollHeight + "px";
+                  }
+                }}
+                name={field.fieldName}
+                value={field.declarationText || "No declaration text provided"}
+                readOnly
+                disabled
+                className={`${inputClass} bg-gray-100 cursor-not-allowed ${hasError ? 'border-red-500' : ''}`}
+                style={{ overflow: "hidden", resize: "none" }}
+                rows={1}
+              />
+            </div>
+          );
+
+        /* NUMBER */
+        case "number":
+          return (
+            <input
+              type="text"
+              name={field.fieldName}
+              value={value}
+              disabled={field.fieldName === "Contact Number"}
+              className={`${inputClass} ${field.fieldName === "Contact Number"
+                ? "bg-gray-100 cursor-not-allowed"
+                : ""
+                } ${hasError ? 'border-red-500' : ''}`}
+              inputMode="numeric"
+              maxLength={field.maxLength ?? 15}
+              onChange={(e) => {
+                const numericValue = e.target.value.replace(/\D/g, "");
+
+                // Don't allow 0 as first value
+                if (numericValue === "0") return;
+
+                const num = Number(numericValue);
+
+                // Max value restriction while typing
+                if (
+                  numericValue &&
+                  field.maxValue !== undefined &&
+                  num > field.maxValue
+                ) {
+                  return;
+                }
+
+                setFormData((p) => ({ ...p, [field.fieldName]: numericValue }));
+                setFieldErrors((prev) => ({ ...prev, [field.fieldName]: "" }));
+              }}
+              onBlur={(e) => {
+                const val = e.target.value;
+
+                if (val.length > 0 && val.startsWith("0")) {
+                  setFieldErrors(prev => ({
+                    ...prev,
+                    [field.fieldName]: `${field.fieldName} cannot start with zero`
+                  }));
+                } else if (val.length > 0 && field.minLength && val.length < field.minLength) {
+                  setFieldErrors(prev => ({
+                    ...prev,
+                    [field.fieldName]: `${field.fieldName} must be at least ${field.minLength} digits`
+                  }));
+                } else if (field.maxLength && val.length > field.maxLength) {
+                  setFieldErrors(prev => ({
+                    ...prev,
+                    [field.fieldName]: `${field.fieldName} cannot exceed ${field.maxLength} digits`
+                  }));
+                } else {
+                  handleBlur(e);
+                }
+              }}
+            />
+          );
+
+        case "decimal":
+          return (
+            <input
+              type="text"
+              name={field.fieldName}
+              value={value}
+              className={`${inputClass} ${hasError ? 'border-red-500' : ''}`}
+              inputMode="decimal"
+              onChange={(e) => {
+                let val = e.target.value;
+
+                // Allow only number and dot
+                val = val.replace(/[^0-9.]/g, "");
+
+                // Only one decimal point
+                const parts = val.split(".");
+                if (parts.length > 2) {
+                  val = parts[0] + "." + parts[1];
+                }
+
+                // Don't allow 0
+                if (val === "0") return;
+
+                const num = Number(val);
+
+                // Max value restriction while typing
+                if (
+                  val &&
+                  !isNaN(num) &&
+                  field.maxValue !== undefined &&
+                  num > field.maxValue
+                ) {
+                  return;
+                }
+
+                setFormData((p) => ({ ...p, [field.fieldName]: val }));
+                setFieldErrors((prev) => ({ ...prev, [field.fieldName]: "" }));
+              }}
+              onBlur={handleBlur}
+            />
+          );
+
+        /* TEXT ONLY */
+        case "text":
+          return (
+            <input
+              type="text"
+              name={field.fieldName}
+              value={value}
+              className={`${inputClass} ${hasError ? 'border-red-500' : ''}`}
+              minLength={field.minLength}
+              maxLength={field.maxLength ?? 100}
+              onChange={(e) => {
+                const textValue = e.target.value.replace(/[^a-zA-Z\s]/g, "");
+                setFormData(p => ({ ...p, [field.fieldName]: textValue }));
+                setFieldErrors(prev => ({ ...prev, [field.fieldName]: "" }));
+              }}
+              onBlur={handleBlur}
+            />
+          );
+
+        /* ALPHANUMERIC */
+        case "alphanumeric":
+          return (
+            <input
+              type="text"
+              name={field.fieldName}
+              value={value}
+              className={`${inputClass} ${hasError ? 'border-red-500' : ''}`}
+              minLength={field.minLength}
+              maxLength={field.maxLength ?? 100}
+              onChange={(e) => {
+                const alphanumericValue = e.target.value.replace(/[^a-zA-Z0-9\s]/g, "");
+                setFormData(p => ({ ...p, [field.fieldName]: alphanumericValue }));
+                setFieldErrors(prev => ({ ...prev, [field.fieldName]: "" }));
+              }}
+              onBlur={handleBlur}
+            />
+          );
+
+        /* ANY */
+        case "any":
+          return (
+            <input
+              type="text"
+              name={field.fieldName}
+              value={value}
+              className={`${inputClass} ${hasError ? 'border-red-500' : ''}`}
+              minLength={field.minLength}
+              maxLength={field.maxLength ?? 300}
+              onChange={(e) => {
+                setFormData(p => ({ ...p, [field.fieldName]: e.target.value }));
+                setFieldErrors(prev => ({ ...prev, [field.fieldName]: "" }));
+              }}
+              onBlur={handleBlur}
+            />
+          );
+
+        /* FILE */
+        case "file": {
+          const getExt = (filename: string) => filename?.split(".").pop()?.toLowerCase() || "";
+          const isImage = (filename: string) => ["jpg", "jpeg", "png", "webp"].includes(getExt(filename));
+          const isPDF = (filename: string) => getExt(filename) === "pdf";
+          const isDocument = (filename: string) => ["doc", "docx"].includes(getExt(filename));
+
+          const getFileIcon = (filename: string) => {
+            if (isPDF(filename)) return "📄";
+            if (isDocument(filename)) return "📝";
+            return "📎";
+          };
+
+          return (
+            <div>
+              <input
+                type="file"
+                name={field.fieldName}
+                onChange={handleFileChange}
+                onBlur={() => {
+                  const err = validateField(field, files[field.fieldName]?.name || formData[field.fieldName]);
+                  setFieldErrors(prev => ({ ...prev, [field.fieldName]: err }));
+                }}
+                className={`${inputClass} ${hasError ? 'border-red-500' : ''}`}
+                accept=".jpg,.jpeg,.png,.webp,.pdf,.doc,.docx"
+              />
+
+              {/* Preview for newly uploaded files */}
+              {files[field.fieldName] && (
+                <div className="mt-2 p-2 border rounded bg-gray-50">
+                  {isImage(files[field.fieldName].name) ? (
+                    <img
+                      src={URL.createObjectURL(files[field.fieldName])}
+                      alt="Preview"
+                      className="max-h-20 rounded border"
+                    />
+                  ) : (
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="text-2xl">{getFileIcon(files[field.fieldName].name)}</span>
+                      <span className="text-gray-600 truncate max-w-[200px]">
+                        {files[field.fieldName].name}
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        ({(files[field.fieldName].size / 1024).toFixed(2)} KB)
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Existing file from server */}
+              {formData[field.fieldName] && !files[field.fieldName] && (
+                <div className="mt-2 p-2 border rounded bg-gray-50">
+                  {isImage(formData[field.fieldName]) ? (
+                    <img
+                      src={`${BASE_URL}${formData[field.fieldName]}`}
+                      alt="Current file"
+                      className="max-h-20 rounded border"
+                    />
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl">{getFileIcon(formData[field.fieldName])}</span>
+                      <a
+                        href={`${BASE_URL}${formData[field.fieldName]}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 text-sm hover:underline truncate max-w-[200px]"
+                      >
+                        {formData[field.fieldName]}
+                      </a>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        }
+
+        default:
+          return (
+            <input
+              type={field.type}
+              name={field.fieldName}
+              value={value}
+              disabled={
+                field.fieldName === "Email Address" ||
+                field.fieldName === "Contact Number"
+              }
+              onChange={(e) => {
+                setFormData(p => ({ ...p, [field.fieldName]: e.target.value }));
+                setFieldErrors(prev => ({ ...prev, [field.fieldName]: "" }));
+              }}
+              onBlur={handleBlur}
+              className={`${inputClass} ${field.fieldName === "Email Address" ||
+                field.fieldName === "Contact Number"
+                ? "bg-gray-100 cursor-not-allowed"
+                : ""
+                } ${hasError ? 'border-red-500' : ''}`}
+              maxLength={field.maxLength || undefined}
+            />
+          );
+      }
+    };
+
+    return (
+      <div>
+        {renderInput()}
+        {hasError && <p className="text-red-500 text-xs mt-1">{error}</p>}
+      </div>
+    );
+  };
+
   const steps = ["program", "personal", "education"];
 
   return (
     <div className="w-full px-3 sm:px-6 lg:px-0 flex justify-center overflow-x-hidden ">
+      {/* ✅ FIX 5: noValidate -> browser never blocks submit silently; our toast shows the errors */}
       <form
         onSubmit={handleSubmit}
-        onInvalidCapture={(e) => {
-          // Browser's own validation (minLength / type etc.) blocked the submit:
-          // show its message in a toast too, only for the first invalid field
-          const form = e.currentTarget as HTMLFormElement;
-          const target = e.target as HTMLInputElement;
-          if (target !== form.querySelector(":invalid")) return;
-
-          toast.error(
-            `${target.name || "Field"}: ${target.validationMessage || "Invalid value"}`,
-            { id: "validation-error" }
-          );
-        }}
-        className="w-full max-w-5xl bg-white rounded-2xl  border border-gray-100
-  p-4 sm:p-6 md:p-8 space-y-8 overflow-hidden">
+        noValidate
+        className="w-full max-w-5xl bg-white rounded-2xl  border border-gray-100 
+  p-4 sm:p-6 md:p-8 space-y-8 overflow-hidden"
+      >
         <Toaster position="top-right" />
 
         {/* STEP PROGRESS */}
@@ -2108,7 +1678,6 @@ export default function CourseApplication() {
                     >
                       {step}
                     </span>
-                    {/* Optional subtitle for a “royal feel” */}
                     <span className="text-xs text-gray-400">
                       {step === "program" && "Choose your course"}
                       {step === "personal" && "Fill your details"}
@@ -2139,7 +1708,7 @@ export default function CourseApplication() {
               value={programOptions.find((p) => p.value === programId) || null}
               onChange={(o) => setProgramId(o?.value || "")}
               placeholder="Choose your program"
-              menuPortalTarget={document.body}
+              menuPortalTarget={typeof document !== "undefined" ? document.body : undefined}
               menuPosition="fixed"
             />
           </div>
@@ -2150,11 +1719,7 @@ export default function CourseApplication() {
           <div className="space-y-8">
             <h2 className="text-xl font-semibold text-gray-800 tracking-wide">Personal Details</h2>
             {formConfig?.personalDetails?.map((section: any) => {
-              const visibleFields = section.fields.filter((f: any) => {
-                if (!f.showWhen) return true;
-
-                return formData[f.showWhen.field] === f.showWhen.value;
-              });
+              const visibleFields = section.fields.filter(isFieldVisible);
 
               if (visibleFields.length === 0) return null;
 
@@ -2207,6 +1772,7 @@ export default function CourseApplication() {
                     {visibleFields.map((f: any) => (
                       <div
                         key={f.fieldName}
+                        data-field={f.fieldName}
                         className={`relative flex flex-col ${f.type === "declaration"
                           ? "col-span-1 sm:col-span-2 lg:col-span-3"
                           : ""
@@ -2216,11 +1782,7 @@ export default function CourseApplication() {
                           <button
                             type="button"
                             onClick={() =>
-                              removeField(
-                                "personal",
-                                section.sectionName,
-                                f.fieldName
-                              )
+                              removeField("personal", section.sectionName, f.fieldName)
                             }
                             className="absolute top-1 right-1 text-red-500 text-sm"
                           >
@@ -2248,11 +1810,7 @@ export default function CourseApplication() {
           <div className="space-y-8">
             <h2 className="text-xl font-semibold text-gray-800 tracking-wide">Education Details</h2>
             {formConfig?.educationDetails?.map((section: any) => {
-              const visibleFields = section.fields.filter((f: any) => {
-                if (!f.showWhen) return true;
-
-                return formData[f.showWhen.field] === f.showWhen.value;
-              });
+              const visibleFields = section.fields.filter(isFieldVisible);
 
               if (visibleFields.length === 0) return null;
 
@@ -2269,6 +1827,7 @@ export default function CourseApplication() {
                     {visibleFields.map((f: any) => (
                       <div
                         key={f.fieldName}
+                        data-field={f.fieldName}
                         className={`relative flex flex-col ${f.type === "declaration"
                           ? "col-span-1 sm:col-span-2 lg:col-span-3"
                           : ""
@@ -2287,7 +1846,11 @@ export default function CourseApplication() {
               );
             })}
 
-            <button type="submit" disabled={loading} className="w-full bg-gradient-to-b from-[#003B73] to-[#0057A0] hover:bg-indigo-700 transition text-white py-3 rounded-xl font-medium">
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-gradient-to-b from-[#003B73] to-[#0057A0] hover:bg-indigo-700 transition text-white py-3 rounded-xl font-medium disabled:opacity-60"
+            >
               {loading ? "Submitting..." : "Submit Application"}
             </button>
           </div>
@@ -2312,7 +1875,6 @@ export default function CourseApplication() {
                   : "Next →"}
             </button>
           )}
-
         </div>
       </form>
     </div>
