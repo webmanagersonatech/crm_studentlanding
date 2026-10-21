@@ -38,6 +38,37 @@ export default function LoginForm({ instituteId }: Props) {
         window.location.href = "/dashboard";
     };
 
+    const institutionWebsites: Record<string, string> = {
+        "INS-0VVEACMY": "https://scaleindia.in/sona-uwa",
+        "INS-HY0CZ0CO": "https://www.sonatech.ac.in/",
+        "INS-IWXDEN7K": "https://scaleindia.in/",
+        "INS-3-ZXYXKM": "https://www.sonavalliappapublicschool.com/",
+        "INS-YOWWE5DG": "https://tpt.edu.in/",
+        "INS-P2VTCZ5T": "https://sonacas.edu.in/",
+        "INS-ZFBTTF5P": "https://www.sonatech.ac.in/",
+        "INS-DHJMFQ6G": "https://sonabusinessschool.com/",
+        "INS-ESTKLHCB": "https://sonamedicalcollege.ac.in/",
+    };
+
+    const institutionWebsite =
+        institutionWebsites[instituteId ?? ""] || "/";
+
+
+    const institutionBackgrounds: Record<string, string> = {
+        "INS-0VVEACMY": "/images/hero-3.webp",
+        "INS-HY0CZ0CO": "/images/hero-1.webp",
+        "INS-IWXDEN7K": "/images/hero-1.webp",
+        "INS-3-ZXYXKM": "/images/hero-2.webp",
+        "INS-YOWWE5DG": "/images/hero-1.webp",
+        "INS-P2VTCZ5T": "/images/hero-1.webp",
+        "INS-ZFBTTF5P": "/images/hero-1.webp",
+        "INS-DHJMFQ6G": "/images/hero-1.webp",
+        "INS-ESTKLHCB": "/images/hero-4.webp",
+    };
+
+    const backgroundImage =
+        institutionBackgrounds[instituteId ?? ""] || "/images/hero-1.webp";
+
     useEffect(() => {
         const fetchSettings = async () => {
             if (!instituteId) return;
@@ -55,11 +86,29 @@ export default function LoginForm({ instituteId }: Props) {
 
 
     return (
-        <AuthShell title="Student Management Portal"  logo={institutdata?.logo || null} size="sm">
+        <AuthShell title="Hika Portal" logo={institutdata?.logo || null} backgroundImage={backgroundImage} size="sm">
             {!isApplicationOpen && (
-                <div className="mb-4 p-3 rounded-xl bg-red-100 text-red-700 text-center font-semibold">
-                    🚫 Applications are currently closed.
-                    Please contact the institution for more details.
+                <div className="mb-4 p-4 rounded-xl bg-red-100 text-red-700 text-center">
+                    <div className="font-semibold">
+                        🚫 Applications are currently closed.
+                    </div>
+
+                    <div className="mt-1 text-sm">
+                        Please contact the institution for more details.
+                    </div>
+
+                    {institutionWebsite && (
+                        <a
+                            href={institutionWebsite}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center mt-2 gap-2  px-5 
+                            text-red 
+                           font-bold"
+                        >
+                            ← Back to Website
+                        </a>
+                    )}
                 </div>
             )}
             <form onSubmit={handleSubmit} className="space-y-4">

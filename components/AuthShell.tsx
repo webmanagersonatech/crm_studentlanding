@@ -6,6 +6,7 @@ interface AuthShellProps {
   subtitle?: string;
   title: string;
   logo?: string | null;
+  backgroundImage?: string;
   size?: "sm" | "md" | "lg";
 }
 
@@ -14,6 +15,7 @@ export function AuthShell({
   subtitle,
   title,
   logo,
+  backgroundImage = "/images/hero-1.webp",
   size = "sm",
 }: AuthShellProps) {
   const width =
@@ -22,7 +24,7 @@ export function AuthShell({
   return (
     <div
       className="min-h-screen flex items-center justify-center bg-cover bg-center px-4 relative"
-      style={{ backgroundImage: "url('images/hero-1.webp')" }}
+      style={{ backgroundImage: `url("${backgroundImage}")` }}
     >
       <div className="absolute inset-0 bg-black/60"></div>
 
