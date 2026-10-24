@@ -277,7 +277,7 @@ export default function ReceiptPage() {
 
                     {/* Receipt Card */}
                     <div ref={componentRef}>
-                        <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-200">
+                        <div className="bg-white  overflow-hidden border border-gray-200">
                             {/* Success Header */}
                             <div className="bg-gradient-to-r from-green-500 to-green-600 p-6 text-white">
                                 <div className="flex items-center gap-3">
