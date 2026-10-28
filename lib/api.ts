@@ -143,7 +143,7 @@ export type TuitionTransaction = {
   courseName: string;
   paymentType: string;
   installmentNumber: number;
-  paymentId:string;
+  paymentId: string;
   year: string;
   paymentOptionName: string;
   totalAmount: number;
@@ -157,6 +157,68 @@ export type TuitionTransactionsResponse = {
   success: boolean;
   message?: string;
   data?: TuitionTransaction[];
+};
+
+
+export type AdvancePaymentData = {
+  name: string;
+  email: string;
+  mobileNo: string;
+  applicationId: string;
+  programId: string;
+  courseId: string;
+  amount: number;
+  programName: string;
+  isPaid: boolean;
+  gstAmount: number;
+  advanceTokenFee: number;
+  academicYear: string;
+  paymentMethod: string;
+  gstPercentage: number;
+};
+
+export type AdvancePaymentDataResponse = {
+  success: boolean;
+  message?: string;
+  data?: AdvancePaymentData;
+};
+
+
+export type AdvanceReceiptData = {
+  name: string;
+  email: string;
+  mobileNo: string;
+
+  instituteName: string;
+  instituteLogo: string;
+
+  applicationId: string;
+  programId: string;
+  programName: string;
+  academicYear: string;
+
+  amount: number;
+  gstAmount: number;
+  totalAmount: number;
+  gstPercentage: number;
+
+  paymentId: string | null;
+  orderId: string | null;
+  transactionId: string | null;
+  gateway: string | null;
+  paymentMethod: string | null;
+  paymentStatus: string;
+
+  paymentDate: string | null;
+
+  isAdvanceToken: boolean;
+};
+
+export type AdvanceReceiptResponse = {
+  success: boolean;
+  message?: string;
+  errorCode?: string;
+  data?: AdvanceReceiptData;
 };
 
 export const getAllPaidTuitionTransactions = async (): Promise<TuitionTransactionsResponse> => {
@@ -180,6 +242,171 @@ export const getAllPaidTuitionTransactions = async (): Promise<TuitionTransactio
     };
   }
 };
+
+
+// ========================
+// Get advance token payment data for logged-in student
+// ========================
+export const getAdvancePaymentRelatedData =
+  async (): Promise<AdvancePaymentDataResponse> => {
+    try {
+      const res = await axios.get(
+        `${API_BASE}/student/advance-payment-data`,
+        { withCredentials: true }
+      );
+
+      if (res.data.success) {
+        return {
+          success: true,
+          data: res.data.data,
+          message: res.data.message,
+        };
+      }
+
+      return {
+        success: false,
+        message: res.data.message || "Failed to fetch advance payment data",
+      };
+    } catch (err: any) {
+      return {
+        success: false,
+        message:
+          err.response?.data?.message ||
+          "Server error while fetching advance payment data",
+      };
+    }
+  };
+
+
+
+// ========================
+// Advance Token — Razorpay
+// ========================
+export const createAdvanceRazorpayPayment = async (
+  applicationId: string
+) => {
+  try {
+    const res = await axios.post(
+      `${API_BASE}/advancetoken-amount/razorpay/create`,
+      { applicationId },
+      { withCredentials: true }
+    );
+    return res.data;
+  } catch (err: any) {
+    return {
+      success: false,
+      message:
+        err.response?.data?.message ||
+        "Razorpay advance initiation failed",
+    };
+  }
+};
+
+// ========================
+// Advance Token — Instamojo
+// ========================
+export const createAdvanceInstamojoPayment = async (
+  applicationId: string
+) => {
+  try {
+    const res = await axios.post(
+      `${API_BASE}/advancetoken-amount/instamojo/create`,
+      { applicationId },
+      { withCredentials: true }
+    );
+    return res.data;
+  } catch (err: any) {
+    return {
+      success: false,
+      message:
+        err.response?.data?.message ||
+        "Instamojo advance initiation failed",
+    };
+  }
+};
+
+
+// ========================
+// Advance token receipt data
+// ========================
+export const getAdvanceReceiptData =
+  async (): Promise<AdvanceReceiptResponse> => {
+    try {
+      const res = await axios.get(
+        `${API_BASE}/student/advance-receipt-data`,
+        { withCredentials: true }
+      );
+
+      if (res.data.success) {
+        return {
+          success: true,
+          data: res.data.data,
+          message: res.data.message,
+        };
+      }
+
+      return {
+        success: false,
+        errorCode: res.data.errorCode,
+        message: res.data.message || "Failed to fetch advance receipt data",
+        data: res.data.data,
+      };
+    } catch (err: any) {
+      const status = err.response?.status;
+      const message = err.response?.data?.message;
+
+      if (status === 401) {
+        return {
+          success: false,
+          errorCode: "UNAUTHORIZED",
+          message: "You are not authorized. Please login again.",
+        };
+      }
+
+      if (status === 404) {
+        return {
+          success: false,
+          errorCode:
+            err.response?.data?.errorCode || "ADVANCE_PAYMENT_NOT_FOUND",
+          message: message || "No advance receipt found",
+          data: err.response?.data?.data,
+        };
+      }
+
+      return {
+        success: false,
+        message:
+          message || "Server error while fetching advance receipt",
+      };
+    }
+  };
+
+// ========================
+// Advance Token — CCAvenue
+// ========================
+export const createAdvanceCCAvenuePayment = async (
+  applicationId: string
+) => {
+  try {
+    const res = await axios.post(
+      `${API_BASE}/advancetoken-amount/ccavenue/create`,
+      { applicationId },
+      { withCredentials: true }
+    );
+    return res.data;
+  } catch (err: any) {
+    return {
+      success: false,
+      message:
+        err.response?.data?.message ||
+        "CCAvenue advance initiation failed",
+    };
+  }
+};
+
+
+
+
 export const getAdditionalFeeConfigurationByStudent = async (): Promise<AdditionalFeeConfigurationResponse> => {
   try {
     const res = await axios.get(

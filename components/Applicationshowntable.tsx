@@ -1,23 +1,33 @@
-
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import toast, { Toaster } from "react-hot-toast";
 import { AppShell } from "./AppShell";
 import { getApplicationByStudent } from "@/lib/api";
 
-
 export default function DashboardClient() {
   const [application, setApplication] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [showQR, setShowQR] = useState(false);
   const router = useRouter();
+
+  /** Institute that gets the advance token option. */
+  const ADVANCE_TOKEN_INSTITUTE_ID = "INS-3-ZXYXKM";
+  /** Academic year that gets the advance token option. */
+  const ADVANCE_TOKEN_ACADEMIC_YEAR = "2027-2028";
+
   const hidePaymentButtons =
     application?.instituteId === "INS-P2VTCZ5T" ||
     application?.instituteId === "INS-HY0CZ0CO";
 
-
   const showQRPopup =
-    application?.instituteId === "INS-0VVEACMYsss"
+    application?.instituteId === "INS-0VVEACMYsss";
+
+  /** ✅ Advance token gate: institute + academic year only. */
+  const showAdvanceToken =
+    application?.instituteId === ADVANCE_TOKEN_INSTITUTE_ID &&
+    String(application?.academicYear ?? "") === ADVANCE_TOKEN_ACADEMIC_YEAR;
+
+
 
   useEffect(() => {
     const fetchApplication = async () => {
@@ -35,13 +45,19 @@ export default function DashboardClient() {
   }, []);
 
   const handlePayNow = () => {
-    router.push(
-      `/payment`
-    );
+    router.push(`/payment`);
   };
 
   const handleViewReceipt = () => {
     router.push(`/receipt`);
+  };
+
+  const handlePayAdvanceToken = () => {
+    router.push("/advance-payment");
+  };
+
+  const handleViewAdvanceReceipt = () => {
+    router.push("/advance-receipt");
   };
 
   return (
@@ -60,7 +76,7 @@ export default function DashboardClient() {
               <p>Application ID: {application.applicationId}</p>
               <p>Program: {application.program}</p>
             </div>
-            <div className="mt-4 flex gap-3">
+            <div className="mt-4 flex flex-wrap gap-3">
 
               {application.paymentStatus !== "Paid" && (
                 <button
@@ -80,17 +96,28 @@ export default function DashboardClient() {
                     Pay Now
                   </button>
                 )}
+
+              {/* ✅ Advance Token — INS-3-ZXYXKM, AY 2027-2028 only */}
+              {showAdvanceToken && application.formStatus === "Complete" && (
+
+                <button
+                  onClick={handlePayAdvanceToken}
+                  className="px-5 py-3 rounded-md bg-amber-600 text-white font-medium hover:bg-amber-700 transition"
+                >
+                  Reserve Your Seat — Token Advance Amount
+                </button>
+
+              )}
+
               {showQRPopup &&
                 application.paymentStatus === "Unpaid" &&
                 application.formStatus === "Complete" && (
-
                   <button
                     onClick={() => setShowQR(true)}
-                    className="px-5 py-2 rounded-md bg-gray-900 text-white text-white font-medium  transition"
+                    className="px-5 py-2 rounded-md bg-gray-900 text-white font-medium transition"
                   >
                     Scan & Pay Now
                   </button>
-
                 )}
 
               {!hidePaymentButtons && application.paymentStatus === "Paid" && (
@@ -104,7 +131,6 @@ export default function DashboardClient() {
                   View Receipt
                 </button>
               )}
-
 
             </div>
           </div>
@@ -121,6 +147,8 @@ export default function DashboardClient() {
                 status={application.paymentStatus === "Paid"}
               />
               <InfoRow label="Form Status" value={application.formStatus} />
+
+
             </div>
           </div>
         </div>
@@ -139,9 +167,7 @@ export default function DashboardClient() {
 
       {showQR && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-
           <div className="bg-white rounded-lg p-6 relative w-[350px] text-center">
-
             <button
               onClick={() => setShowQR(false)}
               className="absolute right-3 top-2 text-gray-600 text-xl"
@@ -149,11 +175,7 @@ export default function DashboardClient() {
               ✕
             </button>
 
-
-            <h2 className="text-xl font-semibold mb-4">
-              Scan QR & Pay
-            </h2>
-
+            <h2 className="text-xl font-semibold mb-4">Scan QR & Pay</h2>
 
             <img
               src="/images/payment-qr.jpg"
@@ -161,13 +183,10 @@ export default function DashboardClient() {
               className="w-64 mx-auto"
             />
 
-
             <p className="mt-4 text-gray-600">
               Please scan and complete payment
             </p>
-
           </div>
-
         </div>
       )}
     </AppShell>
